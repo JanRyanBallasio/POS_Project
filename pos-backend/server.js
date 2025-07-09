@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { supabase } = require('./supabaseClient'); 
+const { supabase } = require('./src/config/db'); // CHANGE THIS LINE
 
 const app = express();
 const PORT = 5000;
