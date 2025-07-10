@@ -1,25 +1,32 @@
 const express = require('express');
 const cors = require('cors');
-const { supabase } = require('./src/config/db'); // CHANGE THIS LINE
+
+// Routes
+const userRoutes = require('./src/routes/userRoutes');
+const productRoutes = require('./src/routes/productRoutes');
+const categoryRoutes = require('./src/routes/categoryRoutes');
+const positionRoutes = require('./src/routes/positionRoutes');
 
 const app = express();
 const PORT = 5000;
 
+// Middleware
 app.use(cors());
 app.use(express.json());
 
-app.get('/api/test', (req, res) => {
-  res.json({ message: 'Backend connected successfully!' });
-});
+// API Routes
+app.use('/api/users', userRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/positions', positionRoutes);
 
-app.get('/api/users', async (req, res) => {
-  try {
-    const { data, error } = await supabase.from('Users').select('*');
-    if (error) throw error;
-    res.json(data);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+// Add this before app.listen()
+app.use((error, req, res, next) => {
+  console.error('Error:', error);
+  res.status(500).json({
+    success: false,
+    message: 'Internal server error'
+  });
 });
 
 app.listen(PORT, () => {
