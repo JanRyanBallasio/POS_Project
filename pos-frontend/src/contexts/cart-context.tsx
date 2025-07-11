@@ -5,6 +5,7 @@ import React, {
   useMemo,
   ReactNode,
   RefObject,
+  useEffect,
 } from "react";
 import { Product, productApi } from "@/lib/api";
 
@@ -22,6 +23,7 @@ interface CartContextType {
   scanAndAddToCart: (barcode: string) => Promise<void>;
   refocusScanner: () => void;
   setScannerRef: (ref: RefObject<HTMLInputElement>) => void;
+  updateCartItemQuantity: (id: string, quantity: number) => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -45,6 +47,12 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     }, 100);
   };
 
+  const updateCartItemQuantity = (id: string, quantity: number) => {
+    setCart((prevCart) =>
+      prevCart.map((item) => (item.id === id ? { ...item, quantity } : item))
+    );
+  };
+
   const scanAndAddToCart = async (barcode: string): Promise<void> => {
     try {
       setIsScanning(true);
@@ -53,13 +61,27 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       const product = await productApi.getByBarcode(barcode);
 
       if (product) {
-        const cartItem: CartItem = {
-          product,
-          quantity: 1,
-          id: Date.now().toString(), // Unique ID
-        };
-
-        setCart((prevCart) => [...prevCart, cartItem]);
+        setCart((prevCart) => {
+          // Check if product already in cart
+          const existing = prevCart.find(
+            (item) => item.product.barcode === product.barcode
+          );
+          if (existing) {
+            // Add to quantity
+            return prevCart.map((item) =>
+              item.product.barcode === product.barcode
+                ? { ...item, quantity: item.quantity + 1 }
+                : item
+            );
+          } else {
+            const cartItem: CartItem = {
+              product,
+              quantity: 1,
+              id: Date.now().toString(),
+            };
+            return [...prevCart, cartItem];
+          }
+        });
       } else {
         setScanError(`Product not found: ${barcode}`);
       }
@@ -86,6 +108,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     scanAndAddToCart,
     refocusScanner,
     setScannerRef,
+    updateCartItemQuantity,
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
@@ -97,4 +120,25 @@ export const useCart = () => {
     throw new Error("useCart must be used within a CartProvider");
   }
   return context;
+};
+
+export const useCartKeyboard = (selectedRowId: string | null) => {
+  const { cart, updateCartItemQuantity } = useCart();
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!selectedRowId) return;
+      if (e.key === "+") {
+        const item = cart.find((i) => i.id === selectedRowId);
+        if (item) updateCartItemQuantity(item.id, item.quantity + 1);
+      }
+      if (e.key === "-") {
+        const item = cart.find((i) => i.id === selectedRowId);
+        if (item && item.quantity > 1)
+          updateCartItemQuantity(item.id, item.quantity - 1);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedRowId, cart, updateCartItemQuantity]);
 };
