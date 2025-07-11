@@ -1,12 +1,16 @@
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCart } from "@/contexts/cart-context";
 import { useCustomerTagging } from "@/hooks/pos/useCustomerTagging";
 import Calculator from "./Calculator";
 import CustomerSearch from "./CustomerSearch";
 import PaymentSummary from "./PaymentSummary";
 import Receipt from "./Receipt";
+import { PDFViewer } from "@react-pdf/renderer";
+
+import ReceiptPDF from "./ReceiptPDF";
+import { pdf } from "@react-pdf/renderer";
 
 interface POSRightColProps {
   step: 1 | 2 | 3;
@@ -14,9 +18,14 @@ interface POSRightColProps {
 }
 
 export default function RightColumn({ step, setStep }: POSRightColProps) {
-  const { cartTotal, refocusScanner } = useCart();
+  const { cart, cartTotal, refocusScanner } = useCart();
   const [amount, setAmount] = useState("");
   const [change, setChange] = useState(0);
+
+  useEffect(() => {
+    const amountValue = parseFloat(amount) || 0;
+    setChange(amountValue - cartTotal);
+  }, [amount, cartTotal]);
 
   const {
     customerQuery,
@@ -39,15 +48,29 @@ export default function RightColumn({ step, setStep }: POSRightColProps) {
   };
 
   // Print Receipt
-  const handlePrintReceipt = () => {
-    if (selectedCustomer) {
-      const earned = Math.floor(cartTotal / 10);
-      alert(
-        `${selectedCustomer.name} earned ${earned} point(s)! (Old: ${selectedCustomer.points})`
-      );
-    }
+  const handlePrintReceipt = async () => {
+    const blob = await pdf(
+      <ReceiptPDF
+        cartTotal={cartTotal}
+        amount={amount}
+        change={change}
+        customer={selectedCustomer}
+        items={cart.map((item) => ({
+          desc: item.product.name, // or whatever field is the product name
+          qty: item.quantity,
+          amount: item.product.price * item.quantity,
+        }))}
+      />
+    ).toBlob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `receipt-${Date.now()}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
-
   // New Transaction
   const handleNewTransaction = () => {
     setStep(1);
