@@ -13,16 +13,19 @@ import { Search } from "lucide-react";
 import { Product } from "@/lib/api";
 
 import { useCart } from "@/contexts/cart-context";
+import { useCartKeyboard } from "@/contexts/cart-context";
 
 import { useProducts } from "@/hooks/products/useProducts";
 import { useBarcodeScan } from "@/hooks/products/useBarcodeScan";
 import { useProductSearch } from "@/hooks/products/useProductsSearch";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function POSLeftCol() {
+  const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
   const { products } = useProducts();
   const {
     cart,
+    updateCartItemQuantity,
     scanError,
     isScanning,
     scanAndAddToCart,
@@ -31,6 +34,8 @@ export default function POSLeftCol() {
   } = useCart();
   const { barcodeInput, inputRef, handleBarcodeChange, handleKeyPress } =
     useBarcodeScan(scanAndAddToCart);
+
+  useCartKeyboard(selectedRowId); // <-- handles + and - keys
 
   const {
     searchQuery,
@@ -60,13 +65,31 @@ export default function POSLeftCol() {
     }
 
     return cart.map((item) => (
-      <TableRow key={item.id} className="hover:bg-gray-50">
+      <TableRow
+        key={item.id}
+        className={`hover:bg-gray-50 cursor-pointer ${
+          selectedRowId === item.id ? "bg-gray-100" : ""
+        }`}
+        onClick={() => setSelectedRowId(item.id)}
+      >
         <TableCell className="font-medium">
           {item.product.barcode || "N/A"}
         </TableCell>
         <TableCell>{item.product.name}</TableCell>
         <TableCell>₱ {item.product.price.toFixed(2)}</TableCell>
-        <TableCell>{item.quantity}</TableCell>
+        <TableCell>
+          <Input
+            type="number"
+            min={1}
+            value={item.quantity}
+            className="w-16"
+            onClick={(e) => e.stopPropagation()} // <-- Add this line
+            onChange={(e) => {
+              const qty = Math.max(1, Number(e.target.value));
+              updateCartItemQuantity(item.id, qty);
+            }}
+          />
+        </TableCell>
         <TableCell>₱ 0.00</TableCell>
       </TableRow>
     ));
@@ -97,6 +120,7 @@ export default function POSLeftCol() {
               placeholder="Search by product name or barcode..."
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
               onBlur={refocusScanner}
             />
           </div>
