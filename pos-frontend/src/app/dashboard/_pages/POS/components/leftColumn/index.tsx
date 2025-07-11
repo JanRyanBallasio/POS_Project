@@ -42,7 +42,7 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
   }, [setScannerRef, inputRef]);
 
   useEffect(() => {
-    if (step === 2) {
+    if (step === 2 || step === 3) {
       // Cancel/clear scanning here
       if (inputRef?.current) inputRef.current.blur();
       // If you have a barcodeInput state:
@@ -68,7 +68,7 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
             barcodeInput={barcodeInput}
             handleBarcodeChange={handleBarcodeChange}
             handleKeyPress={handleKeyPress}
-            disabled={step === 2}
+            disabled={step === 2 || step === 3}
           />
           <ProductSearch
             searchQuery={searchQuery}
@@ -78,7 +78,7 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
             handleSearchSelect={handleSearchSelect}
             clearSearch={clearSearch}
             refocusScanner={refocusScanner}
-            disabled={step === 2}
+            disabled={step === 2 || step === 3}
           />
           <div className="rounded-md border flex-1 flex flex-col min-h-0 overflow-auto relative">
             <CartTable
@@ -86,7 +86,7 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
               selectedRowId={selectedRowId}
               selectRow={selectRow}
               updateCartItemQuantity={updateCartItemQuantity}
-              disabled={step === 2}
+              disabled={step === 2 || step === 3}
             />
           </div>
         </CardContent>

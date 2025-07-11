@@ -14,7 +14,7 @@ interface ReceiptProps {
 export default function Receipt({ selectedCustomer, cartTotal }: ReceiptProps) {
   return (
     <div className="flex flex-col items-center justify-center flex-1">
-      <h2 className="text-3xl font-bold mb-4">Receipt Printed!</h2>
+      <h2 className="text-3xl font-bold mb-4">Transaction Successful!</h2>
       <p className="mb-8">Thank you for your purchase.</p>
     </div>
   );
