@@ -12,27 +12,36 @@ import { Search } from "lucide-react";
 
 import { Product } from "@/lib/api";
 
+import { useCart } from "@/contexts/cart-context";
+
 import { useProducts } from "@/hooks/products/useProducts";
 import { useBarcodeScan } from "@/hooks/products/useBarcodeScan";
 import { useProductSearch } from "@/hooks/products/useProductsSearch";
+import { useEffect } from "react";
 
 export default function POSLeftCol() {
-  const { cart, scanError, isScanning, scanAndAddToCart, products } = useProducts();
+  const { products } = useProducts();
   const {
-    barcodeInput,
-    inputRef,
-    handleBarcodeChange,
-    handleKeyPress,
-    refocusScanner
-  } = useBarcodeScan(scanAndAddToCart);
+    cart,
+    scanError,
+    isScanning,
+    scanAndAddToCart,
+    setScannerRef,
+    refocusScanner,
+  } = useCart();
+  const { barcodeInput, inputRef, handleBarcodeChange, handleKeyPress } =
+    useBarcodeScan(scanAndAddToCart);
+
   const {
     searchQuery,
     searchResults,
     showSearchResults,
     handleSearchChange,
-    clearSearch
+    clearSearch,
   } = useProductSearch(products);
-
+  useEffect(() => {
+    setScannerRef(inputRef as React.RefObject<HTMLInputElement>);
+  }, [setScannerRef, inputRef]);
   const handleSearchSelect = (product: Product) => {
     scanAndAddToCart(product.barcode || "");
     clearSearch();
@@ -64,7 +73,7 @@ export default function POSLeftCol() {
   };
 
   return (
-    <Card className="w-full h-full">
+    <Card className="w-full h-full" onClick={() => refocusScanner()}>
       <CardContent className="p-6">
         {/* Hidden scanner input - automatic scanning */}
         <Input
@@ -137,8 +146,12 @@ export default function POSLeftCol() {
                 <TableHead className="text-lg font-semibold">Barcode</TableHead>
                 <TableHead className="text-lg font-semibold">Name</TableHead>
                 <TableHead className="text-lg font-semibold">Price</TableHead>
-                <TableHead className="text-lg font-semibold">Quantity</TableHead>
-                <TableHead className="text-lg font-semibold">Discount</TableHead>
+                <TableHead className="text-lg font-semibold">
+                  Quantity
+                </TableHead>
+                <TableHead className="text-lg font-semibold">
+                  Discount
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>{renderCartContent()}</TableBody>
