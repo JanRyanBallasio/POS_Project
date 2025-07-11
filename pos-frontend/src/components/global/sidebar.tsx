@@ -1,6 +1,6 @@
 "use client";
 
-import {Calculator , NotebookPen  } from "lucide-react";
+import { Calculator, NotebookPen, Home as IconInnerShadowTop } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -13,6 +13,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarHeader
 } from "@/components/ui/sidebar";
 
 // Main items.
@@ -20,7 +21,7 @@ const main = [
   {
     title: "Point of Sale",
     url: "/dashboard/main",
-    icon: Calculator ,
+    icon: Calculator,
   },
 ];
 
@@ -34,12 +35,12 @@ const inventory = [
   {
     title: "Inventory",
     url: "/dashboard/asdass",
-    icon: Calculator ,
+    icon: Calculator,
   },
   {
     title: "Categories",
     url: "/dashboard/asdasda",
-    icon: Calculator ,
+    icon: Calculator,
   },
 ];
 
@@ -48,6 +49,21 @@ export function AppSidebar() {
 
   return (
     <Sidebar>
+      <SidebarHeader>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              className="data-[slot=sidebar-menu-button]:!p-1.5"
+            >
+              <a href="#">
+                <IconInnerShadowTop className="!size-5" />
+                <span className="text-base font-semibold">ISTORE DA</span>
+              </a>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Main</SidebarGroupLabel>
