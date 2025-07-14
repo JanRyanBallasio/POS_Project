@@ -62,12 +62,10 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
       if (product) {
         setCart((prevCart) => {
-          // Check if product already in cart
           const existing = prevCart.find(
             (item) => item.product.barcode === product.barcode
           );
           if (existing) {
-            // Add to quantity
             return prevCart.map((item) =>
               item.product.barcode === product.barcode
                 ? { ...item, quantity: item.quantity + 1 }

@@ -9,7 +9,7 @@ export default function MainDashboard() {
 
   return (
     <CartProvider>
-      <div className="flex flex-col w-full h-[880px] bg-neutral-100 py-4 px-4">
+      <div className="flex flex-col w-full h-full py-4 px-4">
         <div className="flex gap-2 h-full">
           <div className="flex-[70%]">
             <POSleft step={step} />
