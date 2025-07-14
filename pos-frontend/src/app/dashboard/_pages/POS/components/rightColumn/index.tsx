@@ -2,7 +2,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { useCart } from "@/contexts/cart-context";
-import { useCustomerTagging } from "@/hooks/pos/useCustomerTagging";
+import { useCustomerTagging } from "@/hooks/poss/rightCol/useCustomerTagging";
 import Calculator from "./Calculator";
 import CustomerSearch from "./CustomerSearch";
 import PaymentSummary from "./PaymentSummary";
