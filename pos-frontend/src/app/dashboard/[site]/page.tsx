@@ -2,7 +2,7 @@
 
 import { use } from "react";
 import MainDashboard from "../_pages/POS/pos-screen";
-import ProductsPage from "../_pages/Products/page";
+import ProductsPage from "../_pages/Products/productsScreen";
 export default function SiteDashboardPage({
   params,
 }: {
