@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
-import { categoryApi } from "@/lib/api"; // Make sure you have this
-
+import { categoryApi } from "@/hooks/categories/useCategoryApi";
 export interface Category {
   id: number;
   name: string;
