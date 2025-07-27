@@ -17,9 +17,34 @@ const productController = {
         count: data.length
       });
     } catch (error) {
-      res.status(500).json({ 
+      res.status(500).json({
         success: false,
-        error: error.message 
+        error: error.message
+      });
+    }
+  },
+
+  createProduct: async (req, res) => {
+    try {
+      const { name, barcode, category_id, price, quantity } = req.body;
+      const { data, error } = await supabase
+        .from('Products')
+        .insert([
+          { name, barcode, category_id, price, quantity }
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      res.json({
+        success: true,
+        data: data
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error.message
       });
     }
   },
@@ -31,7 +56,7 @@ const productController = {
         .from('Products')
         .select('*')
         .eq('barcode', barcode)
-        .single(); 
+        .single();
 
       if (error) {
         if (error.code === 'PGRST116') {
@@ -48,9 +73,9 @@ const productController = {
         data: data
       });
     } catch (error) {
-      res.status(500).json({ 
+      res.status(500).json({
         success: false,
-        error: error.message 
+        error: error.message
       });
     }
   }
