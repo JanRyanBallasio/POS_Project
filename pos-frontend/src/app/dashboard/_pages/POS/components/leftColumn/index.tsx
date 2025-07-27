@@ -1,9 +1,9 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { useCart } from "@/contexts/cart-context";
-import { useCartSelection } from "@/hooks/poss/leftCol/useCartSelection";
+import { useCartSelection } from "@/hooks/pos/leftCol/useCartSelection";
 import { useProducts } from "@/hooks/global/fetching/useProducts";
-import { useBarcodeScan } from "@/hooks/poss/leftCol/useBarcodeScan";
-import { useProductSearch } from "@/hooks/poss/leftCol/useProductsSearch";
+import { useBarcodeScan } from "@/hooks/pos/leftCol/useBarcodeScan";
+import { useProductSearch } from "@/hooks/pos/leftCol/useProductsSearch";
 import { useCartKeyboard } from "@/contexts/cart-context";
 import { useEffect } from "react";
 import CartTable from "./CartTable";
