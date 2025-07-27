@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Product, productApi } from "@/lib/api";
+import { productApi, Product } from "@/hooks/products/useProductApi";
 
 interface CartItem {
   product: Product;

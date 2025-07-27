@@ -1,6 +1,6 @@
 "use client";
 
-import { Calculator, NotebookPen, Home as IconInnerShadowTop } from "lucide-react";
+import { Calculator, NotebookPen, Home as IconInnerShadowTop, LayoutDashboard} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -19,8 +19,13 @@ import {
 // Main items.
 const main = [
   {
-    title: "Point of Sale",
+    title: "Dashboard",
     url: "/dashboard/main",
+    icon: LayoutDashboard,
+  },
+  {
+    title: "Point of Sale",
+    url: "/dashboard/pos",
     icon: Calculator,
   },
 ];
