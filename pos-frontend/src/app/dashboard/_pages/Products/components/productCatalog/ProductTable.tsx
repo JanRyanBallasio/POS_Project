@@ -1,8 +1,18 @@
 import { useState } from "react";
 import { DataTable } from "../../table/dataTable";
 import { columns, Products } from "../../table/columns";
+import { productApi } from "@/hooks/products/useProductApi";
 import Pagination from "./Pagination";
-import { useProducts } from "@/hooks/global/fetching/useProducts";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+
+interface ProductTableProps {
+    products: any[];
+    selectedCategory: string;
+    selectedStatus: string;
+    onProductDeleted?: (id: number) => void; // <-- Add this
+}
 
 const PAGE_SIZE = 6;
 
@@ -22,28 +32,67 @@ function mapProductToPayment(product: any): Products {
     };
 }
 
-export default function ProductTable() {
-    const { products, loading, error } = useProducts();
+export default function ProductTable({ products, selectedCategory, selectedStatus, onProductDeleted}: ProductTableProps) {
     const [page, setPage] = useState(0);
     const [filteredCount, setFilteredCount] = useState(0);
-    const [pageSize, setPageSize] = useState(6);
+    const [pageSize, setPageSize] = useState(PAGE_SIZE);
 
-    const mappedProducts: Products[] = (products ?? []).map(mapProductToPayment);
+    // Step 1: Add state for dialogs
+    const [editProduct, setEditProduct] = useState<any | null>(null);
+    const [showEditDialog, setShowEditDialog] = useState(false);
 
-    const pageCount = Math.ceil(filteredCount / pageSize);
+    const [deleteProduct, setDeleteProduct] = useState<any | null>(null);
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-    if (loading) {
-        return <div className="w-full text-center py-8">Loading...</div>;
+    let filteredProducts = selectedCategory === "all"
+        ? products
+        : products.filter(p => String(p.category_id) === selectedCategory);
+
+    if (selectedStatus && selectedStatus !== "all") {
+        filteredProducts = filteredProducts.filter(p => {
+            let status: "in stock" | "low stock" | "out of stock";
+            if (p.quantity === 0) status = "out of stock";
+            else if (p.quantity < 5) status = "low stock";
+            else status = "in stock";
+            return status === selectedStatus;
+        });
     }
 
-    if (error) {
-        return <div className="w-full text-center py-8 text-red-500">{error}</div>;
-    }
+    const mappedProducts: Products[] = (filteredProducts ?? []).map(mapProductToPayment);
+
+    const pageCount = Math.max(1, Math.ceil(mappedProducts.length / pageSize));
+
+    // Step 1: Button handlers
+    const handleEdit = (product: any) => {
+        setEditProduct(product);
+        setShowEditDialog(true);
+    };
+
+    const handleDelete = (product: any) => {
+        setDeleteProduct(product);
+        setShowDeleteDialog(true);
+    };
 
     return (
         <div className="w-full mt-4 relative">
             <DataTable
-                columns={columns}
+                columns={columns.map(col =>
+                    col.id === "actions"
+                        ? {
+                            ...col,
+                            cell: ({ row }: any) => (
+                                <div className="flex gap-5 justify-center">
+                                    <Button variant="outline" size="icon" onClick={() => handleEdit(row.original)}>
+                                        Edit
+                                    </Button>
+                                    <Button variant="outline" size="icon" onClick={() => handleDelete(row.original)}>
+                                        Delete
+                                    </Button>
+                                </div>
+                            ),
+                        }
+                        : col
+                )}
                 data={mappedProducts}
                 page={page}
                 pageSize={pageSize}
@@ -61,7 +110,55 @@ export default function ProductTable() {
                     }}
                 />
             </div>
-
+            {/* Step 1: Placeholder dialogs */}
+            <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit Product</DialogTitle>
+                        <DialogDescription>
+                            Do you want to edit this product?
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowEditDialog(false)}>Cancel</Button>
+                        <Button onClick={() => setShowEditDialog(false)}>Edit (not implemented)</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+            <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Delete Product</DialogTitle>
+                        <DialogDescription>
+                            Do you want to delete this product?
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>Cancel</Button>
+                        <Button
+                            variant="destructive"
+                            onClick={async () => {
+                                if (deleteProduct) {
+                                    try {
+                                        await productApi.delete(deleteProduct.id);
+                                        toast("Product deleted", {
+                                            description: `${deleteProduct.productName} has been deleted.`,
+                                        });
+                                        setShowDeleteDialog(false);
+                                        if (onProductDeleted) onProductDeleted(deleteProduct.id); // <-- Notify parent
+                                    } catch (err: any) {
+                                        toast("Failed to delete product", {
+                                            description: err?.message || "An error occurred.",
+                                        });
+                                    }
+                                }
+                            }}
+                        >
+                            Delete
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

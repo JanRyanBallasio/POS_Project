@@ -3,9 +3,14 @@ import ProductCatalogToolbar from "./ProductCatalogToolbar";
 import ProductTable from "./ProductTable";
 import { useState } from "react";
 
-export default function Index() {
+interface IndexProps {
+  products: any[];
+  onProductDeleted?: (id: number) => void; // <-- Add this line
+}
+
+export default function Index({ products, onProductDeleted }: IndexProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+  const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [search, setSearch] = useState("");
 
   return (
@@ -17,15 +22,15 @@ export default function Index() {
         <ProductCatalogToolbar
           selectedCategory={selectedCategory}
           setSelectedCategory={setSelectedCategory}
-          selectedStatuses={selectedStatuses}
-          setSelectedStatuses={setSelectedStatuses}
-          search={search}
-          setSearch={setSearch}
+          selectedProducts={selectedStatus}
+          setSelectedProducts={setSelectedStatus}
         />
+        {/* Pass products to ProductTable */}
         <ProductTable
+          products={products}
           selectedCategory={selectedCategory}
-          selectedStatuses={selectedStatuses}
-          search={search}
+          selectedStatus={selectedStatus}
+          onProductDeleted={onProductDeleted}
         />
       </CardContent>
     </Card>
