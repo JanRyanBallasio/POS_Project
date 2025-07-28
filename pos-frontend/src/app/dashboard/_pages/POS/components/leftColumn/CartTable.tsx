@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import React from "react";
-import { Product } from "@/lib/api";
+import { Product } from "@/hooks/products/useProductApi";
 
 interface CartItem {
   id: string;
@@ -56,9 +56,8 @@ export default function CartTable({
         {cart.map((item) => (
           <TableRow
             key={item.id}
-            className={`hover:bg-gray-50 cursor-pointer ${
-              selectedRowId === item.id ? "bg-gray-100" : ""
-            }`}
+            className={`hover:bg-gray-50 cursor-pointer ${selectedRowId === item.id ? "bg-gray-100" : ""
+              }`}
             onClick={() => selectRow(item.id)}
           >
             <TableCell className="font-medium">
