@@ -3,6 +3,8 @@
 import { use } from "react";
 import MainDashboard from "../_pages/POS/pos-screen";
 import ProductsPage from "../_pages/Products/productsScreen";
+import DashboardScreen from "../_pages/Dashboard/dashboardScreen";
+
 export default function SiteDashboardPage({
   params,
 }: {
@@ -11,8 +13,8 @@ export default function SiteDashboardPage({
   const { site } = use(params);
 
   switch (site) {
-    // case "main":
-    //   return <MainDashboard />;
+    case "main":
+      return <DashboardScreen />;
     case "pos":
       return <MainDashboard />;
     case "products":
