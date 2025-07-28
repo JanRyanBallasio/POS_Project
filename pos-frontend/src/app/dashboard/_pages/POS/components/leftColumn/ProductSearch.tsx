@@ -1,7 +1,7 @@
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import React from "react";
-import { Product } from "@/lib/api";
+import { Product } from "@/hooks/products/useProductApi";
 
 interface ProductSearchProps {
   searchQuery: string;
