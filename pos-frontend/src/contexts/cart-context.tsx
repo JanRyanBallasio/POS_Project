@@ -24,6 +24,7 @@ interface CartContextType {
   refocusScanner: () => void;
   setScannerRef: (ref: RefObject<HTMLInputElement>) => void;
   updateCartItemQuantity: (id: string, quantity: number) => void;
+  clearCart: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -35,6 +36,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [scannerInputRef, setScannerInputRef] =
     useState<RefObject<HTMLInputElement> | null>(null);
 
+  const clearCart = () => setCart([]);
   const setScannerRef = (ref: RefObject<HTMLInputElement>) => {
     setScannerInputRef(ref);
   };
@@ -107,6 +109,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     refocusScanner,
     setScannerRef,
     updateCartItemQuantity,
+    clearCart,
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

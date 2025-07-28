@@ -18,7 +18,7 @@ interface POSRightColProps {
 }
 
 export default function RightColumn({ step, setStep }: POSRightColProps) {
-  const { cart, cartTotal, refocusScanner } = useCart();
+  const { cart, cartTotal, refocusScanner, clearCart } = useCart(); 
   const [amount, setAmount] = useState("");
   const [change, setChange] = useState(0);
 
@@ -72,7 +72,16 @@ export default function RightColumn({ step, setStep }: POSRightColProps) {
     URL.revokeObjectURL(url);
   };
   // New Transaction
-  const handleNewTransaction = () => {
+  const handleNewTransaction = async () => {
+    // Save sale to backend
+    await fetch("http://localhost:5000/api/sales", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        customer_id: selectedCustomer?.id || null,
+        total_purchase: cartTotal,
+      }),
+    });
     setStep(1);
     setAmount("");
     clearCustomer();
