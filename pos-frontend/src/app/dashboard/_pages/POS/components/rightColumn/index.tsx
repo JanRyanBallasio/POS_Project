@@ -18,7 +18,7 @@ interface POSRightColProps {
 }
 
 export default function RightColumn({ step, setStep }: POSRightColProps) {
-  const { cart, cartTotal, refocusScanner, clearCart } = useCart(); 
+  const { cart, cartTotal, refocusScanner, clearCart } = useCart();
   const [amount, setAmount] = useState("");
   const [change, setChange] = useState(0);
 
@@ -80,6 +80,11 @@ export default function RightColumn({ step, setStep }: POSRightColProps) {
       body: JSON.stringify({
         customer_id: selectedCustomer?.id || null,
         total_purchase: cartTotal,
+        items: cart.map(item => ({
+          product_id: item.product.id,
+          quantity: item.quantity,
+          price: item.product.price,
+        })),
       }),
     });
     setStep(1);
@@ -87,6 +92,7 @@ export default function RightColumn({ step, setStep }: POSRightColProps) {
     clearCustomer();
     setChange(0);
     refocusScanner();
+    clearCart();
   };
 
   return (
