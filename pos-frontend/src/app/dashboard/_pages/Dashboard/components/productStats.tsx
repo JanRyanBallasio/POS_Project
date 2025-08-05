@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import { CalendarIcon } from 'lucide-react'
 import type { DateRange } from 'react-day-picker'
 import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts'
+import { ChevronDown, ChevronUp, List } from 'lucide-react';
 
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
@@ -19,113 +20,139 @@ import {
 import type { ChartConfig } from '@/components/ui/chart'
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { useSaleItems } from "@/hooks/global/fetching/useSaleItems";
+import { useProducts } from "@/hooks/global/fetching/useProducts";
 
 type ChartData = {
-  date: string
-  visitors: number
+  product: string
+  quantity: number
 }
 
-const chartData: ChartData[] = [
-  { date: '2025-01-01', visitors: 178 },
-  { date: '2025-01-02', visitors: 470 },
-  { date: '2025-01-03', visitors: 103 },
-  { date: '2025-01-04', visitors: 439 },
-  { date: '2025-01-05', visitors: 88 },
-  { date: '2025-01-06', visitors: 294 },
-  { date: '2025-01-07', visitors: 323 },
-  { date: '2025-01-08', visitors: 385 },
-  { date: '2025-01-09', visitors: 438 },
-  { date: '2025-01-10', visitors: 155 },
-  { date: '2025-01-11', visitors: 92 },
-  { date: '2025-01-12', visitors: 492 },
-  { date: '2025-01-13', visitors: 81 },
-  { date: '2025-01-14', visitors: 426 },
-  { date: '2025-01-15', visitors: 307 },
-  { date: '2025-01-16', visitors: 371 },
-  { date: '2025-01-17', visitors: 475 },
-  { date: '2025-01-18', visitors: 107 },
-  { date: '2025-01-19', visitors: 341 },
-  { date: '2025-01-20', visitors: 408 },
-  { date: '2025-01-21', visitors: 169 },
-  { date: '2025-01-22', visitors: 317 },
-  { date: '2025-01-23', visitors: 480 },
-  { date: '2025-01-24', visitors: 132 },
-  { date: '2025-01-25', visitors: 141 },
-  { date: '2025-01-26', visitors: 434 },
-  { date: '2025-01-27', visitors: 448 },
-  { date: '2025-01-28', visitors: 149 },
-  { date: '2025-01-29', visitors: 103 },
-  { date: '2025-01-30', visitors: 446 },
-  { date: '2025-01-31', visitors: 320 }
-]
-
 const chartConfig: ChartConfig = {
-  visitors: {
-    label: 'Visitors',
+  quantity: {
+    label: 'Quantity Sold',
     color: 'var(--color-primary)'
   }
 }
 
 export default function ProductStats() {
+  const today = new Date();
+  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
   const [range, setRange] = useState<DateRange | undefined>({
-    from: new Date(2025, 0, 1),
-    to: new Date(2025, 0, 31)
-  })
+    from: startOfMonth,
+    to: today
+  });
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | 'normal'>('desc');
 
-  const filteredData = useMemo(() => {
-    if (!range?.from && !range?.to) {
-      return chartData
+  const { saleItems, loading, error } = useSaleItems();
+  const { products } = useProducts();
+
+  // Map product_id to product name for display
+  const productMap = useMemo(() => {
+    const map: Record<number, string> = {};
+    products.forEach(p => {
+      map[p.id] = p.name;
+    });
+    return map;
+  }, [products]);
+  const isSameOrAfter = (a: Date, b: Date) =>
+    a.setHours(0, 0, 0, 0) >= b.setHours(0, 0, 0, 0);
+  const isSameOrBefore = (a: Date, b: Date) =>
+    a.setHours(0, 0, 0, 0) <= b.setHours(0, 0, 0, 0);
+  // Transform sale items data: group by product, sum quantity sold
+  const chartData = useMemo(() => {
+    const grouped: { [product_id: number]: number } = {};
+    saleItems.forEach(item => {
+      const date = new Date(item.created_at);
+      if (
+        (!range?.from || isSameOrAfter(date, range.from)) &&
+        (!range?.to || isSameOrBefore(date, range.to))
+      ) {
+        grouped[item.product_id] = (grouped[item.product_id] || 0) + item.quantity;
+      }
+    });
+    let arr = Object.entries(grouped)
+      .map(([product_id, quantity]) => ({
+        product: productMap[Number(product_id)] || `Product ${product_id}`,
+        quantity
+      }));
+    if (sortOrder === 'asc') {
+      arr = arr.sort((a, b) => a.quantity - b.quantity);
+    } else if (sortOrder === 'desc') {
+      arr = arr.sort((a, b) => b.quantity - a.quantity);
     }
-    return chartData.filter(item => {
-      const date = new Date(item.date)
-      return (!range.from || date >= range.from) && (!range.to || date <= range.to)
-    })
-  }, [range])
+    // 'normal' leaves the original order
+    return arr;
+  }, [saleItems, range, productMap, sortOrder]);
 
   const total = useMemo(
-    () => filteredData.reduce((acc, curr) => acc + curr.visitors, 0),
-    [filteredData]
-  )
+    () => chartData.reduce((acc, curr) => acc + curr.quantity, 0),
+    [chartData]
+  );
 
   return (
     <Card className='@container/card w-full'>
       <CardHeader className='flex flex-col border-b @md/card:grid'>
         <CardTitle>Product Analytics</CardTitle>
-        <CardDescription>Showing total visitors for this month.</CardDescription>
+        <CardDescription>Showing most sold products for this month.</CardDescription>
         <CardAction className='mt-2 @md/card:mt-0'>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant='outline'>
-                <CalendarIcon />
-                {range?.from && range?.to
-                  ? `${range.from.toLocaleDateString()} - ${range.to.toLocaleDateString()}`
-                  : 'January 2025'}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className='w-auto overflow-hidden p-0' align='end'>
-              <Calendar
-                className='w-full'
-                mode='range'
-                defaultMonth={range?.from}
-                selected={range}
-                onSelect={setRange}
-                startMonth={range?.from}
-                fixedWeeks
-                showOutsideDays
-                disabled={{
-                  after: new Date(2025, 0, 31),
-                  before: new Date(2025, 0, 1)
-                }}
-              />
-            </PopoverContent>
-          </Popover>
+          <div className="flex gap-2 items-center mt-2">
+            <Button
+              variant={sortOrder === 'desc' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSortOrder('desc')}
+              aria-label="Sort Descending"
+            >
+              <ChevronDown className="mr-1" size={16} /> Desc
+            </Button>
+            <Button
+              variant={sortOrder === 'asc' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSortOrder('asc')}
+              aria-label="Sort Ascending"
+            >
+              <ChevronUp className="mr-1" size={16} /> Asc
+            </Button>
+            <Button
+              variant={sortOrder === 'normal' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSortOrder('normal')}
+              aria-label="Follow Order"
+            >
+              <List className="mr-1" size={16} /> Follow Order
+            </Button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant='outline'>
+                  <CalendarIcon />
+                  {range?.from && range?.to
+                    ? `${range.from.toLocaleDateString()} - ${range.to.toLocaleDateString()}`
+                    : `${startOfMonth.toLocaleDateString()} - ${today.toLocaleDateString()}`}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className='w-auto overflow-hidden p-0' align='end'>
+                <Calendar
+                  className='w-full'
+                  mode='range'
+                  defaultMonth={range?.from}
+                  selected={range}
+                  onSelect={setRange}
+                  fixedWeeks
+                  showOutsideDays
+                  disabled={{
+                    after: today // disables future dates
+                  }}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
         </CardAction>
       </CardHeader>
       <CardContent className='px-4'>
         <ChartContainer config={chartConfig} className='aspect-auto h-89 w-full'>
           <BarChart
             accessibilityLayer
-            data={filteredData}
+            data={chartData}
             margin={{
               left: 12,
               right: 12
@@ -133,42 +160,30 @@ export default function ProductStats() {
           >
             <CartesianGrid vertical={false} />
             <XAxis
-              dataKey='date'
+              dataKey='product'
               tickLine={false}
               axisLine={false}
               tickMargin={8}
               minTickGap={20}
-              tickFormatter={value => {
-                const date = new Date(value)
-                return date.toLocaleDateString('en-US', {
-                  day: 'numeric'
-                })
-              }}
             />
             <ChartTooltip
               content={
                 <ChartTooltipContent
                   className='w-[150px]'
-                  nameKey='visitors'
-                  labelFormatter={value => {
-                    return new Date(value).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric'
-                    })
-                  }}
+                  nameKey='quantity'
+                  labelFormatter={value => value}
                 />
               }
             />
-            <Bar dataKey='visitors' fill={`var(--color-visitors)`} radius={4} />
+            <Bar dataKey='quantity' fill={`var(--color-quantity)`} radius={4} />
           </BarChart>
         </ChartContainer>
       </CardContent>
       <CardFooter className='border-t'>
         <div className='text-sm'>
-          You had <span className='font-semibold'>{total.toLocaleString()}</span> visitors for the selected period.
+          Total sold: <span className='font-semibold'>{total.toLocaleString()}</span>
         </div>
       </CardFooter>
     </Card>
   )
-} 
+}

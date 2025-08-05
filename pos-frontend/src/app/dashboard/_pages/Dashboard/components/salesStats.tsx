@@ -2,8 +2,9 @@
 
 import * as React from 'react'
 import { CartesianGrid, Line, LineChart, XAxis } from 'recharts'
-import { CalendarIcon } from 'lucide-react'
+import { CalendarIcon, List } from 'lucide-react'
 import type { DateRange } from 'react-day-picker'
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
@@ -19,113 +20,141 @@ import {
 import type { ChartConfig } from '@/components/ui/chart'
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { useSales } from "@/hooks/global/fetching/useSales";
 
 type ChartData = {
   date: string
-  visitors: number
+  customer: number
 }
 
-const chartData: ChartData[] = [
-  { date: '2025-01-01', visitors: 178 },
-  { date: '2025-01-02', visitors: 470 },
-  { date: '2025-01-03', visitors: 103 },
-  { date: '2025-01-04', visitors: 439 },
-  { date: '2025-01-05', visitors: 88 },
-  { date: '2025-01-06', visitors: 294 },
-  { date: '2025-01-07', visitors: 323 },
-  { date: '2025-01-08', visitors: 385 },
-  { date: '2025-01-09', visitors: 438 },
-  { date: '2025-01-10', visitors: 155 },
-  { date: '2025-01-11', visitors: 92 },
-  { date: '2025-01-12', visitors: 492 },
-  { date: '2025-01-13', visitors: 81 },
-  { date: '2025-01-14', visitors: 426 },
-  { date: '2025-01-15', visitors: 307 },
-  { date: '2025-01-16', visitors: 371 },
-  { date: '2025-01-17', visitors: 475 },
-  { date: '2025-01-18', visitors: 107 },
-  { date: '2025-01-19', visitors: 341 },
-  { date: '2025-01-20', visitors: 408 },
-  { date: '2025-01-21', visitors: 169 },
-  { date: '2025-01-22', visitors: 317 },
-  { date: '2025-01-23', visitors: 480 },
-  { date: '2025-01-24', visitors: 132 },
-  { date: '2025-01-25', visitors: 141 },
-  { date: '2025-01-26', visitors: 434 },
-  { date: '2025-01-27', visitors: 448 },
-  { date: '2025-01-28', visitors: 149 },
-  { date: '2025-01-29', visitors: 103 },
-  { date: '2025-01-30', visitors: 446 },
-  { date: '2025-01-31', visitors: 320 }
-]
-
 const chartConfig: ChartConfig = {
-  visitors: {
-    label: 'Visitors',
+  customer: {
+    label: 'Customer',
     color: 'var(--color-primary)'
   }
 }
 
+
 export default function ProductStats() {
+  const { sales, loading, error } = useSales();
+  const today = new Date();
+  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
   const [range, setRange] = React.useState<DateRange | undefined>({
-    from: new Date(2025, 0, 1),
-    to: new Date(2025, 0, 31)
-  })
+    from: new Date(today.getFullYear(), today.getMonth(), 1),
+    to: today
+  });
+  const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc' | 'normal'>('desc');
+
+  const isSameOrAfter = (a: Date, b: Date) =>
+    a.setHours(0, 0, 0, 0) >= b.setHours(0, 0, 0, 0);
+  const isSameOrBefore = (a: Date, b: Date) =>
+    a.setHours(0, 0, 0, 0) <= b.setHours(0, 0, 0, 0);
+  // Transform sales data: group by date, count sales per day
+  const chartData = React.useMemo(() => {
+    const grouped: { [date: string]: Set<number | null> } = {};
+    sales.forEach(sale => {
+      const date = sale.created_at.slice(0, 10); // YYYY-MM-DD
+      if (!grouped[date]) grouped[date] = new Set();
+      grouped[date].add(sale.customer_id);
+    });
+    return Object.entries(grouped).map(([date, customers]) => ({
+      date,
+      customer: customers.size
+    }));
+  }, [sales]);
 
   const filteredData = React.useMemo(() => {
     if (!range?.from && !range?.to) {
-      return chartData
+      return chartData;
     }
     return chartData.filter(item => {
-      const date = new Date(item.date)
-      return (!range.from || date >= range.from) && (!range.to || date <= range.to)
-    })
-  }, [range])
+      const date = new Date(item.date);
+      return (
+        (!range.from || isSameOrAfter(date, range.from)) &&
+        (!range.to || isSameOrBefore(date, range.to))
+      );
+    });
+  }, [range, chartData]);
+
+
+  const sortedData = React.useMemo(() => {
+    let arr = [...filteredData];
+    if (sortOrder === 'asc') {
+      arr = arr.sort((a, b) => a.customer - b.customer);
+    } else if (sortOrder === 'desc') {
+      arr = arr.sort((a, b) => b.customer - a.customer);
+    }
+    return arr;
+  }, [filteredData, sortOrder]);
 
   const total = React.useMemo(
-    () => filteredData.reduce((acc, curr) => acc + curr.visitors, 0),
-    [filteredData]
-  )
+    () => sortedData.reduce((acc, curr) => acc + curr.customer, 0),
+    [sortedData]
+  );
 
   return (
     <Card className='@container/card w-full '>
       <CardHeader className='flex flex-col border-b @md/card:grid'>
         <CardTitle>Sales Chart</CardTitle>
-        <CardDescription>Filter total visitors by date range</CardDescription>
+        <CardDescription>Filter total customers by date range</CardDescription>
         <CardAction className='mt-2 @md/card:mt-0'>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant='outline'>
-                <CalendarIcon />
-                {range?.from && range?.to
-                  ? `${range.from.toLocaleDateString()} - ${range.to.toLocaleDateString()}`
-                  : 'January 2025'}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className='w-auto overflow-hidden p-0' align='end'>
-              <Calendar
-                className='w-full'
-                mode='range'
-                defaultMonth={range?.from}
-                selected={range}
-                onSelect={setRange}
-                startMonth={range?.from}
-                fixedWeeks
-                showOutsideDays
-                disabled={{
-                  after: new Date(2025, 0, 31),
-                  before: new Date(2025, 0, 1)
-                }}
-              />
-            </PopoverContent>
-          </Popover>
+          <div className="flex gap-2 items-center mt-2">
+            <Button
+              variant={sortOrder === 'desc' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSortOrder('desc')}
+              aria-label="Sort Descending"
+            >
+              <ChevronDown className="mr-1" size={16} /> Desc
+            </Button>
+            <Button
+              variant={sortOrder === 'asc' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSortOrder('asc')}
+              aria-label="Sort Ascending"
+            >
+              <ChevronUp className="mr-1" size={16} /> Asc
+            </Button>
+            <Button
+              variant={sortOrder === 'normal' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSortOrder('normal')}
+              aria-label="Follow Order"
+            >
+              <List className="mr-1" size={16} /> Follow Order
+            </Button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant='outline'>
+                  <CalendarIcon />
+                  {range?.from && range?.to
+                    ? `${range.from.toLocaleDateString()} - ${range.to.toLocaleDateString()}`
+                    : `${startOfMonth.toLocaleDateString()} - ${today.toLocaleDateString()}`}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className='w-auto overflow-hidden p-0' align='end'>
+                <Calendar
+                  className='w-full'
+                  mode='range'
+                  defaultMonth={range?.from}
+                  selected={range}
+                  onSelect={setRange}
+                  fixedWeeks
+                  showOutsideDays
+                  disabled={{
+                    after: today // disables future dates
+                  }}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
         </CardAction>
       </CardHeader>
       <CardContent className='px-4 '>
         <ChartContainer config={chartConfig} className='aspect-auto h-89 w-full'>
           <LineChart
             accessibilityLayer
-            data={filteredData}
+            data={sortedData}
             margin={{
               left: 12,
               right: 12
@@ -149,7 +178,7 @@ export default function ProductStats() {
               content={
                 <ChartTooltipContent
                   className='w-[150px]'
-                  nameKey='visitors'
+                  nameKey='customer'
                   labelFormatter={value => {
                     return new Date(value).toLocaleDateString('en-US', {
                       month: 'short',
@@ -161,9 +190,9 @@ export default function ProductStats() {
               }
             />
             <Line
-              dataKey="visitors"
+              dataKey="customer"
               type="monotone"
-              stroke={`var(--color-visitors)`}
+              stroke={`var(--color-customer)`}
               strokeWidth={2}
               dot={false}
             />
@@ -172,7 +201,7 @@ export default function ProductStats() {
       </CardContent>
       <CardFooter className='border-t'>
         <div className='text-sm'>
-          You had <span className='font-semibold'>{total.toLocaleString()}</span> visitors for the selected period.
+          You had <span className='font-semibold'>{total.toLocaleString()}</span> customers for the selected period.
         </div>
       </CardFooter>
     </Card>
