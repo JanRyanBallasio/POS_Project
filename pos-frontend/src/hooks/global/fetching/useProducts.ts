@@ -1,41 +1,17 @@
-import { useState, useEffect, useMemo } from "react";
+import useSWR from "swr";
 import { productApi, Product } from "@/hooks/products/useProductApi";
 
-interface CartItem {
-  product: Product;
-  quantity: number;
-  id: string;
-}
+const fetcher = async () => {
+  return await productApi.getAll();
+};
 
 export const useProducts = () => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchProducts = async (): Promise<void> => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await productApi.getAll();
-      setProducts(data);
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "An unexpected error occurred";
-      setError(errorMessage);
-      console.error("Error fetching products:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchProducts();
-  }, []);
+  const { data, error, isLoading, mutate } = useSWR("http://13.211.162.106:5000/api/products", fetcher);
 
   return {
-    products,
-    loading,
+    products: data || [],
+    loading: isLoading,
     error,
-    refetch: fetchProducts,
+    refetch: mutate, // you can call this to manually refetch if needed
   };
 };
