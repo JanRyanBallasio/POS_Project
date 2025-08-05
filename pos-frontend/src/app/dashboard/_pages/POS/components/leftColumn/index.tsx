@@ -5,10 +5,22 @@ import { useProducts } from "@/hooks/global/fetching/useProducts";
 import { useBarcodeScan } from "@/hooks/pos/leftCol/useBarcodeScan";
 import { useProductSearch } from "@/hooks/pos/leftCol/useProductsSearch";
 import { useCartKeyboard } from "@/contexts/cart-context";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import CartTable from "./CartTable";
 import ProductSearch from "./ProductSearch";
 import BarcodeScannerInput from "./BarcodeScannerInput";
+import { useProductModal } from "@/contexts/productRegister-context";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import ProductRegisterModal from "@/components/global/ProductRegisterModal";
 
 interface POSLeftColProps {
   step: 1 | 2 | 3;
@@ -25,8 +37,8 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
     refocusScanner,
   } = useCart();
   const { barcodeInput, inputRef, handleBarcodeChange, handleKeyPress } =
-    useBarcodeScan(scanAndAddToCart);
-
+    useBarcodeScan(handleScanAndAddToCart);
+  const { setOpen, setBarcode } = useProductModal();
   useCartKeyboard(selectedRowId);
 
   const {
@@ -37,16 +49,16 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
     clearSearch,
   } = useProductSearch(products);
 
+  const [showRegisterDialog, setShowRegisterDialog] = useState(false);
+  const [unregisteredBarcode, setUnregisteredBarcode] = useState<string | null>(null);
+
   useEffect(() => {
     setScannerRef(inputRef as React.RefObject<HTMLInputElement>);
   }, [setScannerRef, inputRef]);
 
   useEffect(() => {
     if (step === 2 || step === 3) {
-      // Cancel/clear scanning here
       if (inputRef?.current) inputRef.current.blur();
-      // If you have a barcodeInput state:
-      // setBarcodeInput("");
     }
   }, [step]);
 
@@ -56,6 +68,25 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
     refocusScanner();
   };
 
+  // Modified scanAndAddToCart to handle unregistered products
+  function handleScanAndAddToCart(barcode: string) {
+    const foundProduct = products.find(p => p.barcode === barcode);
+    if (foundProduct) {
+      scanAndAddToCart(barcode);
+      refocusScanner(); // Refocus after successful scan
+    } else {
+      setUnregisteredBarcode(barcode);
+      setShowRegisterDialog(true);
+    }
+  }
+
+  function handleRegisterProduct() {
+    setShowRegisterDialog(false);
+    setBarcode(unregisteredBarcode); // Set the barcode for the modal
+    setOpen(true); // Open the add product modal
+  }
+
+  // Pass refocusScanner to ProductRegisterModal so it can reset after adding
   return (
     <div className="relative w-full h-full">
       <Card
@@ -91,6 +122,23 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
           </div>
         </CardContent>
       </Card>
+      <ProductRegisterModal/>
+      <AlertDialog open={showRegisterDialog} onOpenChange={setShowRegisterDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Product Not Registered</AlertDialogTitle>
+            <AlertDialogDescription>
+              The scanned product (<span className="font-bold">{unregisteredBarcode}</span>) is not registered. Would you like to register it?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowRegisterDialog(false)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleRegisterProduct}>
+              Register Product
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
