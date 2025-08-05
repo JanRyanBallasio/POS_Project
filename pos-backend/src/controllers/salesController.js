@@ -36,6 +36,20 @@ const salesController = {
       res.status(500).json({ success: false, error: error.message });
     }
   },
+
+  getSales: async (req, res) => {
+    try {
+      const { data, error } = await supabase.from("Sales").select("*");
+      if (error) throw error;
+      res.json({
+        success: true,
+        data: data,
+        count: data.length
+      });
+    } catch (error) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  },
 };
 
 module.exports = salesController;
