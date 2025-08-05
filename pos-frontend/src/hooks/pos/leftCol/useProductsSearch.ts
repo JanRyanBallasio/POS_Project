@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Product } from "@/lib/api";
+import { Product } from "@/hooks/products/useProductApi";
 
 export const useProductSearch = (products: Product[]) => {
   const [searchQuery, setSearchQuery] = useState("");

@@ -7,6 +7,7 @@ const productRoutes = require('./src/routes/productRoutes');
 const categoryRoutes = require('./src/routes/categoryRoutes');
 const positionRoutes = require('./src/routes/positionRoutes');
 const salesRoutes = require('./src/routes/salesRoutes');
+const salesItemsRoutes = require('./src/routes/salesItemsRoutes');
 
 const app = express();
 const PORT = 5000;
@@ -21,6 +22,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/positions', positionRoutes);
 app.use('/api/sales', salesRoutes);
+app.use('/api/sales-items', salesItemsRoutes);
 
 // Add this before app.listen()
 app.use((error, req, res, next) => {

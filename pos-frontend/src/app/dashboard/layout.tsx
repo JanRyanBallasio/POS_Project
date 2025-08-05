@@ -3,6 +3,8 @@ import "../globals.css";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/global/sidebar";
 import Navbar from "@/components/global/navbar";
+import { ProductModalProvider } from "@/contexts/productRegister-context";
+import ProductRegisterModal from "@/components/global/ProductRegisterModal";
 
 export const metadata: Metadata = {
   title: "Store",
@@ -15,18 +17,19 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <main className="w-full h-screen flex flex-col">
-
-        <div className="flex-[5%]">
-          <Navbar />
-        </div>
-        <div className="flex-[95%]">
-          {children}
-        </div>
-
-      </main>
-    </SidebarProvider>
+     <ProductModalProvider>
+      <SidebarProvider>
+        <AppSidebar />
+        <main className="w-full h-screen flex flex-col">
+          <ProductRegisterModal />
+          <div className="flex-[5%]">
+            <Navbar />
+          </div>
+          <div className="flex-[95%]">
+            {children}
+          </div>
+        </main>
+      </SidebarProvider>
+    </ProductModalProvider>
   );
 }

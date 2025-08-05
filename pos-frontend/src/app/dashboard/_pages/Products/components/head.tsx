@@ -15,26 +15,24 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { productApi, Product } from "@/hooks/products/useProductApi";
 import { useAddProduct } from "@/hooks/products/useAddProducts";
-
+import { useProductModal } from "@/contexts/productRegister-context";
 interface HeadProps {
     onProductAdded: (product: Product) => void;
 }
 
 export default function Head({ onProductAdded }: HeadProps) {
     const [name, setName] = useState("");
-    const [barcode, setBarcode] = useState("");
-    const [category_id, setCategoryId] = useState("");
+    const { open, setOpen, barcode, setBarcode } = useProductModal(); const [category_id, setCategoryId] = useState("");
     const [price, setPrice] = useState(0);
     const [quantity, setQuantity] = useState(0);
     const [showSuccess, setShowSuccess] = useState(false);
-    const [showForm, setShowForm] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
     const { addProduct, loading, error, success, reset } = useAddProduct();
 
     const handleAddProduct = async () => {
         const newProduct = {
             name,
-            barcode,
+            barcode: barcode ?? "",
             category_id: Number(category_id),
             price: Number(price),
             quantity: Number(quantity),
@@ -48,10 +46,10 @@ export default function Head({ onProductAdded }: HeadProps) {
             setCategoryId("");
             setPrice(0);
             setQuantity(0);
-            setShowForm(false);
+            setOpen(false);
             setShowSuccess(true);
         } else {
-            setShowForm(false);
+            setOpen(false);
             setShowSuccess(true);
         }
     };
@@ -61,12 +59,12 @@ export default function Head({ onProductAdded }: HeadProps) {
             <div className="text-4xl font-bold">
                 <h1>Products</h1>
             </div>
-            <Dialog open={showForm} onOpenChange={setShowForm}>
+            <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
                     <Button
                         className="flex items-center justify-center gap-2 p-6"
                         onClick={() => {
-                            setShowForm(true);
+                            setOpen(true);
                             setName("");
                             setBarcode("");
                             setCategoryId("");
@@ -91,8 +89,7 @@ export default function Head({ onProductAdded }: HeadProps) {
                         <div className='flex flex-row gap-2 mt-4'>
                             <div className="flex-[50%] flex flex-col gap-2">
                                 <Label htmlFor='barcode-1'>Barcode</Label>
-                                <Input id='barcode-1' name='barcode' value={barcode} onChange={e => setBarcode(e.target.value)} />
-                            </div>
+                                <Input id='barcode-1' name='barcode' value={barcode || ""} onChange={e => setBarcode(e.target.value)} />                            </div>
                             <div className="flex-[50%] flex flex-col gap-2">
                                 <Label htmlFor='category-1'>Category</Label>
                                 <Input id='category-1' name='category_id' value={category_id} onChange={e => setCategoryId(e.target.value)} />
@@ -158,7 +155,7 @@ export default function Head({ onProductAdded }: HeadProps) {
                                     variant="outline"
                                     onClick={() => {
                                         setShowSuccess(false); // Close error dialog
-                                        setShowForm(true);    // Reopen form dialog
+                                        setOpen(true);    // Reopen form dialog
                                         reset();              // Clear error state, keep inputs
                                     }}
                                 >
