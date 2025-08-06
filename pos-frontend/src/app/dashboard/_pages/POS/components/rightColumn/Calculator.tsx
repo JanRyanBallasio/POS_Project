@@ -9,6 +9,7 @@ interface CalculatorProps {
   cartTotal: number;
   refocusScanner: () => void;
   onNext: () => void;
+  cartIsEmpty?: boolean; 
 }
 
 export default function Calculator({
@@ -17,6 +18,7 @@ export default function Calculator({
   cartTotal,
   refocusScanner,
   onNext,
+  cartIsEmpty = false,
 }: CalculatorProps) {
   const handleCalcButtonClick = (value: string) => {
     if (value === "C") {
@@ -45,6 +47,7 @@ export default function Calculator({
         placeholder="0.00"
         onBlur={refocusScanner}
         onClick={(e) => e.stopPropagation()}
+        disabled={cartIsEmpty} // <-- disable input if cart is empty
       />
       <div className="flex-1 grid grid-cols-3 gap-2 bg-gray-50 p-3 rounded-lg">
         {[7, 8, 9, 4, 5, 6, 1, 2, 3].map((num) => (
@@ -53,6 +56,7 @@ export default function Calculator({
             onClick={() => handleCalcButtonClick(num.toString())}
             variant="outline"
             className="h-16 text-2xl font-medium"
+            disabled={cartIsEmpty} // <-- disable buttons if cart is empty
           >
             {num}
           </Button>
@@ -61,6 +65,7 @@ export default function Calculator({
           onClick={() => handleCalcButtonClick(".")}
           variant="outline"
           className="h-16 text-2xl font-medium"
+          disabled={cartIsEmpty}
         >
           .
         </Button>
@@ -68,6 +73,7 @@ export default function Calculator({
           onClick={() => handleCalcButtonClick("0")}
           variant="outline"
           className="h-16 text-2xl font-medium"
+          disabled={cartIsEmpty}
         >
           0
         </Button>
@@ -75,6 +81,7 @@ export default function Calculator({
           onClick={() => handleCalcButtonClick("⌫")}
           variant="outline"
           className="h-16 text-2xl font-medium"
+          disabled={cartIsEmpty}
         >
           ⌫
         </Button>
@@ -82,6 +89,7 @@ export default function Calculator({
           onClick={() => handleCalcButtonClick("C")}
           variant="outline"
           className="h-16 text-2xl font-medium col-span-3"
+          disabled={cartIsEmpty}
         >
           Clear
         </Button>
@@ -90,7 +98,7 @@ export default function Calculator({
         <Button
           className="w-full h-14 text-xl font-medium"
           onClick={onNext}
-          disabled={!amount || parseFloat(amount) < cartTotal}
+          disabled={cartIsEmpty || !amount || parseFloat(amount) < cartTotal} // <-- disable if cart is empty
         >
           Next
         </Button>

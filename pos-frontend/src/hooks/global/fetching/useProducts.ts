@@ -7,6 +7,7 @@ const fetcher = async () => {
 
 export const useProducts = () => {
   const { data, error, isLoading, mutate } = useSWR("http://13.211.162.106:5000/api/products", fetcher);
+  // const { data, error, isLoading, mutate } = useSWR("http://localhost:5000/api/products", fetcher);
 
   return {
     products: data || [],

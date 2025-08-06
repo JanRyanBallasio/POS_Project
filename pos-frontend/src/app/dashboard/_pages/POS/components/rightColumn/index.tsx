@@ -113,6 +113,7 @@ export default function RightColumn({ step, setStep }: POSRightColProps) {
               cartTotal={cartTotal}
               refocusScanner={refocusScanner}
               onNext={handleNext}
+              cartIsEmpty={cart.length === 0} // <-- add this prop
             />
           )}
           {step === 2 && (
