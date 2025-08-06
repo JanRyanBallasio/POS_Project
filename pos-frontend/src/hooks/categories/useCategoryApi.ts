@@ -1,5 +1,5 @@
-const API_BASE_URL = "http://13.211.162.106:5000/api";
-// const API_BASE_URL = "http://localhost:5000/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_backend_api_url;
+
 
 export interface Category {
   id: number;

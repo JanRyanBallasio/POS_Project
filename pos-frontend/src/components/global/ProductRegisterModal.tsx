@@ -38,8 +38,7 @@ export default function ProductRegisterModal() {
         setQuantity(0);
         setShowSuccessDialog(true);
         console.log("Mutating SWR for products...");
-        // mutate("http://localhost:5000/api/products", undefined, true).then(() => {
-        mutate("http://13.211.162.106:5000/api/products", undefined, true).then(() => {
+        mutate(process.env.NEXT_PUBLIC_backend_api_url + "/products", undefined, true).then(() => {
             console.log("SWR mutate finished");
         });
     };
