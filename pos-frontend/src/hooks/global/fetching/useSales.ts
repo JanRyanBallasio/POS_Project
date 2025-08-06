@@ -18,6 +18,7 @@ export const useSales = () => {
       setLoading(true);
       setError(null);
       const res = await axios.get("http://13.211.162.106:5000/api/sales");
+      // const res = await axios.get("http://localhost:5000/api/sales");
     setSales(res.data.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
