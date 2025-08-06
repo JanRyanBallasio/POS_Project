@@ -19,7 +19,7 @@ import {
 // Main items.
 const main = [
   {
-    title: "Dashboard",
+    title: "Dashboardsssss",
     url: "/dashboard/main",
     icon: LayoutDashboard,
   },

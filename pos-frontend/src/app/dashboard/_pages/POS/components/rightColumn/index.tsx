@@ -74,8 +74,7 @@ export default function RightColumn({ step, setStep }: POSRightColProps) {
   // New Transaction
   const handleNewTransaction = async () => {
     // Save sale to backend
-    await fetch("http://13.211.162.106:5000/api/sales", {
-    // await fetch("http://localhost:5000/api/sales", {
+    await fetch(process.env.NEXT_PUBLIC_backend_api_url + "/sales", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
