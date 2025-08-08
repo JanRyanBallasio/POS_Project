@@ -1,11 +1,14 @@
 import { Card, CardContent } from "@/components/ui/card";
+import useSWR from "swr";
+import { productApi } from "@/hooks/products/useProductApi";
+import type { Product } from "@/hooks/products/useProductApi";
 
-interface ProductsStatsProps {
-  products: any[];
-}
+const fetcher = () => productApi.getAll();
 
-export default function ProductsStats({ products }: ProductsStatsProps) {
- const validProducts = products.filter(p => p && typeof p.quantity === "number" && typeof p.price === "number");
+export default function ProductStats() {
+  const { data: products = [], isLoading } = useSWR("/api/products", fetcher, { revalidateOnFocus: false });
+
+  const validProducts = products.filter(p => p && typeof p.quantity === "number" && typeof p.price === "number");
 
   const totalProducts = validProducts.length;
   const lowStockItems = validProducts.filter(p => p.quantity < 5 && p.quantity > 0).length;
@@ -15,19 +18,19 @@ export default function ProductsStats({ products }: ProductsStatsProps) {
   const statsData = [
     {
       title: "Total Products",
-      content: totalProducts,
+      content: isLoading ? "..." : totalProducts,
     },
     {
       title: "Low Stock Items",
-      content: lowStockItems,
+      content: isLoading ? "..." : lowStockItems,
     },
     {
       title: "Out of Stock",
-      content: outOfStockItems,
+      content: isLoading ? "..." : outOfStockItems,
     },
     {
       title: "Total Value",
-      content: `₱ ${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      content: isLoading ? "..." : `₱ ${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
     }
   ];
 
