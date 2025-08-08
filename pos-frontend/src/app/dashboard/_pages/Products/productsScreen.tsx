@@ -32,7 +32,7 @@ export default function ProductsScreen() {
         <Head />
       </div>
       {/* Pass products as props to children */}
-      <div className="flex-[18%]"><ProductsStats products={products} /></div>
+      <div className="flex-[18%]"><ProductsStats /></div>
       <div className="flex-[75%]"><Index
         products={products}
         onProductDeleted={handleProductDeleted}
