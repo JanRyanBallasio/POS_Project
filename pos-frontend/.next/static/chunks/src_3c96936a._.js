@@ -297,7 +297,7 @@ function useCustomerTagging() {
     const [selectedCustomer, setSelectedCustomer] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
     const fetchCustomers = async ()=>{
         try {
-            const res = await fetch(`${("TURBOPACK compile-time value", "http://localhost:5000/api")}/customers`);
+            const res = await fetch(`${("TURBOPACK compile-time value", "http://13.211.162.106:5000/api")}/customers`);
             const json = await res.json();
             if (json.success && Array.isArray(json.data)) {
                 setAllCustomers(json.data);
@@ -314,7 +314,7 @@ function useCustomerTagging() {
             const fetchCustomers = {
                 "useCustomerTagging.useEffect.fetchCustomers": async ()=>{
                     try {
-                        const res = await fetch(`${("TURBOPACK compile-time value", "http://localhost:5000/api")}/customers`);
+                        const res = await fetch(`${("TURBOPACK compile-time value", "http://13.211.162.106:5000/api")}/customers`);
                         const json = await res.json();
                         if (json.success && Array.isArray(json.data)) {
                             setAllCustomers(json.data);
@@ -880,7 +880,7 @@ function AddCustomerModal({ open, onOpenChange, onCustomerAdded }) {
         setLoading(true);
         setError(null);
         try {
-            const res = await fetch(`${("TURBOPACK compile-time value", "http://localhost:5000/api")}/customers`, {
+            const res = await fetch(`${("TURBOPACK compile-time value", "http://13.211.162.106:5000/api")}/customers`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -1498,7 +1498,7 @@ function RightColumn({ step, setStep }) {
     // New Transaction
     const handleNewTransaction = async ()=>{
         // Save sale to backend
-        await fetch(("TURBOPACK compile-time value", "http://localhost:5000/api") + "/sales", {
+        await fetch(("TURBOPACK compile-time value", "http://13.211.162.106:5000/api") + "/sales", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -5105,7 +5105,7 @@ const useSaleItems = ()=>{
         try {
             setLoading(true);
             setError(null);
-            const res = await __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$axios$2f$lib$2f$axios$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"].get(("TURBOPACK compile-time value", "http://localhost:5000/api") + "/sales-items");
+            const res = await __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$axios$2f$lib$2f$axios$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"].get(("TURBOPACK compile-time value", "http://13.211.162.106:5000/api") + "/sales-items");
             setSaleItems(res.data.data);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Unknown error");
@@ -5153,7 +5153,7 @@ const useSales = ()=>{
         try {
             setLoading(true);
             setError(null);
-            const res = await __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$axios$2f$lib$2f$axios$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"].get(("TURBOPACK compile-time value", "http://localhost:5000/api") + "/sales");
+            const res = await __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$axios$2f$lib$2f$axios$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"].get(("TURBOPACK compile-time value", "http://13.211.162.106:5000/api") + "/sales");
             setSales(res.data.data);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Unknown error");
