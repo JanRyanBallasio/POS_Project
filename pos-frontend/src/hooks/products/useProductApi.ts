@@ -57,7 +57,14 @@ export const productApi = {
     }
     return data.data;
   },
-
+  async getById(id: number): Promise<Product> {
+    const response = await fetch(`${API_BASE_URL}/products/${id}`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch product with id ${id}`);
+    }
+    const data: ApiResponse<Product> = await response.json();
+    return data.data;
+  },
   async delete(id: number): Promise<void> {
     const response = await fetch(`${API_BASE_URL}/products/${id}`, {
       method: "DELETE",
@@ -72,6 +79,7 @@ export const productApi = {
   async getByBarcode(barcode: string): Promise<Product | null> {
     const response = await fetch(`${API_BASE_URL}/products/barcode/${barcode}`);
     if (response.status === 404) {
+      // Don't log error, just return null
       return null;
     }
     if (!response.ok) {
@@ -79,5 +87,17 @@ export const productApi = {
     }
     const data: ApiResponse<Product> = await response.json();
     return data.data;
+  },
+
+  async getByName(name: string): Promise<Product | null> {
+    const response = await fetch(`${API_BASE_URL}/products/name/${encodeURIComponent(name)}`);
+    if (response.status === 404) {
+      return null;
+    }
+    if (!response.ok) {
+      throw new Error(`Failed to fetch product: ${response.status}`);
+    }
+    const data = await response.json();
+    return data.data || null;
   },
 };
