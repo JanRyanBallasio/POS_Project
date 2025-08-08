@@ -27,7 +27,6 @@ export default function Index({ products, onProductDeleted }: IndexProps) {
         />
         {/* Pass products to ProductTable */}
         <ProductTable
-          products={products}
           selectedCategory={selectedCategory}
           selectedStatus={selectedStatus}
           onProductDeleted={onProductDeleted}

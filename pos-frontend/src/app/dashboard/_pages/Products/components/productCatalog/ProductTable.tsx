@@ -44,11 +44,13 @@ function mapProductToPayment(product: Product, categories: { id: number; name: s
 type ProductTableProps = {
     selectedCategory: string;
     selectedStatus: string;
+    onProductDeleted?: (id: number) => void; // <-- Add this line
 };
 
 export default function ProductTable({
     selectedCategory,
     selectedStatus,
+    onProductDeleted,
 }: ProductTableProps) {
     // Use SWR for products
     const { data: products = [], isLoading, error } = useSWR("/api/products", fetcher, { revalidateOnFocus: false });
@@ -156,6 +158,7 @@ export default function ProductTable({
             setShowDeleteDialog(false);
             setDeleteProduct(null); // Clear the state after deletion
             mutate("/api/products");
+            if (onProductDeleted) onProductDeleted(deleteProduct.id); // <-- Call the callback
         } catch (err: any) {
             toast("Failed to delete product", { description: err?.message || "An error occurred." });
         }

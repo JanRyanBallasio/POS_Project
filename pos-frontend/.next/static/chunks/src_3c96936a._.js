@@ -295,6 +295,19 @@ function useCustomerTagging() {
     const [allCustomers, setAllCustomers] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])([]);
     const [filteredCustomers, setFilteredCustomers] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])([]);
     const [selectedCustomer, setSelectedCustomer] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
+    const fetchCustomers = async ()=>{
+        try {
+            const res = await fetch(`${("TURBOPACK compile-time value", "http://localhost:5000/api")}/customers`);
+            const json = await res.json();
+            if (json.success && Array.isArray(json.data)) {
+                setAllCustomers(json.data);
+            } else {
+                setAllCustomers([]);
+            }
+        } catch (error) {
+            setAllCustomers([]);
+        }
+    };
     // Fetch customers from backend
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
         "useCustomerTagging.useEffect": ()=>{
@@ -327,24 +340,29 @@ function useCustomerTagging() {
         customerQuery,
         allCustomers
     ]);
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
+        "useCustomerTagging.useEffect": ()=>{
+            fetchCustomers();
+        }
+    }["useCustomerTagging.useEffect"], []);
     const selectCustomer = (customer)=>{
         setSelectedCustomer(customer);
         setCustomerQuery(customer.name);
     };
-    const clearCustomer = ()=>{
-        setSelectedCustomer(null);
-        setCustomerQuery("");
-    };
+    const clearCustomer = ()=>setSelectedCustomer(null);
     return {
         customerQuery,
         setCustomerQuery,
         filteredCustomers,
         selectedCustomer,
         selectCustomer,
-        clearCustomer
+        clearCustomer,
+        fetchCustomers,
+        allCustomers,
+        setAllCustomers
     };
 }
-_s(useCustomerTagging, "OHHfqM8y8pCWZPTvsxy44QBjHXM=");
+_s(useCustomerTagging, "IH71J4ztQS6x1EUJIhxyHqT5Kfs=");
 if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelpers !== null) {
     __turbopack_context__.k.registerExports(module, globalThis.$RefreshHelpers$);
 }
@@ -527,7 +545,7 @@ var _s = __turbopack_context__.k.signature();
 ;
 ;
 ;
-function CustomerSearch({ customerQuery, setCustomerQuery, filteredCustomers, selectedCustomer, selectCustomer, onAddCustomer }) {
+function CustomerSearch({ customerQuery, setCustomerQuery, filteredCustomers, selectedCustomer, selectCustomer, clearCustomer, onAddCustomer }) {
     _s();
     const id = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useId"])();
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -539,7 +557,7 @@ function CustomerSearch({ customerQuery, setCustomerQuery, filteredCustomers, se
                 children: "Customer Name"
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/CustomerSearch.tsx",
-                lineNumber: 35,
+                lineNumber: 37,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -554,46 +572,52 @@ function CustomerSearch({ customerQuery, setCustomerQuery, filteredCustomers, se
                                     className: "w-4 h-4"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/CustomerSearch.tsx",
-                                    lineNumber: 41,
+                                    lineNumber: 43,
                                     columnNumber: 13
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/CustomerSearch.tsx",
-                                lineNumber: 40,
+                                lineNumber: 42,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
                                 id: id,
                                 className: "pl-9",
                                 placeholder: "Search Name",
-                                value: customerQuery,
-                                onChange: (e)=>setCustomerQuery(e.target.value),
+                                value: selectedCustomer ? selectedCustomer.name : customerQuery,
+                                onChange: (e)=>{
+                                    setCustomerQuery(e.target.value);
+                                    clearCustomer(); // Clear selection if user starts typing
+                                },
                                 autoComplete: "off"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/CustomerSearch.tsx",
-                                lineNumber: 43,
+                                lineNumber: 45,
                                 columnNumber: 11
                             }, this),
                             customerQuery && !selectedCustomer && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                className: "absolute left-0 right-0 mt-1 bg-white border rounded shadow max-h-40 overflow-y-auto z-10",
+                                className: "absolute z-10 left-0 right-0 bg-white border rounded shadow max-h-40 overflow-y-auto",
                                 children: [
                                     filteredCustomers.length === 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                         className: "p-2 text-gray-500 text-center",
                                         children: "No results"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/CustomerSearch.tsx",
-                                        lineNumber: 54,
+                                        lineNumber: 59,
                                         columnNumber: 17
                                     }, this),
                                     filteredCustomers.map((customer)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                             className: "p-2 hover:bg-gray-100 cursor-pointer flex justify-between",
-                                            onClick: ()=>selectCustomer(customer),
+                                            onClick: ()=>{
+                                                selectCustomer(customer);
+                                                setCustomerQuery(customer.name);
+                                            },
                                             children: [
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                                     children: customer.name
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/CustomerSearch.tsx",
-                                                    lineNumber: 64,
+                                                    lineNumber: 72,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -604,25 +628,25 @@ function CustomerSearch({ customerQuery, setCustomerQuery, filteredCustomers, se
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/CustomerSearch.tsx",
-                                                    lineNumber: 65,
+                                                    lineNumber: 73,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, customer.id, true, {
                                             fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/CustomerSearch.tsx",
-                                            lineNumber: 59,
+                                            lineNumber: 64,
                                             columnNumber: 17
                                         }, this))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/CustomerSearch.tsx",
-                                lineNumber: 52,
+                                lineNumber: 57,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/CustomerSearch.tsx",
-                        lineNumber: 39,
+                        lineNumber: 41,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -634,26 +658,26 @@ function CustomerSearch({ customerQuery, setCustomerQuery, filteredCustomers, se
                                 className: "w-4 h-4 mr-1"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/CustomerSearch.tsx",
-                                lineNumber: 74,
+                                lineNumber: 82,
                                 columnNumber: 11
                             }, this),
                             " Add"
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/CustomerSearch.tsx",
-                        lineNumber: 73,
+                        lineNumber: 81,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/CustomerSearch.tsx",
-                lineNumber: 38,
+                lineNumber: 40,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/CustomerSearch.tsx",
-        lineNumber: 34,
+        lineNumber: 36,
         columnNumber: 5
     }, this);
 }
@@ -821,6 +845,158 @@ function Receipt({ selectedCustomer, cartTotal }) {
 _c = Receipt;
 var _c;
 __turbopack_context__.k.register(_c, "Receipt");
+if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelpers !== null) {
+    __turbopack_context__.k.registerExports(module, globalThis.$RefreshHelpers$);
+}
+}}),
+"[project]/src/app/dashboard/_pages/POS/components/rightColumn/AddCustomerModal.tsx [app-client] (ecmascript)": ((__turbopack_context__) => {
+"use strict";
+
+var { g: global, __dirname, k: __turbopack_refresh__, m: module } = __turbopack_context__;
+{
+__turbopack_context__.s({
+    "default": (()=>AddCustomerModal)
+});
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$polyfills$2f$process$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/build/polyfills/process.js [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react/jsx-dev-runtime.js [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/dialog.tsx [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/button.tsx [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/input.tsx [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/label.tsx [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react/index.js [app-client] (ecmascript)");
+;
+var _s = __turbopack_context__.k.signature();
+;
+;
+;
+;
+;
+function AddCustomerModal({ open, onOpenChange, onCustomerAdded }) {
+    _s();
+    const [name, setName] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])("");
+    const [loading, setLoading] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
+    const [error, setError] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
+    const handleAdd = async ()=>{
+        setLoading(true);
+        setError(null);
+        try {
+            const res = await fetch(`${("TURBOPACK compile-time value", "http://localhost:5000/api")}/customers`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    name
+                })
+            });
+            const json = await res.json();
+            if (!json.success) throw new Error(json.message || "Failed to add customer");
+            setName("");
+            onOpenChange(false);
+            onCustomerAdded(json.data); // <-- pass the new customer object
+        } catch (err) {
+            setError(err.message || "Failed to add customer");
+        } finally{
+            setLoading(false);
+        }
+    };
+    return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Dialog"], {
+        open: open,
+        onOpenChange: onOpenChange,
+        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogContent"], {
+            children: [
+                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogHeader"], {
+                    children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogTitle"], {
+                        children: "Add Customer"
+                    }, void 0, false, {
+                        fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/AddCustomerModal.tsx",
+                        lineNumber: 43,
+                        columnNumber: 21
+                    }, this)
+                }, void 0, false, {
+                    fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/AddCustomerModal.tsx",
+                    lineNumber: 42,
+                    columnNumber: 17
+                }, this),
+                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                    className: "flex flex-col gap-2 my-2",
+                    children: [
+                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
+                            htmlFor: "customer-name",
+                            children: "Name"
+                        }, void 0, false, {
+                            fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/AddCustomerModal.tsx",
+                            lineNumber: 46,
+                            columnNumber: 21
+                        }, this),
+                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
+                            id: "customer-name",
+                            value: name,
+                            onChange: (e)=>setName(e.target.value),
+                            placeholder: "Enter customer name",
+                            disabled: loading
+                        }, void 0, false, {
+                            fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/AddCustomerModal.tsx",
+                            lineNumber: 47,
+                            columnNumber: 21
+                        }, this),
+                        error && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                            className: "text-red-500 text-sm",
+                            children: error
+                        }, void 0, false, {
+                            fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/AddCustomerModal.tsx",
+                            lineNumber: 54,
+                            columnNumber: 31
+                        }, this)
+                    ]
+                }, void 0, true, {
+                    fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/AddCustomerModal.tsx",
+                    lineNumber: 45,
+                    columnNumber: 17
+                }, this),
+                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogFooter"], {
+                    children: [
+                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
+                            variant: "outline",
+                            onClick: ()=>onOpenChange(false),
+                            disabled: loading,
+                            children: "Cancel"
+                        }, void 0, false, {
+                            fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/AddCustomerModal.tsx",
+                            lineNumber: 57,
+                            columnNumber: 21
+                        }, this),
+                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
+                            onClick: handleAdd,
+                            disabled: loading || !name.trim(),
+                            children: loading ? "Adding..." : "Add"
+                        }, void 0, false, {
+                            fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/AddCustomerModal.tsx",
+                            lineNumber: 60,
+                            columnNumber: 21
+                        }, this)
+                    ]
+                }, void 0, true, {
+                    fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/AddCustomerModal.tsx",
+                    lineNumber: 56,
+                    columnNumber: 17
+                }, this)
+            ]
+        }, void 0, true, {
+            fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/AddCustomerModal.tsx",
+            lineNumber: 41,
+            columnNumber: 13
+        }, this)
+    }, void 0, false, {
+        fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/AddCustomerModal.tsx",
+        lineNumber: 40,
+        columnNumber: 9
+    }, this);
+}
+_s(AddCustomerModal, "XLU51yJJDMY2lyNShiOo+/3jTbg=");
+_c = AddCustomerModal;
+var _c;
+__turbopack_context__.k.register(_c, "AddCustomerModal");
 if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelpers !== null) {
     __turbopack_context__.k.registerExports(module, globalThis.$RefreshHelpers$);
 }
@@ -1249,11 +1425,13 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_pages$2f$POS$2f$components$2f$rightColumn$2f$CustomerSearch$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/app/dashboard/_pages/POS/components/rightColumn/CustomerSearch.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_pages$2f$POS$2f$components$2f$rightColumn$2f$PaymentSummary$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/app/dashboard/_pages/POS/components/rightColumn/PaymentSummary.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_pages$2f$POS$2f$components$2f$rightColumn$2f$Receipt$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/app/dashboard/_pages/POS/components/rightColumn/Receipt.tsx [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_pages$2f$POS$2f$components$2f$rightColumn$2f$AddCustomerModal$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/app/dashboard/_pages/POS/components/rightColumn/AddCustomerModal.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_pages$2f$POS$2f$components$2f$rightColumn$2f$ReceiptPDF$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/app/dashboard/_pages/POS/components/rightColumn/ReceiptPDF.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$react$2d$pdf$2f$renderer$2f$lib$2f$react$2d$pdf$2e$browser$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$module__evaluation$3e$__ = __turbopack_context__.i("[project]/node_modules/@react-pdf/renderer/lib/react-pdf.browser.js [app-client] (ecmascript) <module evaluation>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$react$2d$pdf$2f$renderer$2f$lib$2f$react$2d$pdf$2e$browser$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$locals$3e$__ = __turbopack_context__.i("[project]/node_modules/@react-pdf/renderer/lib/react-pdf.browser.js [app-client] (ecmascript) <locals>");
 ;
 var _s = __turbopack_context__.k.signature();
+;
 ;
 ;
 ;
@@ -1280,7 +1458,7 @@ function RightColumn({ step, setStep }) {
         amount,
         cartTotal
     ]);
-    const { customerQuery, setCustomerQuery, filteredCustomers, selectedCustomer, selectCustomer, clearCustomer, refetchCustomers } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$pos$2f$rightCol$2f$useCustomerTagging$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCustomerTagging"])();
+    const { customerQuery, setCustomerQuery, filteredCustomers, selectedCustomer, selectCustomer, clearCustomer, fetchCustomers, allCustomers, setAllCustomers } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$pos$2f$rightCol$2f$useCustomerTagging$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCustomerTagging"])();
     // Calculator
     const handleNext = ()=>{
         const amountValue = parseFloat(amount) || 0;
@@ -1305,7 +1483,7 @@ function RightColumn({ step, setStep }) {
                 }))
         }, void 0, false, {
             fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-            lineNumber: 56,
+            lineNumber: 59,
             columnNumber: 7
         }, this)).toBlob();
         const url = URL.createObjectURL(blob);
@@ -1342,6 +1520,16 @@ function RightColumn({ step, setStep }) {
         refocusScanner();
         clearCart();
     };
+    const handleCustomerAdded = (newCustomer)=>{
+        setAllCustomers((prev)=>[
+                ...prev,
+                newCustomer
+            ]);
+        selectCustomer(newCustomer); // <-- select the new customer
+        setCustomerQuery(newCustomer.name); // <-- show name in input
+    // Optionally refetch from backend if needed
+    // refetchCustomers();
+    };
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Card"], {
         className: "h-full flex flex-col",
         onClick: ()=>refocusScanner(),
@@ -1353,7 +1541,7 @@ function RightColumn({ step, setStep }) {
                     children: "Total"
                 }, void 0, false, {
                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                    lineNumber: 104,
+                    lineNumber: 115,
                     columnNumber: 9
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1365,25 +1553,25 @@ function RightColumn({ step, setStep }) {
                                 children: "₱"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                lineNumber: 107,
+                                lineNumber: 118,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h1", {
                                 children: cartTotal.toFixed(2)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                lineNumber: 108,
+                                lineNumber: 119,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                        lineNumber: 106,
+                        lineNumber: 117,
                         columnNumber: 11
                     }, this)
                 }, void 0, false, {
                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                    lineNumber: 105,
+                    lineNumber: 116,
                     columnNumber: 9
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1398,7 +1586,7 @@ function RightColumn({ step, setStep }) {
                             cartIsEmpty: cart.length === 0
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                            lineNumber: 113,
+                            lineNumber: 124,
                             columnNumber: 13
                         }, this),
                         step === 2 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
@@ -1409,14 +1597,14 @@ function RightColumn({ step, setStep }) {
                                     change: change
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                    lineNumber: 124,
+                                    lineNumber: 135,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                     className: "flex-1"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                    lineNumber: 129,
+                                    lineNumber: 140,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_pages$2f$POS$2f$components$2f$rightColumn$2f$CustomerSearch$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -1424,10 +1612,21 @@ function RightColumn({ step, setStep }) {
                                     setCustomerQuery: setCustomerQuery,
                                     filteredCustomers: filteredCustomers,
                                     selectedCustomer: selectedCustomer,
-                                    selectCustomer: selectCustomer
+                                    selectCustomer: selectCustomer,
+                                    clearCustomer: clearCustomer,
+                                    onAddCustomer: ()=>setAddCustomerOpen(true)
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                    lineNumber: 130,
+                                    lineNumber: 141,
+                                    columnNumber: 15
+                                }, this),
+                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_pages$2f$POS$2f$components$2f$rightColumn$2f$AddCustomerModal$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
+                                    open: addCustomerOpen,
+                                    onOpenChange: setAddCustomerOpen,
+                                    onCustomerAdded: handleCustomerAdded
+                                }, void 0, false, {
+                                    fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
+                                    lineNumber: 150,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardFooter"], {
@@ -1440,7 +1639,7 @@ function RightColumn({ step, setStep }) {
                                             children: "Back"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                            lineNumber: 138,
+                                            lineNumber: 156,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -1449,13 +1648,13 @@ function RightColumn({ step, setStep }) {
                                             children: "Finish Transaction"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                            lineNumber: 145,
+                                            lineNumber: 163,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                    lineNumber: 137,
+                                    lineNumber: 155,
                                     columnNumber: 15
                                 }, this)
                             ]
@@ -1467,7 +1666,7 @@ function RightColumn({ step, setStep }) {
                                     cartTotal: cartTotal
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                    lineNumber: 156,
+                                    lineNumber: 174,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardFooter"], {
@@ -1479,7 +1678,7 @@ function RightColumn({ step, setStep }) {
                                             children: "Print Receipt"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                            lineNumber: 161,
+                                            lineNumber: 179,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -1489,13 +1688,13 @@ function RightColumn({ step, setStep }) {
                                             children: "Close"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                            lineNumber: 167,
+                                            lineNumber: 185,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                    lineNumber: 160,
+                                    lineNumber: 178,
                                     columnNumber: 15
                                 }, this)
                             ]
@@ -1503,22 +1702,22 @@ function RightColumn({ step, setStep }) {
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                    lineNumber: 111,
+                    lineNumber: 122,
                     columnNumber: 9
                 }, this)
             ]
         }, void 0, true, {
             fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-            lineNumber: 103,
+            lineNumber: 114,
             columnNumber: 7
         }, this)
     }, void 0, false, {
         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-        lineNumber: 102,
+        lineNumber: 113,
         columnNumber: 5
     }, this);
 }
-_s(RightColumn, "c2+uO/rwdnukAo1J9HQkyK7Zd0M=", false, function() {
+_s(RightColumn, "ZHxsTyqXyBGP61vwHT3VUICBgdg=", false, function() {
     return [
         __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$cart$2d$context$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCart"],
         __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$pos$2f$rightCol$2f$useCustomerTagging$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCustomerTagging"]
@@ -3968,7 +4167,7 @@ function mapProductToPayment(product, categories) {
         status
     };
 }
-function ProductTable({ selectedCategory, selectedStatus }) {
+function ProductTable({ selectedCategory, selectedStatus, onProductDeleted }) {
     _s();
     // Use SWR for products
     const { data: products = [], isLoading, error } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$index$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$locals$3e$__["default"])("/api/products", fetcher, {
@@ -4076,6 +4275,7 @@ function ProductTable({ selectedCategory, selectedStatus }) {
             setShowDeleteDialog(false);
             setDeleteProduct(null); // Clear the state after deletion
             (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__["mutate"])("/api/products");
+            if (onProductDeleted) onProductDeleted(deleteProduct.id); // <-- Call the callback
         } catch (err) {
             (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["toast"])("Failed to delete product", {
                 description: err?.message || "An error occurred."
@@ -4101,12 +4301,12 @@ function ProductTable({ selectedCategory, selectedStatus }) {
                                             className: "w-4 h-4"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                            lineNumber: 181,
+                                            lineNumber: 184,
                                             columnNumber: 41
                                         }, void 0)
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                        lineNumber: 175,
+                                        lineNumber: 178,
                                         columnNumber: 37
                                     }, void 0),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -4117,18 +4317,18 @@ function ProductTable({ selectedCategory, selectedStatus }) {
                                             className: "w-4 h-4"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                            lineNumber: 184,
+                                            lineNumber: 187,
                                             columnNumber: 41
                                         }, void 0)
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                        lineNumber: 183,
+                                        lineNumber: 186,
                                         columnNumber: 37
                                     }, void 0)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                lineNumber: 174,
+                                lineNumber: 177,
                                 columnNumber: 33
                             }, void 0)
                     } : col),
@@ -4137,7 +4337,7 @@ function ProductTable({ selectedCategory, selectedStatus }) {
                 pageSize: pageSize
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                lineNumber: 168,
+                lineNumber: 171,
                 columnNumber: 13
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4153,12 +4353,12 @@ function ProductTable({ selectedCategory, selectedStatus }) {
                     }
                 }, void 0, false, {
                     fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                    lineNumber: 196,
+                    lineNumber: 199,
                     columnNumber: 17
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                lineNumber: 195,
+                lineNumber: 198,
                 columnNumber: 13
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Dialog"], {
@@ -4171,14 +4371,14 @@ function ProductTable({ selectedCategory, selectedStatus }) {
                                 children: "Loading"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                lineNumber: 213,
+                                lineNumber: 216,
                                 columnNumber: 29
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogDescription"], {
                                 children: "Loading product data..."
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                lineNumber: 214,
+                                lineNumber: 217,
                                 columnNumber: 29
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4186,7 +4386,7 @@ function ProductTable({ selectedCategory, selectedStatus }) {
                                 children: "Loading..."
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                lineNumber: 215,
+                                lineNumber: 218,
                                 columnNumber: 29
                             }, this)
                         ]
@@ -4196,14 +4396,14 @@ function ProductTable({ selectedCategory, selectedStatus }) {
                                 children: "Confirm Update"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                lineNumber: 220,
+                                lineNumber: 223,
                                 columnNumber: 29
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogDescription"], {
                                 children: "This will update the product details."
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                lineNumber: 221,
+                                lineNumber: 224,
                                 columnNumber: 29
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4214,7 +4414,7 @@ function ProductTable({ selectedCategory, selectedStatus }) {
                                         children: "Are you absolutely sure?"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                        lineNumber: 223,
+                                        lineNumber: 226,
                                         columnNumber: 33
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -4222,7 +4422,7 @@ function ProductTable({ selectedCategory, selectedStatus }) {
                                         children: "This will update the product details."
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                        lineNumber: 224,
+                                        lineNumber: 227,
                                         columnNumber: 33
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4234,7 +4434,7 @@ function ProductTable({ selectedCategory, selectedStatus }) {
                                                 children: "Cancel"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                lineNumber: 226,
+                                                lineNumber: 229,
                                                 columnNumber: 37
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -4242,19 +4442,19 @@ function ProductTable({ selectedCategory, selectedStatus }) {
                                                 children: "Continue"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                lineNumber: 229,
+                                                lineNumber: 232,
                                                 columnNumber: 37
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                        lineNumber: 225,
+                                        lineNumber: 228,
                                         columnNumber: 33
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                lineNumber: 222,
+                                lineNumber: 225,
                                 columnNumber: 29
                             }, this)
                         ]
@@ -4266,20 +4466,20 @@ function ProductTable({ selectedCategory, selectedStatus }) {
                                         children: "Product"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                        lineNumber: 238,
+                                        lineNumber: 241,
                                         columnNumber: 33
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogDescription"], {
                                         children: "Fill in the details below to update the product."
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                        lineNumber: 239,
+                                        lineNumber: 242,
                                         columnNumber: 33
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                lineNumber: 237,
+                                lineNumber: 240,
                                 columnNumber: 29
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4293,7 +4493,7 @@ function ProductTable({ selectedCategory, selectedStatus }) {
                                                 children: "Product Name"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                lineNumber: 245,
+                                                lineNumber: 248,
                                                 columnNumber: 37
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -4306,13 +4506,13 @@ function ProductTable({ selectedCategory, selectedStatus }) {
                                                         }))
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                lineNumber: 246,
+                                                lineNumber: 249,
                                                 columnNumber: 37
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                        lineNumber: 244,
+                                        lineNumber: 247,
                                         columnNumber: 33
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4326,7 +4526,7 @@ function ProductTable({ selectedCategory, selectedStatus }) {
                                                         children: "Barcode"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                        lineNumber: 255,
+                                                        lineNumber: 258,
                                                         columnNumber: 41
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -4339,13 +4539,13 @@ function ProductTable({ selectedCategory, selectedStatus }) {
                                                                 }))
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                        lineNumber: 256,
+                                                        lineNumber: 259,
                                                         columnNumber: 41
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                lineNumber: 254,
+                                                lineNumber: 257,
                                                 columnNumber: 37
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4356,7 +4556,7 @@ function ProductTable({ selectedCategory, selectedStatus }) {
                                                         children: "Category"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                        lineNumber: 264,
+                                                        lineNumber: 267,
                                                         columnNumber: 41
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dropdown$2d$menu$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DropdownMenu"], {
@@ -4371,12 +4571,12 @@ function ProductTable({ selectedCategory, selectedStatus }) {
                                                                     className: "cursor-pointer"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                                    lineNumber: 267,
+                                                                    lineNumber: 270,
                                                                     columnNumber: 49
                                                                 }, this)
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                                lineNumber: 266,
+                                                                lineNumber: 269,
                                                                 columnNumber: 45
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dropdown$2d$menu$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DropdownMenuContent"], {
@@ -4391,12 +4591,12 @@ function ProductTable({ selectedCategory, selectedStatus }) {
                                                                             className: "mb-2"
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                                            lineNumber: 277,
+                                                                            lineNumber: 280,
                                                                             columnNumber: 53
                                                                         }, this)
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                                        lineNumber: 276,
+                                                                        lineNumber: 279,
                                                                         columnNumber: 49
                                                                     }, this),
                                                                     categoriesLoading && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4404,7 +4604,7 @@ function ProductTable({ selectedCategory, selectedStatus }) {
                                                                         children: "Loading..."
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                                        lineNumber: 285,
+                                                                        lineNumber: 288,
                                                                         columnNumber: 53
                                                                     }, this),
                                                                     categoriesError && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4412,7 +4612,7 @@ function ProductTable({ selectedCategory, selectedStatus }) {
                                                                         children: categoriesError
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                                        lineNumber: 288,
+                                                                        lineNumber: 291,
                                                                         columnNumber: 53
                                                                     }, this),
                                                                     !categoriesLoading && !categoriesError && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
@@ -4428,7 +4628,7 @@ function ProductTable({ selectedCategory, selectedStatus }) {
                                                                                     children: cat.name
                                                                                 }, cat.id, false, {
                                                                                     fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                                                    lineNumber: 297,
+                                                                                    lineNumber: 300,
                                                                                     columnNumber: 65
                                                                                 }, this)),
                                                                             categories.filter((cat)=>cat.name.toLowerCase().includes(categorySearch.toLowerCase())).length === 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4436,7 +4636,7 @@ function ProductTable({ selectedCategory, selectedStatus }) {
                                                                                 children: "No categories found."
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                                                lineNumber: 310,
+                                                                                lineNumber: 313,
                                                                                 columnNumber: 65
                                                                             }, this)
                                                                         ]
@@ -4444,25 +4644,25 @@ function ProductTable({ selectedCategory, selectedStatus }) {
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                                lineNumber: 275,
+                                                                lineNumber: 278,
                                                                 columnNumber: 45
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                        lineNumber: 265,
+                                                        lineNumber: 268,
                                                         columnNumber: 41
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                lineNumber: 263,
+                                                lineNumber: 266,
                                                 columnNumber: 37
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                        lineNumber: 253,
+                                        lineNumber: 256,
                                         columnNumber: 33
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4476,7 +4676,7 @@ function ProductTable({ selectedCategory, selectedStatus }) {
                                                         children: "Price"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                        lineNumber: 320,
+                                                        lineNumber: 323,
                                                         columnNumber: 41
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4487,7 +4687,7 @@ function ProductTable({ selectedCategory, selectedStatus }) {
                                                                 children: "₱"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                                lineNumber: 322,
+                                                                lineNumber: 325,
                                                                 columnNumber: 45
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -4502,19 +4702,19 @@ function ProductTable({ selectedCategory, selectedStatus }) {
                                                                 className: "pl-8"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                                lineNumber: 325,
+                                                                lineNumber: 328,
                                                                 columnNumber: 45
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                        lineNumber: 321,
+                                                        lineNumber: 324,
                                                         columnNumber: 41
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                lineNumber: 319,
+                                                lineNumber: 322,
                                                 columnNumber: 37
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4525,7 +4725,7 @@ function ProductTable({ selectedCategory, selectedStatus }) {
                                                         children: "Quantity"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                        lineNumber: 341,
+                                                        lineNumber: 344,
                                                         columnNumber: 41
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -4539,19 +4739,19 @@ function ProductTable({ selectedCategory, selectedStatus }) {
                                                                 }))
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                        lineNumber: 342,
+                                                        lineNumber: 345,
                                                         columnNumber: 41
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                lineNumber: 340,
+                                                lineNumber: 343,
                                                 columnNumber: 37
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                        lineNumber: 318,
+                                        lineNumber: 321,
                                         columnNumber: 33
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogFooter"], {
@@ -4564,12 +4764,12 @@ function ProductTable({ selectedCategory, selectedStatus }) {
                                                     children: "Cancel"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                    lineNumber: 358,
+                                                    lineNumber: 361,
                                                     columnNumber: 41
                                                 }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                lineNumber: 357,
+                                                lineNumber: 360,
                                                 columnNumber: 37
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -4577,31 +4777,31 @@ function ProductTable({ selectedCategory, selectedStatus }) {
                                                 children: "Update Product"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                lineNumber: 362,
+                                                lineNumber: 365,
                                                 columnNumber: 37
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                        lineNumber: 356,
+                                        lineNumber: 359,
                                         columnNumber: 33
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                lineNumber: 243,
+                                lineNumber: 246,
                                 columnNumber: 29
                             }, this)
                         ]
                     }, void 0, true)
                 }, void 0, false, {
                     fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                    lineNumber: 210,
+                    lineNumber: 213,
                     columnNumber: 17
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                lineNumber: 209,
+                lineNumber: 212,
                 columnNumber: 13
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Dialog"], {
@@ -4615,20 +4815,20 @@ function ProductTable({ selectedCategory, selectedStatus }) {
                                     children: "Are you absolutely sure?"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                    lineNumber: 376,
+                                    lineNumber: 379,
                                     columnNumber: 25
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogDescription"], {
                                     children: "This action cannot be undone. This will permanently delete the product and remove it from your database."
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                    lineNumber: 377,
+                                    lineNumber: 380,
                                     columnNumber: 25
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                            lineNumber: 375,
+                            lineNumber: 378,
                             columnNumber: 21
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogFooter"], {
@@ -4639,7 +4839,7 @@ function ProductTable({ selectedCategory, selectedStatus }) {
                                     children: "Cancel"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                    lineNumber: 382,
+                                    lineNumber: 385,
                                     columnNumber: 25
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -4649,30 +4849,30 @@ function ProductTable({ selectedCategory, selectedStatus }) {
                                     children: "Continue"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                    lineNumber: 385,
+                                    lineNumber: 388,
                                     columnNumber: 25
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                            lineNumber: 381,
+                            lineNumber: 384,
                             columnNumber: 21
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                    lineNumber: 374,
+                    lineNumber: 377,
                     columnNumber: 17
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                lineNumber: 373,
+                lineNumber: 376,
                 columnNumber: 13
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-        lineNumber: 167,
+        lineNumber: 170,
         columnNumber: 9
     }, this);
 }
@@ -4743,7 +4943,6 @@ function Index({ products, onProductDeleted }) {
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_pages$2f$Products$2f$components$2f$productCatalog$2f$ProductTable$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
-                        products: products,
                         selectedCategory: selectedCategory,
                         selectedStatus: selectedStatus,
                         onProductDeleted: onProductDeleted
@@ -6673,4 +6872,4 @@ if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelper
 }}),
 }]);
 
-//# sourceMappingURL=src_219dc621._.js.map
+//# sourceMappingURL=src_3c96936a._.js.map

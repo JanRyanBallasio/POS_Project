@@ -1,6 +1,8 @@
+import { useId } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { UserIcon, Plus } from "lucide-react";
 import React from "react";
 
 interface Customer {
@@ -15,6 +17,8 @@ interface CustomerSearchProps {
   filteredCustomers: Customer[];
   selectedCustomer: Customer | null;
   selectCustomer: (customer: Customer) => void;
+  clearCustomer: () => void; // <-- prop from parent
+  onAddCustomer: () => void;
 }
 
 export default function CustomerSearch({
@@ -23,48 +27,61 @@ export default function CustomerSearch({
   filteredCustomers,
   selectedCustomer,
   selectCustomer,
+  clearCustomer, // <-- use the prop, do not redeclare!
+  onAddCustomer,
 }: CustomerSearchProps) {
+  const id = useId();
+
   return (
-    <>
-      <Label htmlFor="customer-search" className="mb-2 mt-4">
+    <div className="w-full mb-4">
+      <Label htmlFor={id} className="mb-2 block">
         Customer Name
       </Label>
-      <div className="relative mb-2">
-        <Search
-          className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400"
-          size={20}
-        />
-        <Input
-          id="customer-search"
-          className="pl-9"
-          placeholder="Search Name"
-          value={customerQuery}
-          onClick={(e) => e.stopPropagation()}
-          onChange={(e) => setCustomerQuery(e.target.value)}
-          autoComplete="off"
-        />
-        {customerQuery && !selectedCustomer && (
-          <div className="absolute z-10 left-0 right-0 bg-white border rounded shadow max-h-40 overflow-y-auto">
-            {filteredCustomers.length === 0 && (
-              <div className="p-2 text-gray-500 text-center">
-                No results
-              </div>
-            )}
-            {filteredCustomers.map((customer) => (
-              <div
-                key={customer.id}
-                className="p-2 hover:bg-gray-100 cursor-pointer flex justify-between"
-                onClick={() => selectCustomer(customer)}
-              >
-                <span>{customer.name}</span>
-                <span className="text-xs text-gray-500">
-                  {customer.points} pts
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+            <UserIcon className="w-4 h-4" />
+          </span>
+          <Input
+            id={id}
+            className="pl-9"
+            placeholder="Search Name"
+            value={selectedCustomer ? selectedCustomer.name : customerQuery}
+            onChange={(e) => {
+              setCustomerQuery(e.target.value);
+              clearCustomer(); // Clear selection if user starts typing
+            }}
+            autoComplete="off"
+          />
+          {customerQuery && !selectedCustomer && (
+            <div className="absolute z-10 left-0 right-0 bg-white border rounded shadow max-h-40 overflow-y-auto">
+              {filteredCustomers.length === 0 && (
+                <div className="p-2 text-gray-500 text-center">
+                  No results
+                </div>
+              )}
+              {filteredCustomers.map((customer) => (
+                <div
+                  key={customer.id}
+                  className="p-2 hover:bg-gray-100 cursor-pointer flex justify-between"
+                  onClick={() => {
+                    selectCustomer(customer);
+                    setCustomerQuery(customer.name);
+                  }}
+                >
+                  <span>{customer.name}</span>
+                  <span className="text-xs text-gray-500 ml-2">
+                    {customer.points} pts
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <Button type="button" onClick={onAddCustomer} className="ml-2">
+          <Plus className="w-4 h-4 mr-1" /> Add
+        </Button>
       </div>
-    </>
+    </div>
   );
 }
