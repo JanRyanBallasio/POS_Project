@@ -1,11 +1,11 @@
 import { Card, CardContent } from "@/components/ui/card";
-
 import useSWR from "swr";
 import { productApi } from "@/hooks/products/useProductApi";
+import type { Product } from "@/hooks/products/useProductApi";
 
 const fetcher = () => productApi.getAll();
 
-export default function ProductsStats() {
+export default function ProductStats() {
   const { data: products = [], isLoading } = useSWR("/api/products", fetcher, { revalidateOnFocus: false });
 
   const validProducts = products.filter(p => p && typeof p.quantity === "number" && typeof p.price === "number");
