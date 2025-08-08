@@ -1,7 +1,6 @@
 const { supabase } = require("../config/db");
 
 const userController = {
-  // Get all users
   getAllUsers: async (req, res) => {
     try {
       const { data, error } = await supabase
