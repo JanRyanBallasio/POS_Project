@@ -8,6 +8,7 @@ const categoryRoutes = require('./src/routes/categoryRoutes');
 const positionRoutes = require('./src/routes/positionRoutes');
 const salesRoutes = require('./src/routes/salesRoutes');
 const salesItemsRoutes = require('./src/routes/salesItemsRoutes');
+const customerRoutes = require('./src/routes/customerRoutes');
 
 const app = express();
 const PORT = 5000;
@@ -17,6 +18,7 @@ app.use(cors());
 app.use(express.json());
 
 // API Routes
+app.use('/api/customers', customerRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
@@ -26,7 +28,7 @@ app.use('/api/sales-items', salesItemsRoutes);
 app.use(productRoutes);
 
 // Add this before app.listen()
-app.use((error, req, res, next) => {
+app.use((error, req, res, next) => {  
   console.error('Error:', error);
   res.status(500).json({
     success: false,
