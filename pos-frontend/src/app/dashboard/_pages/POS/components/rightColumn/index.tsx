@@ -8,6 +8,8 @@ import CustomerSearch from "./CustomerSearch";
 import PaymentSummary from "./PaymentSummary";
 import Receipt from "./Receipt";
 import { PDFViewer } from "@react-pdf/renderer";
+import AddCustomerModal from "./AddCustomerModal";
+import type { Customer } from "@/hooks/pos/rightCol/useCustomerTagging";
 
 import ReceiptPDF from "./ReceiptPDF";
 import { pdf } from "@react-pdf/renderer";
@@ -21,6 +23,7 @@ export default function RightColumn({ step, setStep }: POSRightColProps) {
   const { cart, cartTotal, refocusScanner, clearCart } = useCart();
   const [amount, setAmount] = useState("");
   const [change, setChange] = useState(0);
+  const [addCustomerOpen, setAddCustomerOpen] = useState(false);
 
   useEffect(() => {
     const amountValue = parseFloat(amount) || 0;
@@ -34,6 +37,9 @@ export default function RightColumn({ step, setStep }: POSRightColProps) {
     selectedCustomer,
     selectCustomer,
     clearCustomer,
+    fetchCustomers,
+    allCustomers, // make sure you return this from your hook
+    setAllCustomers, // make sure you return this from your hook
   } = useCustomerTagging();
 
   // Calculator
@@ -95,6 +101,14 @@ export default function RightColumn({ step, setStep }: POSRightColProps) {
     clearCart();
   };
 
+  const handleCustomerAdded = (newCustomer: Customer) => {
+    setAllCustomers((prev) => [...prev, newCustomer]);
+    selectCustomer(newCustomer); // <-- select the new customer
+    setCustomerQuery(newCustomer.name); // <-- show name in input
+    // Optionally refetch from backend if needed
+    // refetchCustomers();
+  };
+
   return (
     <Card className="h-full flex flex-col" onClick={() => refocusScanner()}>
       <CardContent className="flex-1 flex flex-col p-4 pb-0">
@@ -130,6 +144,13 @@ export default function RightColumn({ step, setStep }: POSRightColProps) {
                 filteredCustomers={filteredCustomers}
                 selectedCustomer={selectedCustomer}
                 selectCustomer={selectCustomer}
+                clearCustomer={clearCustomer} // <-- pass this!
+                onAddCustomer={() => setAddCustomerOpen(true)}
+              />
+              <AddCustomerModal
+                open={addCustomerOpen}
+                onOpenChange={setAddCustomerOpen}
+                onCustomerAdded={handleCustomerAdded}
               />
               <CardFooter className="px-4 pb-4 pt-4 flex flex-col gap-3">
                 <Button
@@ -143,7 +164,7 @@ export default function RightColumn({ step, setStep }: POSRightColProps) {
                   className="w-full h-14 text-xl font-medium"
                   onClick={() => setStep(3)}
                 >
-                  Next
+                  Finish Transaction
                 </Button>
               </CardFooter>
             </>
@@ -166,7 +187,7 @@ export default function RightColumn({ step, setStep }: POSRightColProps) {
                   variant="outline"
                   onClick={handleNewTransaction}
                 >
-                  Finish Transaction
+                  Close
                 </Button>
               </CardFooter>
             </>
