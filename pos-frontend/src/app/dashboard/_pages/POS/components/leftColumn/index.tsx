@@ -80,10 +80,10 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
     }
   }
 
-  function handleRegisterProduct() {
+  function handleRegisterProduct(barcode: string) {
     setShowRegisterDialog(false);
-    setBarcode(unregisteredBarcode); // Set the barcode for the modal
-    setOpen(true); // Open the add product modal
+    setBarcode(barcode); // <-- set barcode in context
+    setOpen(true);       // <-- open modal
   }
 
   // Pass refocusScanner to ProductRegisterModal so it can reset after adding
@@ -122,7 +122,7 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
           </div>
         </CardContent>
       </Card>
-      <ProductRegisterModal/>
+      <ProductRegisterModal />
       <AlertDialog open={showRegisterDialog} onOpenChange={setShowRegisterDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -133,7 +133,7 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setShowRegisterDialog(false)}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleRegisterProduct}>
+            <AlertDialogAction onClick={() => unregisteredBarcode && handleRegisterProduct(unregisteredBarcode)}>
               Register Product
             </AlertDialogAction>
           </AlertDialogFooter>
