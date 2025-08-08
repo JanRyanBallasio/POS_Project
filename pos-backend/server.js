@@ -23,6 +23,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/positions', positionRoutes);
 app.use('/api/sales', salesRoutes);
 app.use('/api/sales-items', salesItemsRoutes);
+app.use(productRoutes);
 
 // Add this before app.listen()
 app.use((error, req, res, next) => {
