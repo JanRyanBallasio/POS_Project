@@ -8,7 +8,6 @@ import { productApi, Product } from "@/hooks/products/useProductApi";
 export default function ProductsScreen() {
   // Get initial products from your hook
   const { products: initialProducts, refetch } = useProducts();
-
   // Local state for products, so we can update instantly
   const [products, setProducts] = useState(initialProducts);
 
@@ -30,8 +29,7 @@ export default function ProductsScreen() {
   return (
     <div className="flex flex-col gap-4 h-full p-8">
       <div className="flex-[7%]">
-        {/* Pass the callback to Head */}
-        <Head onProductAdded={handleProductAdded} />
+        <Head />
       </div>
       {/* Pass products as props to children */}
       <div className="flex-[18%]"><ProductsStats products={products} /></div>
