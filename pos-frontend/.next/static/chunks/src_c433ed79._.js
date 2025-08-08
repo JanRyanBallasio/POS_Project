@@ -1814,7 +1814,7 @@ __turbopack_context__.s({
     "productApi": (()=>productApi)
 });
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$polyfills$2f$process$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/build/polyfills/process.js [app-client] (ecmascript)");
-const API_BASE_URL = ("TURBOPACK compile-time value", "http://localhost:5000/api");
+const API_BASE_URL = ("TURBOPACK compile-time value", "http://13.211.162.106:5000/api");
 const productApi = {
     async getAll () {
         const response = await fetch(`${API_BASE_URL}/products`);
@@ -1991,7 +1991,7 @@ const fetcher = async ()=>{
 };
 const useProducts = ()=>{
     _s();
-    const { data, error, isLoading, mutate } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$index$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$locals$3e$__["default"])(("TURBOPACK compile-time value", "http://localhost:5000/api") + "/products", fetcher);
+    const { data, error, isLoading, mutate } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$index$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$locals$3e$__["default"])(("TURBOPACK compile-time value", "http://13.211.162.106:5000/api") + "/products", fetcher);
     return {
         products: data || [],
         loading: isLoading,
@@ -2017,7 +2017,7 @@ __turbopack_context__.s({
     "categoryApi": (()=>categoryApi)
 });
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$polyfills$2f$process$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/build/polyfills/process.js [app-client] (ecmascript)");
-const API_BASE_URL = ("TURBOPACK compile-time value", "http://localhost:5000/api");
+const API_BASE_URL = ("TURBOPACK compile-time value", "http://13.211.162.106:5000/api");
 const categoryApi = {
     async getAll () {
         const response = await fetch(`${API_BASE_URL}/categories`);
