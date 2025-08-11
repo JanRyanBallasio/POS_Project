@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { CalendarIcon } from 'lucide-react'
+import useSWR from 'swr'
+import { CalendarIcon, ChevronDown, ChevronUp, List } from 'lucide-react'
 import type { DateRange } from 'react-day-picker'
 import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts'
-import { ChevronDown, ChevronUp, List } from 'lucide-react';
 
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
@@ -20,8 +20,17 @@ import {
 import type { ChartConfig } from '@/components/ui/chart'
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { useSaleItems } from "@/hooks/global/fetching/useSaleItems";
-import { useProducts } from "@/hooks/global/fetching/useProducts";
+
+type SaleItem = {
+  product_id: number
+  quantity: number
+  created_at: string
+}
+
+type Product = {
+  id: number
+  name: string
+}
 
 type ChartData = {
   product: string
@@ -35,60 +44,75 @@ const chartConfig: ChartConfig = {
   }
 }
 
+const fetcher = async (url: string) => {
+  const res = await fetch(url)
+  const json = await res.json()
+  return json.data
+}
+
 export default function ProductStats() {
-  const today = new Date();
-  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  const API_URL = process.env.NEXT_PUBLIC_backend_api_url
+  const { data: saleItems = [], error: saleItemsError, isLoading: saleItemsLoading } = useSWR<SaleItem[]>(
+    `${API_URL}/sales-items`,
+    fetcher
+  )
+  const { data: products = [], error: productsError, isLoading: productsLoading } = useSWR<Product[]>(
+    `${API_URL}/products`,
+    fetcher
+  )
+
+  const today = new Date()
+  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
   const [range, setRange] = useState<DateRange | undefined>({
     from: startOfMonth,
     to: today
-  });
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | 'normal'>('desc');
+  })
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | 'normal'>('normal')
 
-  const { saleItems, loading, error } = useSaleItems();
-  const { products } = useProducts();
-
-  // Map product_id to product name for display
   const productMap = useMemo(() => {
-    const map: Record<number, string> = {};
+    const map: Record<number, string> = {}
     products.forEach(p => {
-      map[p.id] = p.name;
-    });
-    return map;
-  }, [products]);
+      map[p.id] = p.name
+    })
+    return map
+  }, [products])
+
   const isSameOrAfter = (a: Date, b: Date) =>
-    a.setHours(0, 0, 0, 0) >= b.setHours(0, 0, 0, 0);
+    a.setHours(0, 0, 0, 0) >= b.setHours(0, 0, 0, 0)
   const isSameOrBefore = (a: Date, b: Date) =>
-    a.setHours(0, 0, 0, 0) <= b.setHours(0, 0, 0, 0);
-  // Transform sale items data: group by product, sum quantity sold
+    a.setHours(0, 0, 0, 0) <= b.setHours(0, 0, 0, 0)
+
   const chartData = useMemo(() => {
-    const grouped: { [product_id: number]: number } = {};
+    const grouped: { [product_id: number]: number } = {}
     saleItems.forEach(item => {
-      const date = new Date(item.created_at);
+      const date = new Date(item.created_at)
       if (
         (!range?.from || isSameOrAfter(date, range.from)) &&
         (!range?.to || isSameOrBefore(date, range.to))
       ) {
-        grouped[item.product_id] = (grouped[item.product_id] || 0) + item.quantity;
+        grouped[item.product_id] = (grouped[item.product_id] || 0) + item.quantity
       }
-    });
+    })
     let arr = Object.entries(grouped)
       .map(([product_id, quantity]) => ({
         product: productMap[Number(product_id)] || `Product ${product_id}`,
         quantity
-      }));
+      }))
     if (sortOrder === 'asc') {
-      arr = arr.sort((a, b) => a.quantity - b.quantity);
+      arr = arr.sort((a, b) => a.quantity - b.quantity)
     } else if (sortOrder === 'desc') {
-      arr = arr.sort((a, b) => b.quantity - a.quantity);
+      arr = arr.sort((a, b) => b.quantity - a.quantity)
     }
-    // 'normal' leaves the original order
-    return arr;
-  }, [saleItems, range, productMap, sortOrder]);
+    return arr
+  }, [saleItems, range, productMap, sortOrder])
 
   const total = useMemo(
     () => chartData.reduce((acc, curr) => acc + curr.quantity, 0),
     [chartData]
-  );
+  )
+
+  if (saleItemsLoading || productsLoading) return <div>Loading...</div>
+  if (saleItemsError || productsError) return <div>Error loading product stats.</div>
 
   return (
     <Card className='@container/card w-full'>
@@ -103,15 +127,7 @@ export default function ProductStats() {
               onClick={() => setSortOrder('desc')}
               aria-label="Sort Descending"
             >
-              <ChevronDown className="mr-1" size={16} /> Desc
-            </Button>
-            <Button
-              variant={sortOrder === 'asc' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setSortOrder('asc')}
-              aria-label="Sort Ascending"
-            >
-              <ChevronUp className="mr-1" size={16} /> Asc
+              <ChevronDown size={16} />
             </Button>
             <Button
               variant={sortOrder === 'normal' ? 'default' : 'outline'}
@@ -119,7 +135,15 @@ export default function ProductStats() {
               onClick={() => setSortOrder('normal')}
               aria-label="Follow Order"
             >
-              <List className="mr-1" size={16} /> Follow Order
+              <List size={16} />
+            </Button>
+            <Button
+              variant={sortOrder === 'asc' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSortOrder('asc')}
+              aria-label="Sort Ascending"
+            >
+              <ChevronUp size={16} />
             </Button>
             <Popover>
               <PopoverTrigger asChild>
@@ -140,7 +164,7 @@ export default function ProductStats() {
                   fixedWeeks
                   showOutsideDays
                   disabled={{
-                    after: today // disables future dates
+                    after: today
                   }}
                 />
               </PopoverContent>
