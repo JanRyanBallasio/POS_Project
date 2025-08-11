@@ -1,10 +1,10 @@
 'use client'
 
 import * as React from 'react'
+import useSWR from 'swr'
 import { CartesianGrid, Line, LineChart, XAxis } from 'recharts'
-import { CalendarIcon, List } from 'lucide-react'
+import { CalendarIcon, List, ChevronDown, ChevronUp } from 'lucide-react'
 import type { DateRange } from 'react-day-picker'
-import { ChevronDown, ChevronUp } from 'lucide-react';
 
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
@@ -20,7 +20,11 @@ import {
 import type { ChartConfig } from '@/components/ui/chart'
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { useSales } from "@/hooks/global/fetching/useSales";
+
+type Sale = {
+  created_at: string
+  total_purchase: number
+}
 
 type ChartData = {
   date: string
@@ -29,74 +33,79 @@ type ChartData = {
 
 const chartConfig: ChartConfig = {
   customer: {
-    label: 'Customer',
+    label: 'Total',
     color: 'var(--color-primary)'
   }
 }
 
+const fetcher = async (url: string) => {
+  const res = await fetch(url)
+  const json = await res.json()
+  return json.data
+}
 
 export default function ProductStats() {
-  const { sales, loading, error } = useSales();
-  const today = new Date();
-  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  const API_URL = process.env.NEXT_PUBLIC_backend_api_url
+  const { data: sales = [], error, isLoading } = useSWR<Sale[]>(
+    `${API_URL}/sales`,
+    fetcher
+  )
+  const today = new Date()
+  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
   const [range, setRange] = React.useState<DateRange | undefined>({
-    from: new Date(today.getFullYear(), today.getMonth(), 1),
+    from: startOfMonth,
     to: today
-  });
-  const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc' | 'normal'>('desc');
+  })
+  const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc' | 'normal'>('normal')
 
   const isSameOrAfter = (a: Date, b: Date) =>
-    a.setHours(0, 0, 0, 0) >= b.setHours(0, 0, 0, 0);
+    a.setHours(0, 0, 0, 0) >= b.setHours(0, 0, 0, 0)
   const isSameOrBefore = (a: Date, b: Date) =>
-    a.setHours(0, 0, 0, 0) <= b.setHours(0, 0, 0, 0);
-  // Transform sales data: group by date, count sales per day
+    a.setHours(0, 0, 0, 0) <= b.setHours(0, 0, 0, 0)
+
   const chartData = React.useMemo(() => {
-    const grouped: { [date: string]: Set<number | null> } = {};
+    const grouped: { [date: string]: number } = {}
     sales.forEach(sale => {
-      const date = sale.created_at.slice(0, 10); // YYYY-MM-DD
-      if (!grouped[date]) grouped[date] = new Set();
-      grouped[date].add(sale.customer_id);
-    });
-    return Object.entries(grouped).map(([date, customers]) => ({
+      const date = sale.created_at.slice(0, 10)
+      grouped[date] = (grouped[date] || 0) + (sale.total_purchase ?? 0)
+    })
+    return Object.entries(grouped).map(([date, total]) => ({
       date,
-      customer: customers.size
-    }));
-  }, [sales]);
+      customer: total
+    }))
+  }, [sales])
 
   const filteredData = React.useMemo(() => {
-    if (!range?.from && !range?.to) {
-      return chartData;
-    }
+    if (!range?.from && !range?.to) return chartData
     return chartData.filter(item => {
-      const date = new Date(item.date);
+      const date = new Date(item.date)
       return (
         (!range.from || isSameOrAfter(date, range.from)) &&
         (!range.to || isSameOrBefore(date, range.to))
-      );
-    });
-  }, [range, chartData]);
-
+      )
+    })
+  }, [range, chartData])
 
   const sortedData = React.useMemo(() => {
-    let arr = [...filteredData];
-    if (sortOrder === 'asc') {
-      arr = arr.sort((a, b) => a.customer - b.customer);
-    } else if (sortOrder === 'desc') {
-      arr = arr.sort((a, b) => b.customer - a.customer);
-    }
-    return arr;
-  }, [filteredData, sortOrder]);
+    let arr = [...filteredData]
+    if (sortOrder === 'asc') arr.sort((a, b) => a.customer - b.customer)
+    else if (sortOrder === 'desc') arr.sort((a, b) => b.customer - a.customer)
+    return arr
+  }, [filteredData, sortOrder])
 
   const total = React.useMemo(
     () => sortedData.reduce((acc, curr) => acc + curr.customer, 0),
     [sortedData]
-  );
+  )
+
+  if (isLoading) return <div>Loading...</div>
+  if (error) return <div>Error loading sales data.</div>
 
   return (
-    <Card className='@container/card w-full '>
+    <Card className='@container/card w-full'>
       <CardHeader className='flex flex-col border-b @md/card:grid'>
         <CardTitle>Sales Chart</CardTitle>
-        <CardDescription>Filter total customers by date range</CardDescription>
+        <CardDescription>Filter total sales by date range</CardDescription>
         <CardAction className='mt-2 @md/card:mt-0'>
           <div className="flex gap-2 items-center mt-2">
             <Button
@@ -105,15 +114,7 @@ export default function ProductStats() {
               onClick={() => setSortOrder('desc')}
               aria-label="Sort Descending"
             >
-              <ChevronDown className="mr-1" size={16} /> Desc
-            </Button>
-            <Button
-              variant={sortOrder === 'asc' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setSortOrder('asc')}
-              aria-label="Sort Ascending"
-            >
-              <ChevronUp className="mr-1" size={16} /> Asc
+              <ChevronDown size={16} />
             </Button>
             <Button
               variant={sortOrder === 'normal' ? 'default' : 'outline'}
@@ -121,7 +122,15 @@ export default function ProductStats() {
               onClick={() => setSortOrder('normal')}
               aria-label="Follow Order"
             >
-              <List className="mr-1" size={16} /> Follow Order
+              <List size={16} />
+            </Button>
+            <Button
+              variant={sortOrder === 'asc' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSortOrder('asc')}
+              aria-label="Sort Ascending"
+            >
+              <ChevronUp size={16} />
             </Button>
             <Popover>
               <PopoverTrigger asChild>
@@ -142,7 +151,7 @@ export default function ProductStats() {
                   fixedWeeks
                   showOutsideDays
                   disabled={{
-                    after: today // disables future dates
+                    after: today
                   }}
                 />
               </PopoverContent>
@@ -150,15 +159,12 @@ export default function ProductStats() {
           </div>
         </CardAction>
       </CardHeader>
-      <CardContent className='px-4 '>
+      <CardContent className='px-4'>
         <ChartContainer config={chartConfig} className='aspect-auto h-89 w-full'>
           <LineChart
             accessibilityLayer
             data={sortedData}
-            margin={{
-              left: 12,
-              right: 12
-            }}
+            margin={{ left: 12, right: 12 }}
           >
             <CartesianGrid vertical={false} />
             <XAxis
@@ -169,9 +175,7 @@ export default function ProductStats() {
               minTickGap={20}
               tickFormatter={value => {
                 const date = new Date(value)
-                return date.toLocaleDateString('en-US', {
-                  day: 'numeric'
-                })
+                return date.toLocaleDateString('en-US', { day: 'numeric' })
               }}
             />
             <ChartTooltip
@@ -179,13 +183,13 @@ export default function ProductStats() {
                 <ChartTooltipContent
                   className='w-[150px]'
                   nameKey='customer'
-                  labelFormatter={value => {
-                    return new Date(value).toLocaleDateString('en-US', {
+                  labelFormatter={value =>
+                    new Date(value).toLocaleDateString('en-US', {
                       month: 'short',
                       day: 'numeric',
                       year: 'numeric'
                     })
-                  }}
+                  }
                 />
               }
             />
@@ -201,7 +205,7 @@ export default function ProductStats() {
       </CardContent>
       <CardFooter className='border-t'>
         <div className='text-sm'>
-          You had <span className='font-semibold'>{total.toLocaleString()}</span> customers for the selected period.
+          You had <span className='font-semibold'>₱ {total.toLocaleString()}</span> total sales for the selected period.
         </div>
       </CardFooter>
     </Card>
