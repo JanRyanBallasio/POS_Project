@@ -18,14 +18,14 @@ import {
 
 // Main items.
 const main = [
-  {
-    title: "Dashboardsssss",
-    url: "/dashboard/main",
-    icon: LayoutDashboard,
-  },
+  // {
+  //   title: "Dashboardsssss",
+  //   url: "/dashboard/mains",
+  //   icon: LayoutDashboard,
+  // },
   {
     title: "Point of Sale",
-    url: "/dashboard/pos",
+    url: "/dashboard/main",
     icon: Calculator,
   },
 ];
@@ -37,16 +37,16 @@ const inventory = [
     url: "/dashboard/products",
     icon: NotebookPen,
   },
-  {
-    title: "Inventory",
-    url: "/dashboard/asdass",
-    icon: Calculator,
-  },
-  {
-    title: "Categories",
-    url: "/dashboard/asdasda",
-    icon: Calculator,
-  },
+  // {
+  //   title: "Inventory",
+  //   url: "/dashboard/asdass",
+  //   icon: Calculator,
+  // },
+  // {
+  //   title: "Categories",
+  //   url: "/dashboard/asdasda",
+  //   icon: Calculator,
+  // },
 ];
 
 export function AppSidebar() {

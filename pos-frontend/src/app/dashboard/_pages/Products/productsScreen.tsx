@@ -4,6 +4,7 @@ import Index from './components/productCatalog/index';
 import { useProducts } from "@/hooks/global/fetching/useProducts";
 import { useState, useEffect } from "react";
 import { productApi, Product } from "@/hooks/products/useProductApi";
+import AddCategoryModal from './components/addCategoryModal';
 
 export default function ProductsScreen() {
   // Get initial products from your hook
@@ -37,6 +38,7 @@ export default function ProductsScreen() {
         products={products}
         onProductDeleted={handleProductDeleted}
       /></div>
+      <AddCategoryModal />
     </div>
   );
 }

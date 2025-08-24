@@ -1,3 +1,4 @@
+// ...existing code...
 import {
   Table,
   TableBody,
@@ -21,6 +22,8 @@ interface CartTableProps {
   selectedRowId: string | null;
   selectRow: (id: string) => void;
   updateCartItemQuantity: (id: string, qty: number) => void;
+  updateCartItemPrice: (id: string, price: number) => void;
+  deleteCartItem: (id: string) => void;
   disabled?: boolean;
 }
 
@@ -29,6 +32,8 @@ export default function CartTable({
   selectedRowId,
   selectRow,
   updateCartItemQuantity,
+  updateCartItemPrice,
+  deleteCartItem,
   disabled = false,
 }: CartTableProps) {
   if (cart.length === 0) {
@@ -49,7 +54,7 @@ export default function CartTable({
           <TableHead className="text-lg font-semibold">Name</TableHead>
           <TableHead className="text-lg font-semibold">Price</TableHead>
           <TableHead className="text-lg font-semibold">Quantity</TableHead>
-          <TableHead className="text-lg font-semibold">Discount</TableHead>
+          <TableHead className="text-lg font-semibold">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -64,7 +69,25 @@ export default function CartTable({
               {item.product.barcode || "N/A"}
             </TableCell>
             <TableCell>{item.product.name}</TableCell>
-            <TableCell>₱ {item.product.price.toFixed(2)}</TableCell>
+
+            <TableCell>
+              <Input
+                type="number"
+                min={0}
+                step="0.01"
+                value={String(item.product.price)}
+                className="w-28"
+                onClick={(e) => e.stopPropagation()}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  const parsed = Number(raw);
+                  const price = Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+                  updateCartItemPrice(item.id, price);
+                }}
+                disabled={disabled}
+              />
+            </TableCell>
+
             <TableCell>
               <Input
                 type="number"
@@ -79,7 +102,20 @@ export default function CartTable({
                 disabled={disabled}
               />
             </TableCell>
-            <TableCell>₱ 0.00</TableCell>
+
+            <TableCell>
+              <button
+                type="button"
+                className="text-sm text-red-600 hover:underline disabled:opacity-50"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteCartItem(item.id);
+                }}
+                disabled={disabled}
+              >
+                Delete
+              </button>
+            </TableCell>
           </TableRow>
         ))}
       </TableBody>
