@@ -7,6 +7,7 @@ import React, {
   ReactNode,
   RefObject,
   useEffect,
+  useCallback
 } from "react";
 import { productApi, Product } from "@/hooks/products/useProductApi";
 
