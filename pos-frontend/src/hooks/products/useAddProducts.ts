@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { productApi, Product } from "@/hooks/products/useProductApi";
 
+type CreateInput = Omit<Product, "id">;
+
 export function useAddProduct() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);

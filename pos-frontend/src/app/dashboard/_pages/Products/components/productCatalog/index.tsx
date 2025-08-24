@@ -25,12 +25,15 @@ export default function Index({ products, onProductDeleted }: IndexProps) {
           setSelectedCategory={setSelectedCategory}
           selectedProducts={selectedStatus}
           setSelectedProducts={setSelectedStatus}
+          search={search}
+          setSearch={setSearch}
         />
         {/* Pass products to ProductTable */}
         <ProductTable
           selectedCategory={selectedCategory}
           selectedStatus={selectedStatus}
           onProductDeleted={onProductDeleted}
+          search={search}
         />
       </CardContent>
     </Card>

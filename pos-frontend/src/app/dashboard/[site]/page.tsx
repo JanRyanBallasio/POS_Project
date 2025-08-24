@@ -13,9 +13,9 @@ export default function SiteDashboardPage({
   const { site } = use(params);
 
   switch (site) {
-    case "main":
+    case "db":
       return <DashboardScreen />;
-    case "pos":
+    case "main":
       return <MainDashboard />;
     case "products":
       return <ProductsPage />;

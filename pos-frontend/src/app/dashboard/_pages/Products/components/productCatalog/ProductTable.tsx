@@ -45,12 +45,14 @@ type ProductTableProps = {
     selectedCategory: string;
     selectedStatus: string;
     onProductDeleted?: (id: number) => void; // <-- Add this line
+    search?: string;
 };
 
 export default function ProductTable({
     selectedCategory,
     selectedStatus,
     onProductDeleted,
+    search = "",
 }: ProductTableProps) {
     // Use SWR for products
     const { data: products = [], isLoading, error } = useSWR("/api/products", fetcher, { revalidateOnFocus: false });
@@ -111,6 +113,21 @@ export default function ProductTable({
         });
     }
 
+    // Search filter (by name or barcode, case-insensitive)
+    const q = (search || "").trim().toLowerCase();
+    if (q.length > 0) {
+        filteredProducts = filteredProducts.filter((p: Product) => {
+            const name = String(p.name ?? "").toLowerCase();
+            const barcode = String(p.barcode ?? "").toLowerCase();
+            return name.includes(q) || barcode.includes(q);
+        });
+    }
+
+    // Reset page when filters/search change
+    useEffect(() => {
+        setPage(0);
+    }, [selectedCategory, selectedStatus, search]);
+
     const mappedProducts: Products[] = (filteredProducts ?? []).map(p => mapProductToPayment(p, categories)); const pageCount = Math.max(1, Math.ceil(mappedProducts.length / pageSize));
 
     // Open edit dialog
@@ -164,7 +181,6 @@ export default function ProductTable({
         }
     };
 
-    // Suggestion: For even less boilerplate, you can use [TanStack Query](https://tanstack.com/query/latest) instead of SWR for full CRUD, caching, and mutation hooks.
 
     return (
         <div className="w-full mt-4 relative">
@@ -220,8 +236,6 @@ export default function ProductTable({
 
                     ) : showUpdateConfirm ? (
                         <>
-                            <DialogTitle>Confirm Update</DialogTitle>
-                            <DialogDescription>This will update the product details.</DialogDescription>
                             <div className="flex flex-col items-center justify-center py-8">
                                 <h2 className="font-bold text-lg mb-2">Are you absolutely sure?</h2>
                                 <p className="mb-6 text-gray-500">This will update the product details.</p>

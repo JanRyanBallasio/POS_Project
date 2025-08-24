@@ -15,6 +15,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
     AlertDialog,
     AlertDialogContent,
@@ -53,15 +54,27 @@ export default function ProductRegisterModal() {
         }
     };
     useEffect(() => {
-        if (open && contextBarcode) setBarcode(contextBarcode);
+        // only run when modal opens or the context barcode changes
         if (!open) {
-            setBarcode("");
-            setContextBarcode("");
+            // clear local form when modal closed
             setName("");
-            // reset other fields as needed
-            reset();
+            setBarcode("");
+            // call reset only if it's a stable function — if it's unstable you can omit it here
+            if (typeof reset === "function") reset();
+            return;
         }
-    }, [open, contextBarcode, setContextBarcode, reset]);
+
+        // modal opened: if there's a barcode from context, consume it once
+        if (contextBarcode && contextBarcode !== barcode) {
+            setBarcode(contextBarcode);
+            // only call setContextBarcode if it's a function
+            if (typeof setContextBarcode === "function") {
+                setContextBarcode("");
+            }
+        }
+
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [open, contextBarcode]);
     return (
         <>
             <Dialog open={open} onOpenChange={setOpen}>
@@ -94,24 +107,25 @@ export default function ProductRegisterModal() {
                                             className="cursor-pointer"
                                         />
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent className="w-64">
-                                        <div className="p-2">
-                                            <Input
-                                                placeholder="Search category..."
-                                                value={categorySearch}
-                                                onChange={e => setCategorySearch(e.target.value)}
-                                                className="mb-2"
-                                            />
-                                        </div>
-                                        {categoriesLoading && (
-                                            <div className="p-2 text-gray-400">Loading...</div>
-                                        )}
-                                        {categoriesError && (
-                                            <div className="p-2 text-red-500">{categoriesError}</div>
-                                        )}
-                                        
-                                        {!categoriesLoading && !categoriesError && (
-                                            <>
+                                      <DropdownMenuContent className="w-64 p-0">
+                                    <div className="p-2">
+                                        <Input
+                                            placeholder="Search category..."
+                                            value={categorySearch}
+                                            onChange={e => setCategorySearch(e.target.value)}
+                                            className="mb-2"
+                                        />
+                                    </div>
+                                    {categoriesLoading && (
+                                        <div className="p-2 text-gray-400">Loading...</div>
+                                    )}
+                                    {categoriesError && (
+                                        <div className="p-2 text-red-500">{categoriesError}</div>
+                                    )}
+
+                                    {!categoriesLoading && !categoriesError && (
+                                        <ScrollArea className="h-40">
+                                            <div className="p-2">
                                                 {categories
                                                     .filter(cat =>
                                                         cat.name.toLowerCase().includes(categorySearch.toLowerCase())
@@ -130,11 +144,12 @@ export default function ProductRegisterModal() {
                                                 {categories.filter(cat =>
                                                     cat.name.toLowerCase().includes(categorySearch.toLowerCase())
                                                 ).length === 0 && (
-                                                        <div className="p-2 text-gray-400">No categories found.</div>
-                                                    )}
-                                            </>
-                                        )}
-                                    </DropdownMenuContent>
+                                                    <div className="p-2 text-gray-400">No categories found.</div>
+                                                )}
+                                            </div>
+                                        </ScrollArea>
+                                    )}
+                                </DropdownMenuContent>
                                 </DropdownMenu>
                             </div>
                         </div>

@@ -1,3 +1,4 @@
+// ...existing code...
 import { Card, CardContent } from "@/components/ui/card";
 import { useCart } from "@/contexts/cart-context";
 import { useCartSelection } from "@/hooks/pos/leftCol/useCartSelection";
@@ -35,6 +36,8 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
     scanAndAddToCart,
     setScannerRef,
     refocusScanner,
+    updateCartItemPrice, // <- added
+    deleteCartItem, // <- added
   } = useCart();
   const { barcodeInput, inputRef, handleBarcodeChange, handleKeyPress } =
     useBarcodeScan(handleScanAndAddToCart);
@@ -117,6 +120,8 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
               selectedRowId={selectedRowId}
               selectRow={selectRow}
               updateCartItemQuantity={updateCartItemQuantity}
+              updateCartItemPrice={updateCartItemPrice} // <- passed
+              deleteCartItem={deleteCartItem} // <- passed
               disabled={step === 2 || step === 3}
             />
           </div>
@@ -142,3 +147,4 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
     </div>
   );
 }
+// ...existing code...
