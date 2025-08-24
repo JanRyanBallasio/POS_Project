@@ -1,3 +1,4 @@
+
 import React, {
   createContext,
   useContext,
@@ -24,6 +25,8 @@ interface CartContextType {
   refocusScanner: () => void;
   setScannerRef: (ref: RefObject<HTMLInputElement>) => void;
   updateCartItemQuantity: (id: string, quantity: number) => void;
+  updateCartItemPrice: (id: string, price: number) => void; // <--- added
+  deleteCartItem: (id: string) => void; // <--- added
   clearCart: () => void;
 }
 
@@ -53,6 +56,20 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     setCart((prevCart) =>
       prevCart.map((item) => (item.id === id ? { ...item, quantity } : item))
     );
+  };
+
+  // new: update price for a cart item (updates only the cart's product.price)
+  const updateCartItemPrice = (id: string, price: number) => {
+    setCart((prevCart) =>
+      prevCart.map((item) =>
+        item.id === id ? { ...item, product: { ...item.product, price } } : item
+      )
+    );
+  };
+
+  // new: remove item from cart by id
+  const deleteCartItem = (id: string) => {
+    setCart((prevCart) => prevCart.filter((item) => item.id !== id));
   };
 
   const scanAndAddToCart = async (barcode: string): Promise<void> => {
@@ -109,6 +126,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     refocusScanner,
     setScannerRef,
     updateCartItemQuantity,
+    updateCartItemPrice, // <--- added to value
+    deleteCartItem, // <--- added to value
     clearCart,
   };
 

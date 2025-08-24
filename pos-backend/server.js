@@ -25,10 +25,14 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/positions', positionRoutes);
 app.use('/api/sales', salesRoutes);
 app.use('/api/sales-items', salesItemsRoutes);
-app.use(productRoutes);
 
-// Add this before app.listen()
-app.use((error, req, res, next) => {  
+// 404 fallback (optional)
+app.use((req, res, next) => {
+  res.status(404).json({ success: false, message: 'Not found' });
+});
+
+// Error handler
+app.use((error, req, res, next) => {
   console.error('Error:', error);
   res.status(500).json({
     success: false,

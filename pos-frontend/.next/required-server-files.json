@@ -10,6 +10,7 @@
       "ignoreBuildErrors": false,
       "tsconfigPath": "tsconfig.json"
     },
+    "typedRoutes": false,
     "distDir": ".next",
     "cleanDistDir": true,
     "assetPrefix": "",
@@ -84,6 +85,7 @@
       "keepAlive": true
     },
     "logging": {},
+    "compiler": {},
     "expireTime": 31536000,
     "staticPageGenerationTimeout": 60,
     "modularizeImports": {
@@ -96,7 +98,7 @@
     },
     "outputFileTracingRoot": "D:\\Code\\POS_Project\\pos-frontend",
     "experimental": {
-      "nodeMiddleware": false,
+      "useSkewCookie": false,
       "cacheLife": {
         "default": {
           "stale": 300,
@@ -104,7 +106,7 @@
           "expire": 4294967294
         },
         "seconds": {
-          "stale": 0,
+          "stale": 30,
           "revalidate": 1,
           "expire": 60
         },
@@ -144,6 +146,7 @@
       "linkNoTouchStart": false,
       "caseSensitiveRoutes": false,
       "clientSegmentCache": false,
+      "clientParamParsing": false,
       "dynamicOnHover": false,
       "preloadEntriesOnStart": true,
       "clientRouterFilter": true,
@@ -158,6 +161,7 @@
       "imgOptTimeoutInSeconds": 7,
       "imgOptMaxInputPixels": 268402689,
       "imgOptSequentialRead": null,
+      "imgOptSkipMetadata": null,
       "isrFlushToDisk": true,
       "workerThreads": false,
       "optimizeCss": false,
@@ -172,7 +176,6 @@
       "swcTraceProfiling": false,
       "forceSwcTransforms": false,
       "largePageDataBytes": 128000,
-      "typedRoutes": false,
       "typedEnv": false,
       "parallelServerCompiles": false,
       "parallelServerBuildTraces": false,
@@ -180,9 +183,10 @@
       "authInterrupts": false,
       "webpackMemoryOptimizations": false,
       "optimizeServerReact": true,
-      "useEarlyImport": false,
       "viewTransition": false,
       "routerBFCache": false,
+      "removeUncaughtErrorAndRejectionListeners": false,
+      "validateRSCRequestHeaders": false,
       "staleTimes": {
         "dynamic": 0,
         "static": 300
@@ -190,9 +194,13 @@
       "serverComponentsHmrCache": true,
       "staticGenerationMaxConcurrency": 8,
       "staticGenerationMinPagesPerWorker": 25,
-      "dynamicIO": false,
+      "cacheComponents": false,
       "inlineCss": false,
       "useCache": false,
+      "globalNotFound": false,
+      "devtoolSegmentExplorer": true,
+      "browserDebugInfoInTerminal": false,
+      "optimizeRouterScrolling": false,
       "optimizePackageImports": [
         "lucide-react",
         "date-fns",
@@ -224,10 +232,10 @@
         "@effect/sql-mssql",
         "@effect/sql-mysql2",
         "@effect/sql-pg",
-        "@effect/sql-squlite-node",
-        "@effect/sql-squlite-bun",
-        "@effect/sql-squlite-wasm",
-        "@effect/sql-squlite-react-native",
+        "@effect/sql-sqlite-node",
+        "@effect/sql-sqlite-bun",
+        "@effect/sql-sqlite-wasm",
+        "@effect/sql-sqlite-react-native",
         "@effect/rpc",
         "@effect/rpc-http",
         "@effect/typeclass",
@@ -273,7 +281,7 @@
       "trustHostHeader": false,
       "isExperimentalCompile": false
     },
-    "htmlLimitedBots": "Mediapartners-Google|Slurp|DuckDuckBot|baiduspider|yandex|sogou|bitlybot|tumblr|vkShare|quora link preview|redditbot|ia_archiver|Bingbot|BingPreview|applebot|facebookexternalhit|facebookcatalog|Twitterbot|LinkedInBot|Slackbot|Discordbot|WhatsApp|SkypeUriPreview|Yeti",
+    "htmlLimitedBots": "[\\w-]+-Google|Google-[\\w-]+|Chrome-Lighthouse|Slurp|DuckDuckBot|baiduspider|yandex|sogou|bitlybot|tumblr|vkShare|quora link preview|redditbot|ia_archiver|Bingbot|BingPreview|applebot|facebookexternalhit|facebookcatalog|Twitterbot|LinkedInBot|Slackbot|Discordbot|WhatsApp|SkypeUriPreview|Yeti|googleweblight",
     "bundlePagesRouterDependencies": false,
     "configFileName": "next.config.ts",
     "turbopack": {
@@ -299,7 +307,8 @@
     ".next\\server\\server-reference-manifest.json",
     ".next\\BUILD_ID",
     ".next\\server\\next-font-manifest.js",
-    ".next\\server\\next-font-manifest.json"
+    ".next\\server\\next-font-manifest.json",
+    ".next\\required-server-files.json"
   ],
   "ignore": [
     "node_modules\\next\\dist\\compiled\\@ampproject\\toolbox-optimizer\\**\\*"

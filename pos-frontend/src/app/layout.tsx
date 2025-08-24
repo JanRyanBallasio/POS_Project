@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Poppins } from 'next/font/google'
 import BreakpointIndicator from "@/components/global/BreakpointIndicator";
+import { Toaster } from "@/components/ui/sonner"
+
 const poppins = Poppins({
   subsets: ['latin'],
   display: 'swap',
@@ -23,6 +25,7 @@ export default function RootLayout({
       <body>
         <main className="flex-1">{children}</main>
         <BreakpointIndicator />
+        <Toaster position="top-right" />
       </body>
     </html>
   );
