@@ -2,6 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { CATEGORIES_KEY } from "@/hooks/categories/useCategoryApi";
+
+import { mutate } from "swr";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,53 +19,59 @@ import { Label } from "@/components/ui/label";
 import { useProductModal } from "@/contexts/productRegister-context";
 import { useCategories } from "@/hooks/global/fetching/useCategories";
 import useAddCategory from "@/hooks/products/useAddCategory";
+import { useProductFormStore } from "@/stores/productFormStore";
 
 export default function AddCategoryModal() {
-  const { activeModal, closeModal } = useProductModal();
+  const { isOpen, closeModal, openModal } = useProductModal();
   const { refetch } = useCategories();
   const { addCategory, loading, error } = useAddCategory();
-
+  const setCategoryId = useProductFormStore((s) => s.setCategoryId);
+  const setCategoryName = useProductFormStore((s) => s.setCategoryName);
   const [name, setName] = useState("");
   const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
-    if (activeModal !== "addCategory") {
+    if (!isOpen("addCategory")) {
       setName("");
       setSuccess(null);
     }
-  }, [activeModal]);
+  }, [isOpen]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    console.log("AddCategoryModal.handleSubmit called", { name });
     if (!name.trim()) return;
     try {
       await addCategory(
         { name: name.trim() },
         {
-          onSuccess: (created) => {
-            console.log("AddCategoryModal.onSuccess", created);
-            setName("");
-            setSuccess("Category added");
+          onSuccess: (createdRaw) => {
+            // normalize in case API returns { data: {...} } or returns object directly
+            const created = createdRaw?.data ?? createdRaw;
 
-            // show sonner toast (soft-success style)
-            toast.success("Category added", {
-              style: {
-                '--normal-bg':
-                  'color-mix(in oklab, light-dark(var(--color-green-600), var(--color-green-400)) 10%, var(--background))',
-                '--normal-text': 'light-dark(var(--color-green-600), var(--color-green-400))',
-                '--normal-border': 'light-dark(var(--color-green-600), var(--color-green-400))'
-              } as React.CSSProperties
-            });
+            // optimistic update: add new item to the front (prevent duplicate by id)
+            mutate(CATEGORIES_KEY, (current: any[] = []) => {
+              if (!created) return current;
+              const exists = current.some(c => String(c?.id) === String(created?.id));
+              return exists ? current : [created, ...current];
+            }, false);
 
-            // close modal shortly after success so user sees the toast
+            // revalidate after optimistic update
+            mutate(CATEGORIES_KEY);
+
+            // set into store as before
+            const createdId = created?.id ?? created?._id;
+            const createdName = created?.name ?? "";
+            if (createdId != null) {
+              setCategoryId(String(createdId));
+              setCategoryName(createdName);
+            } else {
+              console.warn("[AddCategoryModal] created object has no id field:", created);
+            }
+
             setTimeout(() => {
-              closeModal();
+              closeModal("addCategory");
               setSuccess(null);
             }, 600);
-
-            // refresh category list
-            refetch?.();
           },
         }
       );
@@ -72,7 +81,7 @@ export default function AddCategoryModal() {
   }
 
   return (
-    <Dialog open={activeModal === "addCategory"} onOpenChange={(v) => { if (!v) closeModal(); }}>
+    <Dialog open={isOpen("addCategory")} onOpenChange={(v) => { if (!v) closeModal("addCategory"); }}>
       <DialogContent className="sm:max-w-[420px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
@@ -97,7 +106,7 @@ export default function AddCategoryModal() {
           </div>
 
           <DialogFooter className="mt-5">
-            <Button variant="outline" type="button" onClick={() => closeModal()}>
+            <Button variant="outline" type="button" onClick={() => closeModal("addCategory")}>
               Cancel
             </Button>
             <Button
