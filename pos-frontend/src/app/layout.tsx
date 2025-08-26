@@ -3,6 +3,7 @@ import "./globals.css";
 import { Poppins } from 'next/font/google'
 import BreakpointIndicator from "@/components/global/BreakpointIndicator";
 import { Toaster } from "@/components/ui/sonner"
+import { ProductModalProvider } from "@/contexts/productRegister-context";
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -23,9 +24,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={poppins.className}>
       <body>
-        <main className="flex-1">{children}</main>
-        <BreakpointIndicator />
-        <Toaster position="top-right" />
+        <ProductModalProvider>
+          <main className="flex-1">{children}</main>
+          <BreakpointIndicator />
+          <Toaster position="top-right" />
+        </ProductModalProvider>
       </body>
     </html>
   );

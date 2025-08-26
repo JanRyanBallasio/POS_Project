@@ -8,6 +8,7 @@ import { useState, useEffect } from "react";
 import { useAddProduct } from "@/hooks/products/useAddProducts";
 import { useProducts } from "@/hooks/global/fetching/useProducts";
 import { useCategories } from "@/hooks/global/fetching/useCategories";
+import { useProductFormStore } from "@/stores/productFormStore";
 
 import {
     DropdownMenu,
@@ -25,13 +26,23 @@ import {
     AlertDialogFooter,
     AlertDialogAction,
 } from "@/components/ui/alert-dialog";
+import { Plus } from "lucide-react";
 export default function ProductRegisterModal() {
-    const { open, setOpen, barcode: contextBarcode, setBarcode: setContextBarcode } = useProductModal();
-    const [name, setName] = useState("");
-    const [barcode, setBarcode] = useState("");
-    const [category_id, setCategoryId] = useState("");
-    const [price, setPrice] = useState(0);
-    const [quantity, setQuantity] = useState(0);
+    const getCategoryId = (c: any) => c?.id ?? c?._id ?? c?.category_id ?? c?.categoryId ?? c?.ID ?? null;
+    const { open, setOpen, barcode: contextBarcode, setBarcode: setContextBarcode, openModal } = useProductModal();
+    const name = useProductFormStore((s) => s.name);
+    const setName = useProductFormStore((s) => s.setName);
+    const barcode = useProductFormStore((s) => s.barcode);
+    const setBarcode = useProductFormStore((s) => s.setBarcode);
+    const category_id = useProductFormStore((s) => s.category_id);
+    const setCategoryId = useProductFormStore((s) => s.setCategoryId);
+    const category_name_fallback = useProductFormStore((s) => s.category_name);
+    const setCategoryName = useProductFormStore((s) => s.setCategoryName);
+    const price = useProductFormStore((s) => s.price);
+    const setPrice = useProductFormStore((s) => s.setPrice);
+    const quantity = useProductFormStore((s) => s.quantity);
+    const setQuantity = useProductFormStore((s) => s.setQuantity);
+    const resetForm = useProductFormStore((s) => s.reset);
     const [categorySearch, setCategorySearch] = useState("");
     const { addProduct, loading, error, reset } = useAddProduct();
     const { categories, loading: categoriesLoading, error: categoriesError } = useCategories();
@@ -54,20 +65,16 @@ export default function ProductRegisterModal() {
         }
     };
     useEffect(() => {
-        // only run when modal opens or the context barcode changes
+        // when product modal fully closes, clear the persisted form
         if (!open) {
-            // clear local form when modal closed
-            setName("");
-            setBarcode("");
-            // call reset only if it's a stable function — if it's unstable you can omit it here
+            resetForm();
             if (typeof reset === "function") reset();
             return;
         }
 
-        // modal opened: if there's a barcode from context, consume it once
+        // modal opened: if there's a barcode from context, set it once into the store
         if (contextBarcode && contextBarcode !== barcode) {
             setBarcode(contextBarcode);
-            // only call setContextBarcode if it's a function
             if (typeof setContextBarcode === "function") {
                 setContextBarcode("");
             }
@@ -75,6 +82,18 @@ export default function ProductRegisterModal() {
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open, contextBarcode]);
+
+    useEffect(() => {
+        console.log("[ProductRegisterModal] categories length:", categories?.length);
+        // debug first item shape to see actual fields
+        if (categories && categories.length > 0) {
+            console.log("[ProductRegisterModal] example category item:", JSON.stringify(categories[0]));
+        }
+        console.log("[ProductRegisterModal] categorySearch:", categorySearch);
+        console.log("[ProductRegisterModal] selected category_id:", category_id);
+        const selected = categories?.find((c: any) => String(getCategoryId(c)) === String(category_id));
+        console.log("[ProductRegisterModal] selected category object:", selected);
+    }, [categories, categorySearch, category_id]);
     return (
         <>
             <Dialog open={open} onOpenChange={setOpen}>
@@ -95,62 +114,81 @@ export default function ProductRegisterModal() {
                             </div>
                             <div className="flex-[50%] flex flex-col gap-2">
                                 <Label htmlFor='category-1'>Category</Label>
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Input
-                                            id="category-1"
-                                            readOnly
-                                            value={
-                                                categories.find(c => String(c.id) === String(category_id))?.name || ""
-                                            }
-                                            placeholder="Select category"
-                                            className="cursor-pointer"
-                                        />
-                                    </DropdownMenuTrigger>
-                                      <DropdownMenuContent className="w-64 p-0">
-                                    <div className="p-2">
-                                        <Input
-                                            placeholder="Search category..."
-                                            value={categorySearch}
-                                            onChange={e => setCategorySearch(e.target.value)}
-                                            className="mb-2"
-                                        />
-                                    </div>
-                                    {categoriesLoading && (
-                                        <div className="p-2 text-gray-400">Loading...</div>
-                                    )}
-                                    {categoriesError && (
-                                        <div className="p-2 text-red-500">{categoriesError}</div>
-                                    )}
+                                <div className="flex gap-2">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Input
+                                                id="category-1"
+                                                readOnly
+                                                value={
+                                                    categories.find(c => String(getCategoryId(c)) === String(category_id))?.name
+                                                    || category_name_fallback
+                                                    || ""
+                                                }
+                                                placeholder="Select category"
+                                                className="cursor-pointer"
+                                            />
 
-                                    {!categoriesLoading && !categoriesError && (
-                                        <ScrollArea className="h-40">
+                                        </DropdownMenuTrigger>
+
+                                        <DropdownMenuContent className="w-64 p-0">
                                             <div className="p-2">
-                                                {categories
-                                                    .filter(cat =>
-                                                        cat.name.toLowerCase().includes(categorySearch.toLowerCase())
-                                                    )
-                                                    .map(cat => (
-                                                        <DropdownMenuItem
-                                                            key={cat.id}
-                                                            onClick={() => {
-                                                                setCategoryId(String(cat.id));
-                                                                setCategorySearch("");
-                                                            }}
-                                                        >
-                                                            {cat.name}
-                                                        </DropdownMenuItem>
-                                                    ))}
-                                                {categories.filter(cat =>
-                                                    cat.name.toLowerCase().includes(categorySearch.toLowerCase())
-                                                ).length === 0 && (
-                                                    <div className="p-2 text-gray-400">No categories found.</div>
-                                                )}
+                                                <Input
+                                                    placeholder="Search category..."
+                                                    value={categorySearch}
+                                                    onChange={e => setCategorySearch(e.target.value)}
+                                                    className="mb-2"
+                                                />
+
                                             </div>
-                                        </ScrollArea>
-                                    )}
-                                </DropdownMenuContent>
-                                </DropdownMenu>
+                                            {categoriesLoading && (
+                                                <div className="p-2 text-gray-400">Loading...</div>
+                                            )}
+                                            {categoriesError && (
+                                                <div className="p-2 text-red-500">{categoriesError}</div>
+                                            )}
+
+                                            {!categoriesLoading && !categoriesError && (
+                                                <ScrollArea className="h-40">
+                                                    <div className="p-2">
+                                                        {categories
+                                                            .filter(cat =>
+                                                                (cat?.name || "").toLowerCase().includes(categorySearch.toLowerCase())
+                                                            )
+                                                            .map(cat => {
+                                                                const idString = String(getCategoryId(cat));
+                                                                return (
+                                                                    <DropdownMenuItem
+                                                                        key={idString}
+                                                                        onClick={() => {
+                                                                            setCategoryId(idString);
+                                                                            setCategoryName(""); // clear temporary fallback when user chooses an existing item
+                                                                            setCategorySearch("");
+                                                                        }}
+                                                                    >
+                                                                        {cat.name}
+                                                                    </DropdownMenuItem>
+                                                                );
+                                                            })}
+                                                        {categories.filter(cat =>
+                                                            (cat?.name || "").toLowerCase().includes(categorySearch.toLowerCase())
+                                                        ).length === 0 && (
+                                                                <div className="p-2 text-gray-400">No categories found.</div>
+                                                            )}
+                                                    </div>
+                                                </ScrollArea>
+                                            )}
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        onClick={() => (typeof openModal === "function" ? openModal("addCategory") : null)}
+                                        aria-label="Add Category"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                         <div className='flex flex-row gap-2 my-4'>

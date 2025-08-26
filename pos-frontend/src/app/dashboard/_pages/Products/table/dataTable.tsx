@@ -8,7 +8,7 @@ import {
   useReactTable,
   SortingState,
 } from "@tanstack/react-table"
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 
 import {
   Table,
@@ -18,7 +18,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { useEffect } from "react";
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
@@ -39,18 +38,46 @@ export function DataTable<TData, TValue>({
   const table = useReactTable({
     data,
     columns,
-    state: { sorting },
+    // control pagination externally so react-table doesn't try to reset pageIndex internally
+    state: { sorting, pagination: { pageIndex: page } as any },
     onSortingChange: setSorting,
+    // provide a no-op to avoid internal pagination updates causing setState loops
+    onPaginationChange: (() => {}) as any,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
   })
 
-  // Notify parent of filtered/sorted row count
+  // Notify parent of filtered/sorted row count (deferred to avoid sync updates)
+  const prevCountRef = useRef<number | null>(null)
+  const notifyTimerRef = useRef<number | null>(null)
+  const rowCount = table.getRowModel().rows.length
+
   useEffect(() => {
-    if (onFilteredCountChange) {
-      onFilteredCountChange(table.getRowModel().rows.length)
+    if (!onFilteredCountChange) return
+    if (prevCountRef.current !== rowCount) {
+      prevCountRef.current = rowCount
+
+      // clear any pending timer first
+      if (notifyTimerRef.current !== null) {
+        clearTimeout(notifyTimerRef.current)
+        notifyTimerRef.current = null
+      }
+
+      // defer the callback to avoid triggering synchronous parent state updates
+      notifyTimerRef.current = window.setTimeout(() => {
+        onFilteredCountChange(rowCount)
+        notifyTimerRef.current = null
+      }, 0)
+
+      return () => {
+        if (notifyTimerRef.current !== null) {
+          clearTimeout(notifyTimerRef.current)
+          notifyTimerRef.current = null
+        }
+      }
     }
-  }, [table, onFilteredCountChange])
+    // only re-run when the numeric row count or callback changes
+  }, [rowCount, onFilteredCountChange])
 
   // Paginate the sorted/filtered rows
   const rows = table.getRowModel().rows
