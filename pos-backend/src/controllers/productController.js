@@ -1,3 +1,4 @@
+// ...existing code...
 const { supabase } = require('../config/db');
 
 const cleanInput = (v) =>
@@ -158,19 +159,17 @@ const productController = {
     }
   },
 
-  // Get product by barcode (exact match preferred). Returns 404 when not found.
+  // Get product by barcode (exact match only). Returns 404 when not found.
   getProductByBarcode: async (req, res) => {
     try {
       const rawBarcode = req.params?.barcode;
       const barcode = cleanInput(rawBarcode);
 
-      console.log(`[productController] getProductByBarcode - rawParam: ${JSON.stringify(rawBarcode)}, cleaned: "${barcode}"`);
-
       if (!barcode) {
         return res.status(400).json({ success: false, message: "Barcode is required" });
       }
 
-      // Exact equality
+      // Exact equality only for fast lookups
       const { data: exactData, error: exactError } = await supabase
         .from('Products')
         .select('*')
@@ -178,37 +177,15 @@ const productController = {
         .maybeSingle();
 
       if (exactError) {
-        console.error("[productController] supabase exact query error:", exactError);
+        console.error("supabase exact query error:", exactError);
         throw exactError;
       }
 
       if (exactData) {
-        console.log("[productController] exact match found:", exactData);
         return res.json({ success: true, data: exactData });
       }
 
-      // Defensive: try ilike (debug only) to surface odd DB values (do not rely on this for production matching)
-      console.log("[productController] exact match not found, trying defensive ilike search (debug)");
-      const { data: searchData, error: searchError } = await supabase
-        .from('Products')
-        .select('*')
-        .ilike('barcode', `%${barcode}%`)
-        .order('created_at', { ascending: false });
-
-      if (searchError) {
-        console.error("[productController] supabase search query error:", searchError);
-        throw searchError;
-      }
-
-      console.log(`[productController] defensive search returned ${Array.isArray(searchData) ? searchData.length : 0} rows`);
-
-      if (Array.isArray(searchData) && searchData.length > 0) {
-        console.warn("[productController] returning first search match (defensive) - check database normalization for barcodes", searchData[0]);
-        return res.json({ success: true, data: searchData[0] });
-      }
-
       // Not found
-      console.log(`[productController] product not found for barcode "${barcode}"`);
       return res.status(404).json({ success: false, message: `Product with barcode "${barcode}" not found` });
     } catch (error) {
       console.error("getProductByBarcode error:", error);
