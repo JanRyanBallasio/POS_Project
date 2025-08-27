@@ -1,19 +1,28 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-import { ColumnDef } from "@tanstack/react-table"
-import { ArrowUpDown, Pencil, Trash2 } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
+import { ColumnDef } from "@tanstack/react-table";
+import { ArrowUpDown } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 export type Products = {
-  id: string
-  productName: string
-  barcode: string
-  category: string
-  currentStock: number
-  productPrice: number
-  status: "out of stock" | "low stock" | "in stock"
-}
+  id: string;
+  productName: string;
+  barcode: string;
+  category: string;
+  currentStock: number;
+  productPrice: number;
+  status: "out of stock" | "low stock" | "in stock";
+  original?: any;
+};
+
+const statusConfig: Record<
+  Products["status"],
+  { variant: "default" | "outline" | "secondary" | "destructive"; className: string }
+> = {
+  "in stock": { variant: "default", className: "bg-green-300 text-black" },
+  "low stock": { variant: "secondary", className: "bg-yellow-500 text-black" },
+  "out of stock": { variant: "destructive", className: "bg-red-500 text-white" },
+};
 
 export const columns: ColumnDef<Products>[] = [
   {
@@ -28,7 +37,10 @@ export const columns: ColumnDef<Products>[] = [
       </button>
     ),
     cell: ({ row }) => (
-      <div className="flex items-center font-medium">
+      <div
+        className="flex items-center font-medium max-w-[420px] whitespace-normal break-words leading-tight"
+        title={String(row.getValue("productName"))}
+      >
         {row.getValue("productName")}
       </div>
     ),
@@ -52,11 +64,7 @@ export const columns: ColumnDef<Products>[] = [
         <ArrowUpDown className="ml-1 h-4 w-4" />
       </button>
     ),
-    cell: ({ row }) => (
-      <div className="flex items-center font-medium">
-        {row.getValue("currentStock")}
-      </div>
-    ),
+    cell: ({ row }) => <div className="flex items-center font-medium">{row.getValue("currentStock")}</div>,
   },
   {
     accessorKey: "productPrice",
@@ -67,24 +75,11 @@ export const columns: ColumnDef<Products>[] = [
     header: "Status",
     cell: ({ row }) => {
       const status = row.original.status;
-      let variant: "default" | "outline" | "secondary" | "destructive" = "default";
-      if (status === "out of stock") variant = "destructive";
-      else if (status === "low stock") variant = "secondary";
-      else if (status === "in stock") variant = "default";
+      const cfg = statusConfig[status];
+      const label = status.charAt(0).toUpperCase() + status.slice(1);
       return (
-        <Badge
-          variant={variant}
-          className={
-            status === "in stock"
-              ? "bg-green-300 text-black"
-              : status === "low stock"
-                ? "bg-yellow-500 text-black"
-                : status === "out of stock"
-                  ? "bg-red-500 text-white"
-                  : ""
-          }
-        >
-          {status.replace(/^\w/, c => c.toUpperCase())}
+        <Badge variant={cfg.variant} className={cfg.className}>
+          {label}
         </Badge>
       );
     },
@@ -92,17 +87,10 @@ export const columns: ColumnDef<Products>[] = [
   {
     id: "actions",
     header: () => <div className="text-center font-medium">Actions</div>,
-    cell: () => (
-      <div className="flex gap-5 justify-center">
-        <Button variant="outline" size="icon">
-          <Pencil className="w-4 h-4" />
-        </Button>
-        <Button variant="outline" size="icon">
-          <Trash2 className="w-4 h-4" />
-        </Button>
-      </div>
-    ),
+    // leave actions cell empty here — table parent can provide the real handlers to avoid duplicate button code and reduce bundle
+    cell: () => <div className="flex gap-5 justify-center" aria-hidden />,
     enableSorting: false,
     enableHiding: false,
   },
-]
+];
+//

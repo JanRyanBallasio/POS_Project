@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 export const useBarcodeScan = (onScan: (barcode: string) => void) => {
   const [barcodeInput, setBarcodeInput] = useState("");
@@ -41,11 +41,22 @@ export const useBarcodeScan = (onScan: (barcode: string) => void) => {
     }, 100);
   };
 
+  const reset = useCallback(() => {
+    setBarcodeInput("");
+    try {
+      if (inputRef.current) {
+        inputRef.current.value = "";
+        inputRef.current.focus();
+      }
+    } catch {}
+  }, []);
+
   return {
     barcodeInput,
     inputRef,
     handleBarcodeChange,
     handleKeyPress,
     refocusScanner,
+    reset,
   };
 };

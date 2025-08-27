@@ -2,6 +2,7 @@ module.exports = [
 "[project]/src/contexts/cart-context.tsx [app-ssr] (ecmascript)", ((__turbopack_context__) => {
 "use strict";
 
+// ...existing code...
 __turbopack_context__.s([
     "CartProvider",
     ()=>CartProvider,
@@ -13,6 +14,8 @@ __turbopack_context__.s([
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/route-modules/app-page/vendored/ssr/react-jsx-dev-runtime.js [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/route-modules/app-page/vendored/ssr/react.js [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/hooks/products/useProductApi.ts [app-ssr] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$productRegister$2d$context$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/contexts/productRegister-context.tsx [app-ssr] (ecmascript)");
+;
 ;
 ;
 ;
@@ -22,25 +25,29 @@ const CartProvider = ({ children })=>{
     const [scanError, setScanError] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(null);
     const [isScanning, setIsScanning] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(false);
     const [scannerInputRef, setScannerInputRef] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(null);
-    const clearCart = ()=>setCart([]);
-    const setScannerRef = (ref)=>{
+    const { setBarcode: setContextBarcode, openModal, setOpen: setProductModalOpen } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$productRegister$2d$context$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useProductModal"])();
+    const clearCart = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(()=>setCart([]), []);
+    const setScannerRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])((ref)=>{
         setScannerInputRef(ref);
-    };
-    const refocusScanner = ()=>{
+    }, []);
+    const refocusScanner = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(()=>{
         setTimeout(()=>{
-            if (scannerInputRef?.current) {
-                scannerInputRef.current.focus();
-            }
+            try {
+                if (scannerInputRef?.current) {
+                    scannerInputRef.current.focus();
+                }
+            } catch  {}
         }, 100);
-    };
-    const updateCartItemQuantity = (id, quantity)=>{
+    }, [
+        scannerInputRef
+    ]);
+    const updateCartItemQuantity = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])((id, quantity)=>{
         setCart((prevCart)=>prevCart.map((item)=>item.id === id ? {
                     ...item,
                     quantity
                 } : item));
-    };
-    // new: update price for a cart item (updates only the cart's product.price)
-    const updateCartItemPrice = (id, price)=>{
+    }, []);
+    const updateCartItemPrice = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])((id, price)=>{
         setCart((prevCart)=>prevCart.map((item)=>item.id === id ? {
                     ...item,
                     product: {
@@ -48,12 +55,12 @@ const CartProvider = ({ children })=>{
                         price
                     }
                 } : item));
-    };
-    // new: remove item from cart by id
-    const deleteCartItem = (id)=>{
+    }, []);
+    const deleteCartItem = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])((id)=>{
         setCart((prevCart)=>prevCart.filter((item)=>item.id !== id));
-    };
-    const scanAndAddToCart = async (barcode)=>{
+    }, []);
+    const scanAndAddToCart = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(async (barcode)=>{
+        if (!barcode) return;
         try {
             setIsScanning(true);
             setScanError(null);
@@ -79,6 +86,15 @@ const CartProvider = ({ children })=>{
                     }
                 });
             } else {
+                // Product not found: open add-product modal and prefill barcode
+                if (typeof setContextBarcode === "function") {
+                    setContextBarcode(barcode);
+                }
+                if (typeof openModal === "function") {
+                    openModal("addProduct");
+                } else if (typeof setProductModalOpen === "function") {
+                    setProductModalOpen(true);
+                }
                 setScanError(`Product not found: ${barcode}`);
             }
         } catch (error) {
@@ -86,16 +102,122 @@ const CartProvider = ({ children })=>{
             setScanError(errorMessage);
         } finally{
             setIsScanning(false);
+            // refocus scanner for the next scan
+            refocusScanner();
         }
-    };
+    }, [
+        openModal,
+        setProductModalOpen,
+        setContextBarcode,
+        refocusScanner
+    ]);
+    // Listen for product:added events so newly created products can be added immediately
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
+        const onProductAdded = (e)=>{
+            const detail = e?.detail;
+            if (!detail) return;
+            const addedProduct = detail.product;
+            const barcode = detail.barcode;
+            // If product object was returned by the modal, add it directly to cart (no backend round-trip)
+            if (addedProduct) {
+                setCart((prevCart)=>{
+                    const existing = prevCart.find((item)=>item.product.barcode === addedProduct.barcode);
+                    if (existing) {
+                        return prevCart.map((item)=>item.product.barcode === addedProduct.barcode ? {
+                                ...item,
+                                quantity: item.quantity + 1
+                            } : item);
+                    } else {
+                        const cartItem = {
+                            product: addedProduct,
+                            quantity: 1,
+                            id: Date.now().toString()
+                        };
+                        return [
+                            ...prevCart,
+                            cartItem
+                        ];
+                    }
+                });
+            } else if (barcode) {
+                // if only barcode was provided, attempt to fetch product and add (defensive)
+                (async ()=>{
+                    try {
+                        const product = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["productApi"].getByBarcode(barcode);
+                        if (product) {
+                            setCart((prevCart)=>{
+                                const existing = prevCart.find((item)=>item.product.barcode === product.barcode);
+                                if (existing) {
+                                    return prevCart.map((item)=>item.product.barcode === product.barcode ? {
+                                            ...item,
+                                            quantity: item.quantity + 1
+                                        } : item);
+                                } else {
+                                    const cartItem = {
+                                        product,
+                                        quantity: 1,
+                                        id: Date.now().toString()
+                                    };
+                                    return [
+                                        ...prevCart,
+                                        cartItem
+                                    ];
+                                }
+                            });
+                        }
+                    } catch  {
+                    // ignore fetch errors here; modal likely handled creation
+                    }
+                })();
+            }
+            // Clear the hidden scanner input value so the next hardware scan starts fresh,
+            // dispatch an 'input' event so the barcode hook's React state stays in sync, then focus.
+            try {
+                const el = scannerInputRef?.current;
+                if (el) {
+                    try {
+                        el.value = "";
+                    } catch  {}
+                    // Sync any listeners (handleBarcodeChange) with an input event
+                    el.dispatchEvent(new Event("input", {
+                        bubbles: true
+                    }));
+                    // Focus after a short delay to ensure scanner writes into the empty field
+                    setTimeout(()=>{
+                        try {
+                            el.focus();
+                            // defensive caret reset
+                            if (typeof el.setSelectionRange === "function") {
+                                el.setSelectionRange(0, 0);
+                            }
+                        } catch  {}
+                    }, 50);
+                }
+            } catch  {}
+        };
+        window.addEventListener("product:added", onProductAdded);
+        return ()=>window.removeEventListener("product:added", onProductAdded);
+    }, [
+        scannerInputRef
+    ]);
     const cartTotal = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useMemo"])(()=>{
-        return cart.reduce((total, item)=>{
-            return total + item.product.price * item.quantity;
-        }, 0);
+        return cart.reduce((total, item)=>total + item.product.price * item.quantity, 0);
     }, [
         cart
     ]);
-    const value = {
+    const value = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useMemo"])(()=>({
+            cart,
+            cartTotal,
+            scanError,
+            isScanning,
+            scanAndAddToCart,
+            refocusScanner,
+            setScannerRef,
+            updateCartItemQuantity,
+            updateCartItemPrice,
+            deleteCartItem,
+            clearCart
+        }), [
         cart,
         cartTotal,
         scanError,
@@ -107,13 +229,13 @@ const CartProvider = ({ children })=>{
         updateCartItemPrice,
         deleteCartItem,
         clearCart
-    };
+    ]);
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(CartContext.Provider, {
         value: value,
         children: children
     }, void 0, false, {
         fileName: "[project]/src/contexts/cart-context.tsx",
-        lineNumber: 135,
+        lineNumber: 250,
         columnNumber: 10
     }, ("TURBOPACK compile-time value", void 0));
 };
@@ -1702,12 +1824,22 @@ const useBarcodeScan = (onScan)=>{
             }
         }, 100);
     };
+    const reset = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(()=>{
+        setBarcodeInput("");
+        try {
+            if (inputRef.current) {
+                inputRef.current.value = "";
+                inputRef.current.focus();
+            }
+        } catch  {}
+    }, []);
     return {
         barcodeInput,
         inputRef,
         handleBarcodeChange,
         handleKeyPress,
-        refocusScanner
+        refocusScanner,
+        reset
     };
 };
 }),
@@ -2213,9 +2345,66 @@ __turbopack_context__.s([
 ]);
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/route-modules/app-page/vendored/ssr/react-jsx-dev-runtime.js [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/input.tsx [app-ssr] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/route-modules/app-page/vendored/ssr/react.js [app-ssr] (ecmascript)");
+;
 ;
 ;
 function BarcodeScannerInput({ inputRef, barcodeInput, handleBarcodeChange, handleKeyPress, disabled = false }) {
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
+        const onProductAdded = (e)=>{
+            const detail = e?.detail;
+            // if sender asked to prevent focusing (e.g., product added from Products tab), do nothing
+            if (detail?.preventScan) return;
+            const el = inputRef?.current;
+            if (!el) return;
+            try {
+                el.focus();
+            } catch  {}
+            // clear DOM value so next hardware scan starts fresh
+            try {
+                el.value = "";
+            } catch  {}
+            const syntheticEvent = {
+                target: el
+            };
+            try {
+                handleBarcodeChange(syntheticEvent);
+            } catch  {
+                el.dispatchEvent(new Event("input", {
+                    bubbles: true
+                }));
+            }
+        };
+        const onFocusRequest = ()=>{
+            const el = inputRef?.current;
+            if (!el) return;
+            try {
+                el.focus();
+            } catch  {}
+            try {
+                el.value = "";
+            } catch  {}
+            const syntheticEvent = {
+                target: el
+            };
+            try {
+                handleBarcodeChange(syntheticEvent);
+            } catch  {
+                el.dispatchEvent(new Event("input", {
+                    bubbles: true
+                }));
+            }
+        };
+        window.addEventListener("product:added", onProductAdded);
+        window.addEventListener("focusBarcodeScanner", onFocusRequest);
+        return ()=>{
+            window.removeEventListener("product:added", onProductAdded);
+            window.removeEventListener("focusBarcodeScanner", onFocusRequest);
+        };
+    }, [
+        inputRef,
+        handleBarcodeChange
+    ]);
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
         ref: inputRef,
         className: "opacity-0 absolute -top-1000",
@@ -2226,7 +2415,7 @@ function BarcodeScannerInput({ inputRef, barcodeInput, handleBarcodeChange, hand
         disabled: disabled
     }, void 0, false, {
         fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/BarcodeScannerInput.tsx",
-        lineNumber: 20,
+        lineNumber: 72,
         columnNumber: 5
     }, this);
 }
@@ -2489,6 +2678,14 @@ var __turbopack_async_dependencies__ = __turbopack_handle_async_dependencies__([
 ;
 function MainDashboard() {
     const [step, setStep] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(1);
+    // ensure scanner input in POS immediately receives focus when this page mounts
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
+        if ("TURBOPACK compile-time truthy", 1) return;
+        //TURBOPACK unreachable
+        ;
+        const focusScanner = undefined;
+        const t = undefined;
+    }, []);
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$cart$2d$context$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CartProvider"], {
         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
             className: "flex flex-col w-full h-full py-4 px-4",
@@ -2501,12 +2698,12 @@ function MainDashboard() {
                             step: step
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/_pages/POS/pos-screen.tsx",
-                            lineNumber: 15,
+                            lineNumber: 38,
                             columnNumber: 13
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/dashboard/_pages/POS/pos-screen.tsx",
-                        lineNumber: 14,
+                        lineNumber: 37,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2516,28 +2713,28 @@ function MainDashboard() {
                             setStep: setStep
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/_pages/POS/pos-screen.tsx",
-                            lineNumber: 18,
+                            lineNumber: 41,
                             columnNumber: 13
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/dashboard/_pages/POS/pos-screen.tsx",
-                        lineNumber: 17,
+                        lineNumber: 40,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/dashboard/_pages/POS/pos-screen.tsx",
-                lineNumber: 13,
+                lineNumber: 36,
                 columnNumber: 9
             }, this)
         }, void 0, false, {
             fileName: "[project]/src/app/dashboard/_pages/POS/pos-screen.tsx",
-            lineNumber: 12,
+            lineNumber: 35,
             columnNumber: 7
         }, this)
     }, void 0, false, {
         fileName: "[project]/src/app/dashboard/_pages/POS/pos-screen.tsx",
-        lineNumber: 11,
+        lineNumber: 34,
         columnNumber: 5
     }, this);
 }
@@ -4870,322 +5067,6 @@ function Index({ onProductDeleted }) {
     }, this);
 }
 }),
-"[project]/src/hooks/products/useAddCategory.ts [app-ssr] (ecmascript)", ((__turbopack_context__) => {
-"use strict";
-
-// ...existing code...
-__turbopack_context__.s([
-    "default",
-    ()=>__TURBOPACK__default__export__,
-    "useAddCategory",
-    ()=>useAddCategory
-]);
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/route-modules/app-page/vendored/ssr/react.js [app-ssr] (ecmascript)");
-;
-const useAddCategory = ()=>{
-    const [loading, setLoading] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(false);
-    const [error, setError] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(null);
-    const addCategory = async (payload, options)=>{
-        setLoading(true);
-        setError(null);
-        // Accept either NEXT_PUBLIC_API_URL or NEXT_PUBLIC_backend_api_url
-        // and normalize the value:
-        // - remove trailing slashes
-        // - remove any trailing '/api'
-        // - ensure protocol (defaults to http:// if missing host only)
-        const raw = process.env.NEXT_PUBLIC_API_URL ?? ("TURBOPACK compile-time value", "http://localhost:5000/api") ?? "";
-        let envBase = String(raw).trim();
-        console.log("useAddCategory: raw env value:", raw); // <-- added
-        // remove surrounding quotes if any
-        envBase = envBase.replace(/^["']|["']$/g, "");
-        // remove trailing slashes
-        envBase = envBase.replace(/\/+$/g, "");
-        // remove trailing '/api' if present
-        envBase = envBase.replace(/\/api$/i, "");
-        // if empty, fall back to relative API path
-        if (!envBase) {
-            envBase = "";
-        } else if (!/^https?:\/\//i.test(envBase)) {
-            // If user provided "localhost:5000" or ":5000", normalize to http://localhost:5000
-            if (envBase.startsWith(":")) {
-                envBase = `http://localhost${envBase}`;
-            } else {
-                envBase = `http://${envBase}`;
-            }
-        }
-        const url = envBase ? `${envBase}/api/categories` : "/api/categories";
-        console.log("useAddCategory: POST url:", url, "payload:", payload); // <-- added
-        try {
-            const res = await fetch(url, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(payload)
-            });
-            if (!res.ok) {
-                let bodyText = "";
-                try {
-                    // try parse json; fall back to text
-                    const cloned = res.clone();
-                    bodyText = await cloned.text();
-                } catch (parseErr) {
-                    bodyText = "<could not read response body>";
-                }
-                console.error("useAddCategory: non-ok response", {
-                    url,
-                    status: res.status,
-                    body: bodyText
-                }); // <-- added
-                let msg = `Request failed with status ${res.status}`;
-                try {
-                    const json = await res.json();
-                    msg = json?.message ?? json?.error ?? json?.data?.message ?? msg;
-                } catch  {
-                //
-                }
-                throw new Error(msg);
-            }
-            const json = await res.json();
-            console.log("useAddCategory: success response json:", json); // <-- added
-            const created = json?.data ?? json;
-            options?.onSuccess?.(created);
-            setLoading(false);
-            return created;
-        } catch (err) {
-            console.error("useAddCategory: caught error", err); // <-- added
-            const message = err instanceof Error ? err.message : "Failed to create category";
-            setError(message);
-            setLoading(false);
-            throw err;
-        }
-    };
-    return {
-        addCategory,
-        loading,
-        error
-    };
-};
-const __TURBOPACK__default__export__ = useAddCategory;
- // ...existing code...
-}),
-"[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx [app-ssr] (ecmascript)", ((__turbopack_context__) => {
-"use strict";
-
-__turbopack_context__.s([
-    "default",
-    ()=>AddCategoryModal
-]);
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/route-modules/app-page/vendored/ssr/react-jsx-dev-runtime.js [app-ssr] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/route-modules/app-page/vendored/ssr/react.js [app-ssr] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/sonner/dist/index.mjs [app-ssr] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$categories$2f$useCategoryApi$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/hooks/categories/useCategoryApi.ts [app-ssr] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__ = __turbopack_context__.i("[project]/node_modules/swr/dist/_internal/config-context-client-BoS53ST9.mjs [app-ssr] (ecmascript) <export j as mutate>");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/button.tsx [app-ssr] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/dialog.tsx [app-ssr] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/input.tsx [app-ssr] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/label.tsx [app-ssr] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$productRegister$2d$context$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/contexts/productRegister-context.tsx [app-ssr] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useAddCategory$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/hooks/products/useAddCategory.ts [app-ssr] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$stores$2f$productFormStore$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/stores/productFormStore.ts [app-ssr] (ecmascript)");
-'use client';
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
-function AddCategoryModal() {
-    const { isOpen, closeModal } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$productRegister$2d$context$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useProductModal"])();
-    const { addCategory, loading, error } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useAddCategory$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])();
-    const setCategoryId = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$stores$2f$productFormStore$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useProductFormStore"])((s)=>s.setCategoryId);
-    const setCategoryName = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$stores$2f$productFormStore$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useProductFormStore"])((s)=>s.setCategoryName);
-    const [name, setName] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])("");
-    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
-        if (!isOpen("addCategory")) {
-            setName("");
-        }
-    }, [
-        isOpen
-    ]);
-    const handleSubmit = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(async (e)=>{
-        e.preventDefault();
-        const trimmed = name.trim();
-        if (!trimmed) return;
-        try {
-            await addCategory({
-                name: trimmed
-            }, {
-                onSuccess: (createdRaw)=>{
-                    const created = createdRaw?.data ?? createdRaw;
-                    if (!created) return;
-                    // optimistic insert then revalidate
-                    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__["mutate"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$categories$2f$useCategoryApi$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CATEGORIES_KEY"], (current = [])=>{
-                        const exists = current.some((c)=>String(c?.id) === String(created?.id));
-                        return exists ? current : [
-                            created,
-                            ...current
-                        ];
-                    }, false);
-                    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__["mutate"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$categories$2f$useCategoryApi$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CATEGORIES_KEY"]);
-                    const createdId = created?.id ?? created?._id;
-                    const createdName = created?.name ?? "";
-                    if (createdId != null) {
-                        setCategoryId(String(createdId));
-                        setCategoryName(createdName);
-                    } else {
-                        (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["toast"])("Category added", {
-                            description: "Added but ID was not returned."
-                        });
-                    }
-                    closeModal("addCategory");
-                    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["toast"])("Category added", {
-                        description: createdName || "New category created."
-                    });
-                }
-            });
-        } catch (err) {
-            (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["toast"])("Failed to add category", {
-                description: err?.message ?? "An error occurred."
-            });
-        }
-    }, [
-        name,
-        addCategory,
-        setCategoryId,
-        setCategoryName,
-        closeModal
-    ]);
-    return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Dialog"], {
-        open: isOpen("addCategory"),
-        onOpenChange: (v)=>{
-            if (!v) closeModal("addCategory");
-        },
-        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DialogContent"], {
-            className: "sm:max-w-[420px]",
-            children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("form", {
-                onSubmit: handleSubmit,
-                children: [
-                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DialogHeader"], {
-                        children: [
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DialogTitle"], {
-                                children: "Add Category"
-                            }, void 0, false, {
-                                fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-                                lineNumber: 87,
-                                columnNumber: 13
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DialogDescription"], {
-                                children: "Fill in the details below to add a new category."
-                            }, void 0, false, {
-                                fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-                                lineNumber: 88,
-                                columnNumber: 13
-                            }, this)
-                        ]
-                    }, void 0, true, {
-                        fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-                        lineNumber: 86,
-                        columnNumber: 11
-                    }, this),
-                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        className: "grid gap-4",
-                        children: [
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                className: "grid gap-2",
-                                children: [
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Label"], {
-                                        htmlFor: "category-name",
-                                        children: "Name"
-                                    }, void 0, false, {
-                                        fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-                                        lineNumber: 93,
-                                        columnNumber: 15
-                                    }, this),
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
-                                        id: "category-name",
-                                        value: name,
-                                        onChange: (e)=>setName(e.target.value),
-                                        placeholder: "Category name",
-                                        required: true,
-                                        autoFocus: true
-                                    }, void 0, false, {
-                                        fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-                                        lineNumber: 94,
-                                        columnNumber: 15
-                                    }, this)
-                                ]
-                            }, void 0, true, {
-                                fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-                                lineNumber: 92,
-                                columnNumber: 13
-                            }, this),
-                            error && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                className: "text-sm text-red-600",
-                                children: error
-                            }, void 0, false, {
-                                fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-                                lineNumber: 104,
-                                columnNumber: 23
-                            }, this)
-                        ]
-                    }, void 0, true, {
-                        fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-                        lineNumber: 91,
-                        columnNumber: 11
-                    }, this),
-                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DialogFooter"], {
-                        className: "mt-5",
-                        children: [
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
-                                variant: "outline",
-                                type: "button",
-                                onClick: ()=>closeModal("addCategory"),
-                                children: "Cancel"
-                            }, void 0, false, {
-                                fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-                                lineNumber: 108,
-                                columnNumber: 13
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
-                                type: "submit",
-                                disabled: loading,
-                                children: loading ? "Saving..." : "Save"
-                            }, void 0, false, {
-                                fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-                                lineNumber: 111,
-                                columnNumber: 13
-                            }, this)
-                        ]
-                    }, void 0, true, {
-                        fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-                        lineNumber: 107,
-                        columnNumber: 11
-                    }, this)
-                ]
-            }, void 0, true, {
-                fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-                lineNumber: 85,
-                columnNumber: 9
-            }, this)
-        }, void 0, false, {
-            fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-            lineNumber: 84,
-            columnNumber: 7
-        }, this)
-    }, void 0, false, {
-        fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-        lineNumber: 83,
-        columnNumber: 5
-    }, this);
-}
-}),
 "[project]/src/app/dashboard/_pages/Products/productsScreen.tsx [app-ssr] (ecmascript)", ((__turbopack_context__) => {
 "use strict";
 
@@ -6956,4 +6837,4 @@ __turbopack_async_result__();
 } catch(e) { __turbopack_async_result__(e); } }, false);}),
 ];
 
-//# sourceMappingURL=%5Broot-of-the-server%5D__2f741d00._.js.map
+//# sourceMappingURL=%5Broot-of-the-server%5D__c98d3703._.js.map

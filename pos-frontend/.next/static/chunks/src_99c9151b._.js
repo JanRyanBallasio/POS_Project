@@ -2,6 +2,7 @@
 "[project]/src/contexts/cart-context.tsx [app-client] (ecmascript)", ((__turbopack_context__) => {
 "use strict";
 
+// ...existing code...
 __turbopack_context__.s([
     "CartProvider",
     ()=>CartProvider,
@@ -13,8 +14,10 @@ __turbopack_context__.s([
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react/jsx-dev-runtime.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react/index.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/hooks/products/useProductApi.ts [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$productRegister$2d$context$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/contexts/productRegister-context.tsx [app-client] (ecmascript)");
 ;
 var _s = __turbopack_context__.k.signature(), _s1 = __turbopack_context__.k.signature(), _s2 = __turbopack_context__.k.signature();
+;
 ;
 ;
 const CartContext = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["createContext"])(undefined);
@@ -25,84 +28,262 @@ const CartProvider = (param)=>{
     const [scanError, setScanError] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
     const [isScanning, setIsScanning] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
     const [scannerInputRef, setScannerInputRef] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
-    const clearCart = ()=>setCart([]);
-    const setScannerRef = (ref)=>{
-        setScannerInputRef(ref);
-    };
-    const refocusScanner = ()=>{
-        setTimeout(()=>{
-            if (scannerInputRef === null || scannerInputRef === void 0 ? void 0 : scannerInputRef.current) {
-                scannerInputRef.current.focus();
-            }
-        }, 100);
-    };
-    const updateCartItemQuantity = (id, quantity)=>{
-        setCart((prevCart)=>prevCart.map((item)=>item.id === id ? {
-                    ...item,
-                    quantity
-                } : item));
-    };
-    // new: update price for a cart item (updates only the cart's product.price)
-    const updateCartItemPrice = (id, price)=>{
-        setCart((prevCart)=>prevCart.map((item)=>item.id === id ? {
-                    ...item,
-                    product: {
-                        ...item.product,
-                        price
-                    }
-                } : item));
-    };
-    // new: remove item from cart by id
-    const deleteCartItem = (id)=>{
-        setCart((prevCart)=>prevCart.filter((item)=>item.id !== id));
-    };
-    const scanAndAddToCart = async (barcode)=>{
-        try {
-            setIsScanning(true);
-            setScanError(null);
-            const product = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["productApi"].getByBarcode(barcode);
-            if (product) {
-                setCart((prevCart)=>{
-                    const existing = prevCart.find((item)=>item.product.barcode === product.barcode);
-                    if (existing) {
-                        return prevCart.map((item)=>item.product.barcode === product.barcode ? {
-                                ...item,
-                                quantity: item.quantity + 1
-                            } : item);
-                    } else {
-                        const cartItem = {
-                            product,
-                            quantity: 1,
-                            id: Date.now().toString()
-                        };
-                        return [
-                            ...prevCart,
-                            cartItem
-                        ];
-                    }
-                });
-            } else {
-                setScanError("Product not found: ".concat(barcode));
-            }
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : "Error scanning barcode";
-            setScanError(errorMessage);
-        } finally{
-            setIsScanning(false);
+    const { setBarcode: setContextBarcode, openModal, setOpen: setProductModalOpen } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$productRegister$2d$context$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useProductModal"])();
+    const clearCart = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
+        "CartProvider.useCallback[clearCart]": ()=>setCart([])
+    }["CartProvider.useCallback[clearCart]"], []);
+    const setScannerRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
+        "CartProvider.useCallback[setScannerRef]": (ref)=>{
+            setScannerInputRef(ref);
         }
-    };
+    }["CartProvider.useCallback[setScannerRef]"], []);
+    const refocusScanner = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
+        "CartProvider.useCallback[refocusScanner]": ()=>{
+            setTimeout({
+                "CartProvider.useCallback[refocusScanner]": ()=>{
+                    try {
+                        if (scannerInputRef === null || scannerInputRef === void 0 ? void 0 : scannerInputRef.current) {
+                            scannerInputRef.current.focus();
+                        }
+                    } catch (e) {}
+                }
+            }["CartProvider.useCallback[refocusScanner]"], 100);
+        }
+    }["CartProvider.useCallback[refocusScanner]"], [
+        scannerInputRef
+    ]);
+    const updateCartItemQuantity = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
+        "CartProvider.useCallback[updateCartItemQuantity]": (id, quantity)=>{
+            setCart({
+                "CartProvider.useCallback[updateCartItemQuantity]": (prevCart)=>prevCart.map({
+                        "CartProvider.useCallback[updateCartItemQuantity]": (item)=>item.id === id ? {
+                                ...item,
+                                quantity
+                            } : item
+                    }["CartProvider.useCallback[updateCartItemQuantity]"])
+            }["CartProvider.useCallback[updateCartItemQuantity]"]);
+        }
+    }["CartProvider.useCallback[updateCartItemQuantity]"], []);
+    const updateCartItemPrice = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
+        "CartProvider.useCallback[updateCartItemPrice]": (id, price)=>{
+            setCart({
+                "CartProvider.useCallback[updateCartItemPrice]": (prevCart)=>prevCart.map({
+                        "CartProvider.useCallback[updateCartItemPrice]": (item)=>item.id === id ? {
+                                ...item,
+                                product: {
+                                    ...item.product,
+                                    price
+                                }
+                            } : item
+                    }["CartProvider.useCallback[updateCartItemPrice]"])
+            }["CartProvider.useCallback[updateCartItemPrice]"]);
+        }
+    }["CartProvider.useCallback[updateCartItemPrice]"], []);
+    const deleteCartItem = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
+        "CartProvider.useCallback[deleteCartItem]": (id)=>{
+            setCart({
+                "CartProvider.useCallback[deleteCartItem]": (prevCart)=>prevCart.filter({
+                        "CartProvider.useCallback[deleteCartItem]": (item)=>item.id !== id
+                    }["CartProvider.useCallback[deleteCartItem]"])
+            }["CartProvider.useCallback[deleteCartItem]"]);
+        }
+    }["CartProvider.useCallback[deleteCartItem]"], []);
+    const scanAndAddToCart = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
+        "CartProvider.useCallback[scanAndAddToCart]": async (barcode)=>{
+            if (!barcode) return;
+            try {
+                setIsScanning(true);
+                setScanError(null);
+                const product = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["productApi"].getByBarcode(barcode);
+                if (product) {
+                    setCart({
+                        "CartProvider.useCallback[scanAndAddToCart]": (prevCart)=>{
+                            const existing = prevCart.find({
+                                "CartProvider.useCallback[scanAndAddToCart].existing": (item)=>item.product.barcode === product.barcode
+                            }["CartProvider.useCallback[scanAndAddToCart].existing"]);
+                            if (existing) {
+                                return prevCart.map({
+                                    "CartProvider.useCallback[scanAndAddToCart]": (item)=>item.product.barcode === product.barcode ? {
+                                            ...item,
+                                            quantity: item.quantity + 1
+                                        } : item
+                                }["CartProvider.useCallback[scanAndAddToCart]"]);
+                            } else {
+                                const cartItem = {
+                                    product,
+                                    quantity: 1,
+                                    id: Date.now().toString()
+                                };
+                                return [
+                                    ...prevCart,
+                                    cartItem
+                                ];
+                            }
+                        }
+                    }["CartProvider.useCallback[scanAndAddToCart]"]);
+                } else {
+                    // Product not found: open add-product modal and prefill barcode
+                    if (typeof setContextBarcode === "function") {
+                        setContextBarcode(barcode);
+                    }
+                    if (typeof openModal === "function") {
+                        openModal("addProduct");
+                    } else if (typeof setProductModalOpen === "function") {
+                        setProductModalOpen(true);
+                    }
+                    setScanError("Product not found: ".concat(barcode));
+                }
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : "Error scanning barcode";
+                setScanError(errorMessage);
+            } finally{
+                setIsScanning(false);
+                // refocus scanner for the next scan
+                refocusScanner();
+            }
+        }
+    }["CartProvider.useCallback[scanAndAddToCart]"], [
+        openModal,
+        setProductModalOpen,
+        setContextBarcode,
+        refocusScanner
+    ]);
+    // Listen for product:added events so newly created products can be added immediately
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
+        "CartProvider.useEffect": ()=>{
+            const onProductAdded = {
+                "CartProvider.useEffect.onProductAdded": (e)=>{
+                    var _this;
+                    const detail = (_this = e) === null || _this === void 0 ? void 0 : _this.detail;
+                    if (!detail) return;
+                    const addedProduct = detail.product;
+                    const barcode = detail.barcode;
+                    // If product object was returned by the modal, add it directly to cart (no backend round-trip)
+                    if (addedProduct) {
+                        setCart({
+                            "CartProvider.useEffect.onProductAdded": (prevCart)=>{
+                                const existing = prevCart.find({
+                                    "CartProvider.useEffect.onProductAdded.existing": (item)=>item.product.barcode === addedProduct.barcode
+                                }["CartProvider.useEffect.onProductAdded.existing"]);
+                                if (existing) {
+                                    return prevCart.map({
+                                        "CartProvider.useEffect.onProductAdded": (item)=>item.product.barcode === addedProduct.barcode ? {
+                                                ...item,
+                                                quantity: item.quantity + 1
+                                            } : item
+                                    }["CartProvider.useEffect.onProductAdded"]);
+                                } else {
+                                    const cartItem = {
+                                        product: addedProduct,
+                                        quantity: 1,
+                                        id: Date.now().toString()
+                                    };
+                                    return [
+                                        ...prevCart,
+                                        cartItem
+                                    ];
+                                }
+                            }
+                        }["CartProvider.useEffect.onProductAdded"]);
+                    } else if (barcode) {
+                        // if only barcode was provided, attempt to fetch product and add (defensive)
+                        ({
+                            "CartProvider.useEffect.onProductAdded": async ()=>{
+                                try {
+                                    const product = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["productApi"].getByBarcode(barcode);
+                                    if (product) {
+                                        setCart({
+                                            "CartProvider.useEffect.onProductAdded": (prevCart)=>{
+                                                const existing = prevCart.find({
+                                                    "CartProvider.useEffect.onProductAdded.existing": (item)=>item.product.barcode === product.barcode
+                                                }["CartProvider.useEffect.onProductAdded.existing"]);
+                                                if (existing) {
+                                                    return prevCart.map({
+                                                        "CartProvider.useEffect.onProductAdded": (item)=>item.product.barcode === product.barcode ? {
+                                                                ...item,
+                                                                quantity: item.quantity + 1
+                                                            } : item
+                                                    }["CartProvider.useEffect.onProductAdded"]);
+                                                } else {
+                                                    const cartItem = {
+                                                        product,
+                                                        quantity: 1,
+                                                        id: Date.now().toString()
+                                                    };
+                                                    return [
+                                                        ...prevCart,
+                                                        cartItem
+                                                    ];
+                                                }
+                                            }
+                                        }["CartProvider.useEffect.onProductAdded"]);
+                                    }
+                                } catch (e) {
+                                // ignore fetch errors here; modal likely handled creation
+                                }
+                            }
+                        })["CartProvider.useEffect.onProductAdded"]();
+                    }
+                    // Clear the hidden scanner input value so the next hardware scan starts fresh,
+                    // dispatch an 'input' event so the barcode hook's React state stays in sync, then focus.
+                    try {
+                        const el = scannerInputRef === null || scannerInputRef === void 0 ? void 0 : scannerInputRef.current;
+                        if (el) {
+                            try {
+                                el.value = "";
+                            } catch (e) {}
+                            // Sync any listeners (handleBarcodeChange) with an input event
+                            el.dispatchEvent(new Event("input", {
+                                bubbles: true
+                            }));
+                            // Focus after a short delay to ensure scanner writes into the empty field
+                            setTimeout({
+                                "CartProvider.useEffect.onProductAdded": ()=>{
+                                    try {
+                                        el.focus();
+                                        // defensive caret reset
+                                        if (typeof el.setSelectionRange === "function") {
+                                            el.setSelectionRange(0, 0);
+                                        }
+                                    } catch (e) {}
+                                }
+                            }["CartProvider.useEffect.onProductAdded"], 50);
+                        }
+                    } catch (e) {}
+                }
+            }["CartProvider.useEffect.onProductAdded"];
+            window.addEventListener("product:added", onProductAdded);
+            return ({
+                "CartProvider.useEffect": ()=>window.removeEventListener("product:added", onProductAdded)
+            })["CartProvider.useEffect"];
+        }
+    }["CartProvider.useEffect"], [
+        scannerInputRef
+    ]);
     const cartTotal = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
         "CartProvider.useMemo[cartTotal]": ()=>{
             return cart.reduce({
-                "CartProvider.useMemo[cartTotal]": (total, item)=>{
-                    return total + item.product.price * item.quantity;
-                }
+                "CartProvider.useMemo[cartTotal]": (total, item)=>total + item.product.price * item.quantity
             }["CartProvider.useMemo[cartTotal]"], 0);
         }
     }["CartProvider.useMemo[cartTotal]"], [
         cart
     ]);
-    const value = {
+    const value = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
+        "CartProvider.useMemo[value]": ()=>({
+                cart,
+                cartTotal,
+                scanError,
+                isScanning,
+                scanAndAddToCart,
+                refocusScanner,
+                setScannerRef,
+                updateCartItemQuantity,
+                updateCartItemPrice,
+                deleteCartItem,
+                clearCart
+            })
+    }["CartProvider.useMemo[value]"], [
         cart,
         cartTotal,
         scanError,
@@ -114,17 +295,21 @@ const CartProvider = (param)=>{
         updateCartItemPrice,
         deleteCartItem,
         clearCart
-    };
+    ]);
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(CartContext.Provider, {
         value: value,
         children: children
     }, void 0, false, {
         fileName: "[project]/src/contexts/cart-context.tsx",
-        lineNumber: 135,
+        lineNumber: 250,
         columnNumber: 10
     }, ("TURBOPACK compile-time value", void 0));
 };
-_s(CartProvider, "4kGn47vWITJHnYxB/32D9q0sXwY=");
+_s(CartProvider, "lhr489ZW2ZtRsez1wWY5QkNdCZo=", false, function() {
+    return [
+        __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$productRegister$2d$context$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useProductModal"]
+    ];
+});
 _c = CartProvider;
 const useCart = ()=>{
     _s1();
@@ -1828,15 +2013,27 @@ const useBarcodeScan = (onScan)=>{
             }
         }, 100);
     };
+    const reset = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
+        "useBarcodeScan.useCallback[reset]": ()=>{
+            setBarcodeInput("");
+            try {
+                if (inputRef.current) {
+                    inputRef.current.value = "";
+                    inputRef.current.focus();
+                }
+            } catch (e) {}
+        }
+    }["useBarcodeScan.useCallback[reset]"], []);
     return {
         barcodeInput,
         inputRef,
         handleBarcodeChange,
         handleKeyPress,
-        refocusScanner
+        refocusScanner,
+        reset
     };
 };
-_s(useBarcodeScan, "BqrBQo7RwvvoT+Al683ts64ya+4=");
+_s(useBarcodeScan, "yVlwbWqydWe89X+WvtIUJxuU2GM=");
 if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelpers !== null) {
     __turbopack_context__.k.registerExports(__turbopack_context__.m, globalThis.$RefreshHelpers$);
 }
@@ -2398,10 +2595,78 @@ __turbopack_context__.s([
 ]);
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react/jsx-dev-runtime.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/input.tsx [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react/index.js [app-client] (ecmascript)");
+;
+var _s = __turbopack_context__.k.signature();
 ;
 ;
 function BarcodeScannerInput(param) {
     let { inputRef, barcodeInput, handleBarcodeChange, handleKeyPress, disabled = false } = param;
+    _s();
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
+        "BarcodeScannerInput.useEffect": ()=>{
+            const onProductAdded = {
+                "BarcodeScannerInput.useEffect.onProductAdded": (e)=>{
+                    var _this;
+                    const detail = (_this = e) === null || _this === void 0 ? void 0 : _this.detail;
+                    // if sender asked to prevent focusing (e.g., product added from Products tab), do nothing
+                    if (detail === null || detail === void 0 ? void 0 : detail.preventScan) return;
+                    const el = inputRef === null || inputRef === void 0 ? void 0 : inputRef.current;
+                    if (!el) return;
+                    try {
+                        el.focus();
+                    } catch (e) {}
+                    // clear DOM value so next hardware scan starts fresh
+                    try {
+                        el.value = "";
+                    } catch (e) {}
+                    const syntheticEvent = {
+                        target: el
+                    };
+                    try {
+                        handleBarcodeChange(syntheticEvent);
+                    } catch (e) {
+                        el.dispatchEvent(new Event("input", {
+                            bubbles: true
+                        }));
+                    }
+                }
+            }["BarcodeScannerInput.useEffect.onProductAdded"];
+            const onFocusRequest = {
+                "BarcodeScannerInput.useEffect.onFocusRequest": ()=>{
+                    const el = inputRef === null || inputRef === void 0 ? void 0 : inputRef.current;
+                    if (!el) return;
+                    try {
+                        el.focus();
+                    } catch (e) {}
+                    try {
+                        el.value = "";
+                    } catch (e) {}
+                    const syntheticEvent = {
+                        target: el
+                    };
+                    try {
+                        handleBarcodeChange(syntheticEvent);
+                    } catch (e) {
+                        el.dispatchEvent(new Event("input", {
+                            bubbles: true
+                        }));
+                    }
+                }
+            }["BarcodeScannerInput.useEffect.onFocusRequest"];
+            window.addEventListener("product:added", onProductAdded);
+            window.addEventListener("focusBarcodeScanner", onFocusRequest);
+            return ({
+                "BarcodeScannerInput.useEffect": ()=>{
+                    window.removeEventListener("product:added", onProductAdded);
+                    window.removeEventListener("focusBarcodeScanner", onFocusRequest);
+                }
+            })["BarcodeScannerInput.useEffect"];
+        }
+    }["BarcodeScannerInput.useEffect"], [
+        inputRef,
+        handleBarcodeChange
+    ]);
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
         ref: inputRef,
         className: "opacity-0 absolute -top-1000",
@@ -2412,10 +2677,11 @@ function BarcodeScannerInput(param) {
         disabled: disabled
     }, void 0, false, {
         fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/BarcodeScannerInput.tsx",
-        lineNumber: 20,
+        lineNumber: 72,
         columnNumber: 5
     }, this);
 }
+_s(BarcodeScannerInput, "OD7bBpZva5O2jO+Puf00hKivP7c=");
 _c = BarcodeScannerInput;
 var _c;
 __turbopack_context__.k.register(_c, "BarcodeScannerInput");
@@ -2701,6 +2967,31 @@ var _s = __turbopack_context__.k.signature();
 function MainDashboard() {
     _s();
     const [step, setStep] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(1);
+    // ensure scanner input in POS immediately receives focus when this page mounts
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
+        "MainDashboard.useEffect": ()=>{
+            if ("TURBOPACK compile-time falsy", 0) //TURBOPACK unreachable
+            ;
+            const focusScanner = {
+                "MainDashboard.useEffect.focusScanner": ()=>{
+                    try {
+                        window.dispatchEvent(new Event("focusBarcodeScanner"));
+                    } catch (e) {}
+                }
+            }["MainDashboard.useEffect.focusScanner"];
+            // immediate + a short delayed dispatch to cover timing differences
+            focusScanner();
+            const t = setTimeout(focusScanner, 120);
+            // also focus when the browser window regains focus (user alt-tabs back)
+            window.addEventListener("focus", focusScanner);
+            return ({
+                "MainDashboard.useEffect": ()=>{
+                    clearTimeout(t);
+                    window.removeEventListener("focus", focusScanner);
+                }
+            })["MainDashboard.useEffect"];
+        }
+    }["MainDashboard.useEffect"], []);
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$cart$2d$context$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CartProvider"], {
         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
             className: "flex flex-col w-full h-full py-4 px-4",
@@ -2713,12 +3004,12 @@ function MainDashboard() {
                             step: step
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/_pages/POS/pos-screen.tsx",
-                            lineNumber: 15,
+                            lineNumber: 38,
                             columnNumber: 13
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/dashboard/_pages/POS/pos-screen.tsx",
-                        lineNumber: 14,
+                        lineNumber: 37,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2728,32 +3019,32 @@ function MainDashboard() {
                             setStep: setStep
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/_pages/POS/pos-screen.tsx",
-                            lineNumber: 18,
+                            lineNumber: 41,
                             columnNumber: 13
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/dashboard/_pages/POS/pos-screen.tsx",
-                        lineNumber: 17,
+                        lineNumber: 40,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/dashboard/_pages/POS/pos-screen.tsx",
-                lineNumber: 13,
+                lineNumber: 36,
                 columnNumber: 9
             }, this)
         }, void 0, false, {
             fileName: "[project]/src/app/dashboard/_pages/POS/pos-screen.tsx",
-            lineNumber: 12,
+            lineNumber: 35,
             columnNumber: 7
         }, this)
     }, void 0, false, {
         fileName: "[project]/src/app/dashboard/_pages/POS/pos-screen.tsx",
-        lineNumber: 11,
+        lineNumber: 34,
         columnNumber: 5
     }, this);
 }
-_s(MainDashboard, "M88kfgrd7Unvr/hfMAIVxST1ckg=");
+_s(MainDashboard, "9mtu1L0sJIHiUitrkW1KBOpBm6A=");
 _c = MainDashboard;
 var _c;
 __turbopack_context__.k.register(_c, "MainDashboard");
@@ -5328,369 +5619,6 @@ if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelper
     __turbopack_context__.k.registerExports(__turbopack_context__.m, globalThis.$RefreshHelpers$);
 }
 }),
-"[project]/src/hooks/products/useAddCategory.ts [app-client] (ecmascript)", ((__turbopack_context__) => {
-"use strict";
-
-// ...existing code...
-__turbopack_context__.s([
-    "default",
-    ()=>__TURBOPACK__default__export__,
-    "useAddCategory",
-    ()=>useAddCategory
-]);
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$polyfills$2f$process$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = /*#__PURE__*/ __turbopack_context__.i("[project]/node_modules/next/dist/build/polyfills/process.js [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react/index.js [app-client] (ecmascript)");
-var _s = __turbopack_context__.k.signature();
-;
-const useAddCategory = ()=>{
-    _s();
-    const [loading, setLoading] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
-    const [error, setError] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
-    const addCategory = async (payload, options)=>{
-        setLoading(true);
-        setError(null);
-        var _process_env_NEXT_PUBLIC_API_URL, _ref;
-        // Accept either NEXT_PUBLIC_API_URL or NEXT_PUBLIC_backend_api_url
-        // and normalize the value:
-        // - remove trailing slashes
-        // - remove any trailing '/api'
-        // - ensure protocol (defaults to http:// if missing host only)
-        const raw = (_ref = (_process_env_NEXT_PUBLIC_API_URL = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$polyfills$2f$process$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"].env.NEXT_PUBLIC_API_URL) !== null && _process_env_NEXT_PUBLIC_API_URL !== void 0 ? _process_env_NEXT_PUBLIC_API_URL : ("TURBOPACK compile-time value", "http://localhost:5000/api")) !== null && _ref !== void 0 ? _ref : "";
-        let envBase = String(raw).trim();
-        console.log("useAddCategory: raw env value:", raw); // <-- added
-        // remove surrounding quotes if any
-        envBase = envBase.replace(/^["']|["']$/g, "");
-        // remove trailing slashes
-        envBase = envBase.replace(/\/+$/g, "");
-        // remove trailing '/api' if present
-        envBase = envBase.replace(/\/api$/i, "");
-        // if empty, fall back to relative API path
-        if (!envBase) {
-            envBase = "";
-        } else if (!/^https?:\/\//i.test(envBase)) {
-            // If user provided "localhost:5000" or ":5000", normalize to http://localhost:5000
-            if (envBase.startsWith(":")) {
-                envBase = "http://localhost".concat(envBase);
-            } else {
-                envBase = "http://".concat(envBase);
-            }
-        }
-        const url = envBase ? "".concat(envBase, "/api/categories") : "/api/categories";
-        console.log("useAddCategory: POST url:", url, "payload:", payload); // <-- added
-        try {
-            var _options_onSuccess;
-            const res = await fetch(url, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(payload)
-            });
-            if (!res.ok) {
-                let bodyText = "";
-                try {
-                    // try parse json; fall back to text
-                    const cloned = res.clone();
-                    bodyText = await cloned.text();
-                } catch (parseErr) {
-                    bodyText = "<could not read response body>";
-                }
-                console.error("useAddCategory: non-ok response", {
-                    url,
-                    status: res.status,
-                    body: bodyText
-                }); // <-- added
-                let msg = "Request failed with status ".concat(res.status);
-                try {
-                    var _json_data;
-                    const json = await res.json();
-                    var _json_message, _ref1, _ref2;
-                    msg = (_ref2 = (_ref1 = (_json_message = json === null || json === void 0 ? void 0 : json.message) !== null && _json_message !== void 0 ? _json_message : json === null || json === void 0 ? void 0 : json.error) !== null && _ref1 !== void 0 ? _ref1 : json === null || json === void 0 ? void 0 : (_json_data = json.data) === null || _json_data === void 0 ? void 0 : _json_data.message) !== null && _ref2 !== void 0 ? _ref2 : msg;
-                } catch (e) {
-                //
-                }
-                throw new Error(msg);
-            }
-            const json = await res.json();
-            console.log("useAddCategory: success response json:", json); // <-- added
-            var _json_data1;
-            const created = (_json_data1 = json === null || json === void 0 ? void 0 : json.data) !== null && _json_data1 !== void 0 ? _json_data1 : json;
-            options === null || options === void 0 ? void 0 : (_options_onSuccess = options.onSuccess) === null || _options_onSuccess === void 0 ? void 0 : _options_onSuccess.call(options, created);
-            setLoading(false);
-            return created;
-        } catch (err) {
-            console.error("useAddCategory: caught error", err); // <-- added
-            const message = err instanceof Error ? err.message : "Failed to create category";
-            setError(message);
-            setLoading(false);
-            throw err;
-        }
-    };
-    return {
-        addCategory,
-        loading,
-        error
-    };
-};
-_s(useAddCategory, "Iz3ozxQ+abMaAIcGIvU8cKUcBeo=");
-const __TURBOPACK__default__export__ = useAddCategory;
-if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelpers !== null) {
-    __turbopack_context__.k.registerExports(__turbopack_context__.m, globalThis.$RefreshHelpers$);
-}
- // ...existing code...
-}),
-"[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx [app-client] (ecmascript)", ((__turbopack_context__) => {
-"use strict";
-
-__turbopack_context__.s([
-    "default",
-    ()=>AddCategoryModal
-]);
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react/jsx-dev-runtime.js [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react/index.js [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/sonner/dist/index.mjs [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$categories$2f$useCategoryApi$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/hooks/categories/useCategoryApi.ts [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__ = __turbopack_context__.i("[project]/node_modules/swr/dist/_internal/config-context-client-BoS53ST9.mjs [app-client] (ecmascript) <export j as mutate>");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/button.tsx [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/dialog.tsx [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/input.tsx [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/label.tsx [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$productRegister$2d$context$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/contexts/productRegister-context.tsx [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useAddCategory$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/hooks/products/useAddCategory.ts [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$stores$2f$productFormStore$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/stores/productFormStore.ts [app-client] (ecmascript)");
-;
-var _s = __turbopack_context__.k.signature();
-'use client';
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
-function AddCategoryModal() {
-    _s();
-    const { isOpen, closeModal } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$productRegister$2d$context$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useProductModal"])();
-    const { addCategory, loading, error } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useAddCategory$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"])();
-    const setCategoryId = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$stores$2f$productFormStore$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useProductFormStore"])({
-        "AddCategoryModal.useProductFormStore[setCategoryId]": (s)=>s.setCategoryId
-    }["AddCategoryModal.useProductFormStore[setCategoryId]"]);
-    const setCategoryName = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$stores$2f$productFormStore$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useProductFormStore"])({
-        "AddCategoryModal.useProductFormStore[setCategoryName]": (s)=>s.setCategoryName
-    }["AddCategoryModal.useProductFormStore[setCategoryName]"]);
-    const [name, setName] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])("");
-    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
-        "AddCategoryModal.useEffect": ()=>{
-            if (!isOpen("addCategory")) {
-                setName("");
-            }
-        }
-    }["AddCategoryModal.useEffect"], [
-        isOpen
-    ]);
-    const handleSubmit = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
-        "AddCategoryModal.useCallback[handleSubmit]": async (e)=>{
-            e.preventDefault();
-            const trimmed = name.trim();
-            if (!trimmed) return;
-            try {
-                await addCategory({
-                    name: trimmed
-                }, {
-                    onSuccess: {
-                        "AddCategoryModal.useCallback[handleSubmit]": (createdRaw)=>{
-                            var _createdRaw_data;
-                            const created = (_createdRaw_data = createdRaw === null || createdRaw === void 0 ? void 0 : createdRaw.data) !== null && _createdRaw_data !== void 0 ? _createdRaw_data : createdRaw;
-                            if (!created) return;
-                            // optimistic insert then revalidate
-                            (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__["mutate"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$categories$2f$useCategoryApi$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CATEGORIES_KEY"], {
-                                "AddCategoryModal.useCallback[handleSubmit]": function() {
-                                    let current = arguments.length > 0 && arguments[0] !== void 0 ? arguments[0] : [];
-                                    const exists = current.some({
-                                        "AddCategoryModal.useCallback[handleSubmit].exists": (c)=>String(c === null || c === void 0 ? void 0 : c.id) === String(created === null || created === void 0 ? void 0 : created.id)
-                                    }["AddCategoryModal.useCallback[handleSubmit].exists"]);
-                                    return exists ? current : [
-                                        created,
-                                        ...current
-                                    ];
-                                }
-                            }["AddCategoryModal.useCallback[handleSubmit]"], false);
-                            (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__["mutate"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$categories$2f$useCategoryApi$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CATEGORIES_KEY"]);
-                            var _created_id;
-                            const createdId = (_created_id = created === null || created === void 0 ? void 0 : created.id) !== null && _created_id !== void 0 ? _created_id : created === null || created === void 0 ? void 0 : created._id;
-                            var _created_name;
-                            const createdName = (_created_name = created === null || created === void 0 ? void 0 : created.name) !== null && _created_name !== void 0 ? _created_name : "";
-                            if (createdId != null) {
-                                setCategoryId(String(createdId));
-                                setCategoryName(createdName);
-                            } else {
-                                (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["toast"])("Category added", {
-                                    description: "Added but ID was not returned."
-                                });
-                            }
-                            closeModal("addCategory");
-                            (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["toast"])("Category added", {
-                                description: createdName || "New category created."
-                            });
-                        }
-                    }["AddCategoryModal.useCallback[handleSubmit]"]
-                });
-            } catch (err) {
-                var _err_message;
-                (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["toast"])("Failed to add category", {
-                    description: (_err_message = err === null || err === void 0 ? void 0 : err.message) !== null && _err_message !== void 0 ? _err_message : "An error occurred."
-                });
-            }
-        }
-    }["AddCategoryModal.useCallback[handleSubmit]"], [
-        name,
-        addCategory,
-        setCategoryId,
-        setCategoryName,
-        closeModal
-    ]);
-    return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Dialog"], {
-        open: isOpen("addCategory"),
-        onOpenChange: (v)=>{
-            if (!v) closeModal("addCategory");
-        },
-        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogContent"], {
-            className: "sm:max-w-[420px]",
-            children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("form", {
-                onSubmit: handleSubmit,
-                children: [
-                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogHeader"], {
-                        children: [
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogTitle"], {
-                                children: "Add Category"
-                            }, void 0, false, {
-                                fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-                                lineNumber: 87,
-                                columnNumber: 13
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogDescription"], {
-                                children: "Fill in the details below to add a new category."
-                            }, void 0, false, {
-                                fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-                                lineNumber: 88,
-                                columnNumber: 13
-                            }, this)
-                        ]
-                    }, void 0, true, {
-                        fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-                        lineNumber: 86,
-                        columnNumber: 11
-                    }, this),
-                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        className: "grid gap-4",
-                        children: [
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                className: "grid gap-2",
-                                children: [
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
-                                        htmlFor: "category-name",
-                                        children: "Name"
-                                    }, void 0, false, {
-                                        fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-                                        lineNumber: 93,
-                                        columnNumber: 15
-                                    }, this),
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
-                                        id: "category-name",
-                                        value: name,
-                                        onChange: (e)=>setName(e.target.value),
-                                        placeholder: "Category name",
-                                        required: true,
-                                        autoFocus: true
-                                    }, void 0, false, {
-                                        fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-                                        lineNumber: 94,
-                                        columnNumber: 15
-                                    }, this)
-                                ]
-                            }, void 0, true, {
-                                fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-                                lineNumber: 92,
-                                columnNumber: 13
-                            }, this),
-                            error && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                className: "text-sm text-red-600",
-                                children: error
-                            }, void 0, false, {
-                                fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-                                lineNumber: 104,
-                                columnNumber: 23
-                            }, this)
-                        ]
-                    }, void 0, true, {
-                        fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-                        lineNumber: 91,
-                        columnNumber: 11
-                    }, this),
-                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogFooter"], {
-                        className: "mt-5",
-                        children: [
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
-                                variant: "outline",
-                                type: "button",
-                                onClick: ()=>closeModal("addCategory"),
-                                children: "Cancel"
-                            }, void 0, false, {
-                                fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-                                lineNumber: 108,
-                                columnNumber: 13
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
-                                type: "submit",
-                                disabled: loading,
-                                children: loading ? "Saving..." : "Save"
-                            }, void 0, false, {
-                                fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-                                lineNumber: 111,
-                                columnNumber: 13
-                            }, this)
-                        ]
-                    }, void 0, true, {
-                        fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-                        lineNumber: 107,
-                        columnNumber: 11
-                    }, this)
-                ]
-            }, void 0, true, {
-                fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-                lineNumber: 85,
-                columnNumber: 9
-            }, this)
-        }, void 0, false, {
-            fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-            lineNumber: 84,
-            columnNumber: 7
-        }, this)
-    }, void 0, false, {
-        fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-        lineNumber: 83,
-        columnNumber: 5
-    }, this);
-}
-_s(AddCategoryModal, "vqUjKNmhu6ZuuvaS9zCy8bSakiM=", false, function() {
-    return [
-        __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$productRegister$2d$context$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useProductModal"],
-        __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useAddCategory$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"],
-        __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$stores$2f$productFormStore$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useProductFormStore"],
-        __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$stores$2f$productFormStore$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useProductFormStore"]
-    ];
-});
-_c = AddCategoryModal;
-var _c;
-__turbopack_context__.k.register(_c, "AddCategoryModal");
-if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelpers !== null) {
-    __turbopack_context__.k.registerExports(__turbopack_context__.m, globalThis.$RefreshHelpers$);
-}
-}),
 "[project]/src/app/dashboard/_pages/Products/productsScreen.tsx [app-client] (ecmascript)", ((__turbopack_context__) => {
 "use strict";
 
@@ -7613,4 +7541,4 @@ if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelper
 }),
 ]);
 
-//# sourceMappingURL=src_7749fe00._.js.map
+//# sourceMappingURL=src_99c9151b._.js.map
