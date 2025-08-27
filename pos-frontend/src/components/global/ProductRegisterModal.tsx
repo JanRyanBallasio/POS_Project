@@ -4,11 +4,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useAddProduct } from "@/hooks/products/useAddProducts";
 import { useProducts } from "@/hooks/global/fetching/useProducts";
 import { useCategories } from "@/hooks/global/fetching/useCategories";
 import { useProductFormStore } from "@/stores/productFormStore";
+import AddCategoryModal from "@/app/dashboard/_pages/Products/components/addCategoryModal";
 
 import {
     DropdownMenu,
@@ -27,8 +28,12 @@ import {
     AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 import { Plus } from "lucide-react";
+// ...existing code...
+
+// lightweight utility pulled out so it's not recreated on every render
+const getCategoryId = (c: any) => c?.id ?? c?._id ?? c?.category_id ?? c?.categoryId ?? c?.ID ?? null;
+
 export default function ProductRegisterModal() {
-    const getCategoryId = (c: any) => c?.id ?? c?._id ?? c?.category_id ?? c?.categoryId ?? c?.ID ?? null;
     const { open, setOpen, barcode: contextBarcode, setBarcode: setContextBarcode, openModal } = useProductModal();
     const name = useProductFormStore((s) => s.name);
     const setName = useProductFormStore((s) => s.setName);
@@ -48,8 +53,26 @@ export default function ProductRegisterModal() {
     const { categories, loading: categoriesLoading, error: categoriesError } = useCategories();
     const [showSuccessDialog, setShowSuccessDialog] = useState(false);
     const { refetch } = useProducts(); // This gives you mutate for products
-    const handleAddProduct = async () => {
 
+    // memoize filtered list to avoid repeating filter calls in render
+    const filteredCategories = useMemo(() => {
+        if (!categories || categories.length === 0) return [];
+        const q = categorySearch.trim().toLowerCase();
+        if (!q) return categories;
+        return categories.filter(cat => (cat?.name || "").toLowerCase().includes(q));
+    }, [categories, categorySearch]);
+
+    // memoize selected category object + display name
+    const selectedCategory = useMemo(() => {
+        if (!categories) return undefined;
+        return categories.find((c: any) => String(getCategoryId(c)) === String(category_id));
+    }, [categories, category_id]);
+
+    const selectedCategoryName = useMemo(() => {
+        return selectedCategory?.name ?? category_name_fallback ?? "";
+    }, [selectedCategory, category_name_fallback]);
+
+    const handleAddProduct = useCallback(async () => {
         const newProduct = {
             name,
             barcode,
@@ -57,13 +80,40 @@ export default function ProductRegisterModal() {
             price: Number(price),
             quantity: Number(quantity),
         };
+
         const result = await addProduct(newProduct);
         if (result) {
+            if (typeof window !== "undefined") {
+                try {
+                    // only allow scanner autofocus when the user is currently on the POS page
+                    const path = (window.location?.pathname || "").toLowerCase();
+                    const isOnPOS = path.includes("/pos");
+                    window.dispatchEvent(
+                        new CustomEvent("product:added", {
+                            detail: {
+                                barcode: newProduct.barcode,
+                                product: result,
+                                // preventScan true when NOT on POS, so Products tab/additions don't steal focus
+                                preventScan: !isOnPOS,
+                            },
+                        })
+                    );
+                } catch { }
+            }
+
             setOpen(false);
             setShowSuccessDialog(true);
-            refetch();
+            // refetch(); // removed, not needed because useAddProduct mutated PRODUCTS_KEY
         }
-    };
+    }, [name, barcode, category_id, price, quantity, addProduct, setOpen]);
+
+    const onSelectCategory = useCallback((cat: any) => {
+        const idVal = getCategoryId(cat);
+        setCategoryId(idVal ?? "");
+        setCategoryName(""); // clear temporary fallback when user chooses an existing item
+        setCategorySearch("");
+    }, [setCategoryId, setCategoryName])
+
     useEffect(() => {
         // when product modal fully closes, clear the persisted form
         if (!open) {
@@ -83,17 +133,6 @@ export default function ProductRegisterModal() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open, contextBarcode]);
 
-    useEffect(() => {
-        console.log("[ProductRegisterModal] categories length:", categories?.length);
-        // debug first item shape to see actual fields
-        if (categories && categories.length > 0) {
-            console.log("[ProductRegisterModal] example category item:", JSON.stringify(categories[0]));
-        }
-        console.log("[ProductRegisterModal] categorySearch:", categorySearch);
-        console.log("[ProductRegisterModal] selected category_id:", category_id);
-        const selected = categories?.find((c: any) => String(getCategoryId(c)) === String(category_id));
-        console.log("[ProductRegisterModal] selected category object:", selected);
-    }, [categories, categorySearch, category_id]);
     return (
         <>
             <Dialog open={open} onOpenChange={setOpen}>
@@ -120,15 +159,10 @@ export default function ProductRegisterModal() {
                                             <Input
                                                 id="category-1"
                                                 readOnly
-                                                value={
-                                                    categories.find(c => String(getCategoryId(c)) === String(category_id))?.name
-                                                    || category_name_fallback
-                                                    || ""
-                                                }
+                                                value={selectedCategoryName}
                                                 placeholder="Select category"
                                                 className="cursor-pointer"
                                             />
-
                                         </DropdownMenuTrigger>
 
                                         <DropdownMenuContent className="w-64 p-0">
@@ -151,30 +185,20 @@ export default function ProductRegisterModal() {
                                             {!categoriesLoading && !categoriesError && (
                                                 <ScrollArea className="h-40">
                                                     <div className="p-2">
-                                                        {categories
-                                                            .filter(cat =>
-                                                                (cat?.name || "").toLowerCase().includes(categorySearch.toLowerCase())
-                                                            )
-                                                            .map(cat => {
-                                                                const idString = String(getCategoryId(cat));
-                                                                return (
-                                                                    <DropdownMenuItem
-                                                                        key={idString}
-                                                                        onClick={() => {
-                                                                            setCategoryId(idString);
-                                                                            setCategoryName(""); // clear temporary fallback when user chooses an existing item
-                                                                            setCategorySearch("");
-                                                                        }}
-                                                                    >
-                                                                        {cat.name}
-                                                                    </DropdownMenuItem>
-                                                                );
-                                                            })}
-                                                        {categories.filter(cat =>
-                                                            (cat?.name || "").toLowerCase().includes(categorySearch.toLowerCase())
-                                                        ).length === 0 && (
-                                                                <div className="p-2 text-gray-400">No categories found.</div>
-                                                            )}
+                                                        {filteredCategories.map(cat => {
+                                                            const idString = String(getCategoryId(cat));
+                                                            return (
+                                                                <DropdownMenuItem
+                                                                    key={idString}
+                                                                    onClick={() => onSelectCategory(cat)}
+                                                                >
+                                                                    {cat.name}
+                                                                </DropdownMenuItem>
+                                                            );
+                                                        })}
+                                                        {filteredCategories.length === 0 && (
+                                                            <div className="p-2 text-gray-400">No categories found.</div>
+                                                        )}
                                                     </div>
                                                 </ScrollArea>
                                             )}
@@ -230,6 +254,7 @@ export default function ProductRegisterModal() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+            <AddCategoryModal />
             <AlertDialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
                 <AlertDialogContent>
                     <AlertDialogHeader>

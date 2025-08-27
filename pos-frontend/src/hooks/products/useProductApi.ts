@@ -1,5 +1,5 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_backend_api_url;
-
+// ...existing code...
+const API_BASE_URL = (process.env.NEXT_PUBLIC_backend_api_url || "").replace(/\/$/, "");
 
 export interface Product {
   id: number;
@@ -10,20 +10,26 @@ export interface Product {
   category_id: number;
 }
 
-export interface ApiResponse<T> {
-  data: T;
+export interface ApiResponse<T = any> {
+  success?: boolean;
+  data?: T;
   message?: string;
   error?: string;
 }
 
 export const productApi = {
   async getAll(): Promise<Product[]> {
-    const response = await fetch(`${API_BASE_URL}/products`);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch products: ${response.status}`);
+    try {
+      const response = await fetch(`${API_BASE_URL}/products`);
+      if (!response.ok) {
+        // return empty list instead of throwing to keep UI stable
+        return [];
+      }
+      const json: ApiResponse<Product[]> = await response.json().catch(() => ({ data: [] }));
+      return json.data ?? [];
+    } catch {
+      return [];
     }
-    const data: ApiResponse<Product[]> = await response.json();
-    return data.data || [];
   },
 
   async create(product: Omit<Product, "id">): Promise<Product> {
@@ -32,14 +38,12 @@ export const productApi = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(product),
     });
-    const data: ApiResponse<Product> = await response.json();
+    const json: ApiResponse<Product> = await response.json().catch(() => ({ data: null } as any));
     if (!response.ok) {
-      const errorMsg = data?.error || data?.message || `Failed to create product: ${response.status}`;
-      const error: any = new Error(errorMsg);
-      error.response = data;
-      throw error;
+      const errorMsg = json?.error || json?.message || `Failed to create product: ${response.status}`;
+      throw new Error(errorMsg);
     }
-    return data.data;
+    return json.data as Product;
   },
 
   async update(id: number, product: Omit<Product, "id">): Promise<Product> {
@@ -48,56 +52,109 @@ export const productApi = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(product),
     });
-    const data: ApiResponse<Product> = await response.json();
+    const json: ApiResponse<Product> = await response.json().catch(() => ({ data: null } as any));
     if (!response.ok) {
-      const errorMsg = data?.error || data?.message || `Failed to update product: ${response.status}`;
-      const error: any = new Error(errorMsg);
-      error.response = data;
-      throw error;
+      const errorMsg = json?.error || json?.message || `Failed to update product: ${response.status}`;
+      throw new Error(errorMsg);
     }
-    return data.data;
+    return json.data as Product;
   },
-  async getById(id: number): Promise<Product> {
-    const response = await fetch(`${API_BASE_URL}/products/${id}`);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch product with id ${id}`);
+
+  async getById(id: number): Promise<Product | null> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/products/${id}`);
+      if (!response.ok) {
+        if (response.status === 404) return null;
+        throw new Error(`Failed to fetch product with id ${id}`);
+      }
+      const json: ApiResponse<Product> = await response.json().catch(() => ({ data: null } as any));
+      return json.data ?? null;
+    } catch {
+      return null;
     }
-    const data: ApiResponse<Product> = await response.json();
-    return data.data;
   },
+
   async delete(id: number): Promise<void> {
     const response = await fetch(`${API_BASE_URL}/products/${id}`, {
       method: "DELETE",
     });
     if (!response.ok) {
-      const data: ApiResponse<null> = await response.json();
-      const errorMsg = data?.error || data?.message || `Failed to delete product: ${response.status}`;
+      const json = await response.json().catch(() => ({}));
+      const errorMsg = json?.error || json?.message || `Failed to delete product: ${response.status}`;
       throw new Error(errorMsg);
     }
   },
 
+  // Prefer query param endpoint (safe) -> dedicated route -> fallback to local search
   async getByBarcode(barcode: string): Promise<Product | null> {
-    const response = await fetch(`${API_BASE_URL}/products/barcode/${barcode}`);
-    if (response.status === 404) {
-      // Don't log error, just return null
+    if (!barcode) return null;
+
+    // 1) query param (returns array, safe 200)
+    try {
+      const qRes = await fetch(`${API_BASE_URL}/products?barcode=${encodeURIComponent(String(barcode))}`);
+      if (qRes.ok) {
+        const qJson: ApiResponse<Product[]> = await qRes.json().catch(() => ({ data: [] }));
+        const arr = qJson.data ?? [];
+        return arr.length > 0 ? arr[0] : null;
+      }
+    } catch {
+      /* ignore and try next */
+    }
+
+    // 2) dedicated route (may return data:null or 200/404)
+    try {
+      const r = await fetch(`${API_BASE_URL}/products/barcode/${encodeURIComponent(String(barcode))}`);
+      if (r.ok) {
+        const json: ApiResponse<Product | null> = await r.json().catch(() => ({ data: null } as any));
+        return json.data ?? null;
+      }
+    } catch {
+      /* ignore and try fallback */
+    }
+
+    // 3) final fallback: fetch all and search locally
+    try {
+      const all = await productApi.getAll();
+      return all.find(p => String(p.barcode) === String(barcode)) ?? null;
+    } catch {
       return null;
     }
-    if (!response.ok) {
-      throw new Error(`Failed to fetch product: ${response.status}`);
-    }
-    const data: ApiResponse<Product> = await response.json();
-    return data.data;
   },
 
   async getByName(name: string): Promise<Product | null> {
-    const response = await fetch(`${API_BASE_URL}/products/name/${encodeURIComponent(name)}`);
-    if (response.status === 404) {
+    if (!name) return null;
+
+    // 1) query param (safe)
+    try {
+      const qRes = await fetch(`${API_BASE_URL}/products?name=${encodeURIComponent(String(name))}`);
+      if (qRes.ok) {
+        const qJson: ApiResponse<Product[]> = await qRes.json().catch(() => ({ data: [] }));
+        const arr = qJson.data ?? [];
+        if (arr.length > 0) {
+          const exact = arr.find(p => (p.name || "").toLowerCase() === name.trim().toLowerCase());
+          return exact ?? arr[0];
+        }
+        return null;
+      }
+    } catch {}
+
+    // 2) dedicated route
+    try {
+      const r = await fetch(`${API_BASE_URL}/products/name/${encodeURIComponent(String(name))}`);
+      if (r.ok) {
+        const json: ApiResponse<Product | null> = await r.json().catch(() => ({ data: null } as any));
+        return json.data ?? null;
+      }
+    } catch {}
+
+    // 3) fallback to local search
+    try {
+      const all = await productApi.getAll();
+      const lower = name.trim().toLowerCase();
+      return all.find(p => (p.name || "").toLowerCase() === lower) ?? null;
+    } catch {
       return null;
     }
-    if (!response.ok) {
-      throw new Error(`Failed to fetch product: ${response.status}`);
-    }
-    const data = await response.json();
-    return data.data || null;
   },
 };
+// ...existing code...

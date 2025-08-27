@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { CATEGORIES_KEY } from "@/hooks/categories/useCategoryApi";
 
@@ -17,68 +17,67 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useProductModal } from "@/contexts/productRegister-context";
-import { useCategories } from "@/hooks/global/fetching/useCategories";
 import useAddCategory from "@/hooks/products/useAddCategory";
 import { useProductFormStore } from "@/stores/productFormStore";
 
 export default function AddCategoryModal() {
-  const { isOpen, closeModal, openModal } = useProductModal();
-  const { refetch } = useCategories();
+  const { isOpen, closeModal } = useProductModal();
   const { addCategory, loading, error } = useAddCategory();
   const setCategoryId = useProductFormStore((s) => s.setCategoryId);
   const setCategoryName = useProductFormStore((s) => s.setCategoryName);
   const [name, setName] = useState("");
-  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isOpen("addCategory")) {
       setName("");
-      setSuccess(null);
     }
   }, [isOpen]);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!name.trim()) return;
-    try {
-      await addCategory(
-        { name: name.trim() },
-        {
-          onSuccess: (createdRaw) => {
-            // normalize in case API returns { data: {...} } or returns object directly
-            const created = createdRaw?.data ?? createdRaw;
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      const trimmed = name.trim();
+      if (!trimmed) return;
 
-            // optimistic update: add new item to the front (prevent duplicate by id)
-            mutate(CATEGORIES_KEY, (current: any[] = []) => {
-              if (!created) return current;
-              const exists = current.some(c => String(c?.id) === String(created?.id));
-              return exists ? current : [created, ...current];
-            }, false);
+      try {
+        await addCategory(
+          { name: trimmed },
+          {
+            onSuccess: (createdRaw) => {
+              const created = createdRaw?.data ?? createdRaw;
+              if (!created) return;
 
-            // revalidate after optimistic update
-            mutate(CATEGORIES_KEY);
+              // optimistic insert then revalidate
+              mutate(
+                CATEGORIES_KEY,
+                (current: any[] = []) => {
+                  const exists = current.some((c) => String(c?.id) === String(created?.id));
+                  return exists ? current : [created, ...current];
+                },
+                false
+              );
+              mutate(CATEGORIES_KEY);
 
-            // set into store as before
-            const createdId = created?.id ?? created?._id;
-            const createdName = created?.name ?? "";
-            if (createdId != null) {
-              setCategoryId(String(createdId));
-              setCategoryName(createdName);
-            } else {
-              console.warn("[AddCategoryModal] created object has no id field:", created);
-            }
+              const createdId = created?.id ?? created?._id;
+              const createdName = created?.name ?? "";
+              if (createdId != null) {
+                setCategoryId(String(createdId));
+                setCategoryName(createdName);
+              } else {
+                toast("Category added", { description: "Added but ID was not returned." });
+              }
 
-            setTimeout(() => {
               closeModal("addCategory");
-              setSuccess(null);
-            }, 600);
-          },
-        }
-      );
-    } catch (err) {
-      console.error("Add category failed (modal)", err);
-    }
-  }
+              toast("Category added", { description: createdName || "New category created." });
+            },
+          }
+        );
+      } catch (err: any) {
+        toast("Failed to add category", { description: err?.message ?? "An error occurred." });
+      }
+    },
+    [name, addCategory, setCategoryId, setCategoryName, closeModal]
+  );
 
   return (
     <Dialog open={isOpen("addCategory")} onOpenChange={(v) => { if (!v) closeModal("addCategory"); }}>
@@ -109,14 +108,7 @@ export default function AddCategoryModal() {
             <Button variant="outline" type="button" onClick={() => closeModal("addCategory")}>
               Cancel
             </Button>
-            <Button
-              type="submit"
-              disabled={loading}
-              onClick={(ev) => {
-                ev.preventDefault();
-                handleSubmit(ev as unknown as React.FormEvent);
-              }}
-            >
+            <Button type="submit" disabled={loading}>
               {loading ? "Saving..." : "Save"}
             </Button>
           </DialogFooter>
