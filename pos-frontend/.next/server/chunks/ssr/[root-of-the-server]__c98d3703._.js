@@ -2,7 +2,6 @@ module.exports = [
 "[project]/src/contexts/cart-context.tsx [app-ssr] (ecmascript)", ((__turbopack_context__) => {
 "use strict";
 
-// ...existing code...
 __turbopack_context__.s([
     "CartProvider",
     ()=>CartProvider,
@@ -20,6 +19,12 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$productRe
 ;
 ;
 const CartContext = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["createContext"])(undefined);
+const genId = ()=>typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : Date.now().toString();
+const productEqual = (a, b)=>{
+    // Prefer stable id comparison; fallback to barcode equality
+    if (a?.id && b?.id) return a.id === b.id;
+    return Boolean(a?.barcode && b?.barcode && a.barcode === b.barcode);
+};
 const CartProvider = ({ children })=>{
     const [cart, setCart] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])([]);
     const [scanError, setScanError] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(null);
@@ -59,43 +64,96 @@ const CartProvider = ({ children })=>{
     const deleteCartItem = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])((id)=>{
         setCart((prevCart)=>prevCart.filter((item)=>item.id !== id));
     }, []);
+    const addOrIncrement = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])((product)=>{
+        try {
+            console.log("[cart] addOrIncrement called:", {
+                id: product?.id,
+                barcode: product?.barcode,
+                name: product?.name
+            });
+        } catch  {}
+        setCart((prevCart)=>{
+            const existing = prevCart.find((item)=>productEqual(item.product, product));
+            if (existing) {
+                try {
+                    console.log("[cart] existing item found, incrementing quantity for:", {
+                        existingId: existing.id,
+                        productId: existing.product?.id,
+                        barcode: existing.product?.barcode
+                    });
+                } catch  {}
+                return prevCart.map((item)=>productEqual(item.product, product) ? {
+                        ...item,
+                        quantity: item.quantity + 1
+                    } : item);
+            }
+            const cartItem = {
+                product,
+                quantity: 1,
+                id: genId()
+            };
+            try {
+                console.log("[cart] pushing new cart item:", {
+                    cartItemId: cartItem.id,
+                    productId: product?.id,
+                    barcode: product?.barcode,
+                    name: product?.name
+                });
+            } catch  {}
+            return [
+                ...prevCart,
+                cartItem
+            ];
+        });
+    }, []);
     const scanAndAddToCart = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(async (barcode)=>{
         if (!barcode) return;
+        // Debug helper: show raw, cleaned value, length and char codes
+        const logBarcodeDetails = (label, v)=>{
+            try {
+                const raw = String(v);
+                const cleaned = raw.replace(/[\u0000-\u001F\u007F-\u009F]/g, "").trim();
+                console.log(`[cart][barcode] ${label} -> raw:${JSON.stringify(raw)} length:${raw.length}`);
+                console.log(`[cart][barcode] ${label} -> cleaned:${JSON.stringify(cleaned)} length:${cleaned.length}`);
+                console.log(`[cart][barcode] ${label} charCodes:`, Array.from(raw).map((c)=>c.charCodeAt(0)));
+                return cleaned;
+            } catch (err) {
+                console.log("[cart][barcode] logging error", err);
+                return barcode.trim();
+            }
+        };
         try {
             setIsScanning(true);
             setScanError(null);
-            const product = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["productApi"].getByBarcode(barcode);
+            const cleanedBarcode = logBarcodeDetails("scanned", barcode);
+            // Call API with cleaned barcode
+            const product = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["productApi"].getByBarcode(cleanedBarcode);
+            try {
+                console.log("[cart] scanAndAddToCart scanned barcode:", cleanedBarcode, "-> product:", product);
+                console.log("[cart] scanAndAddToCart product details:", product ? {
+                    id: product.id,
+                    barcode: product.barcode,
+                    name: product.name
+                } : null);
+            } catch  {}
             if (product) {
-                setCart((prevCart)=>{
-                    const existing = prevCart.find((item)=>item.product.barcode === product.barcode);
-                    if (existing) {
-                        return prevCart.map((item)=>item.product.barcode === product.barcode ? {
-                                ...item,
-                                quantity: item.quantity + 1
-                            } : item);
-                    } else {
-                        const cartItem = {
-                            product,
-                            quantity: 1,
-                            id: Date.now().toString()
-                        };
-                        return [
-                            ...prevCart,
-                            cartItem
-                        ];
-                    }
-                });
+                addOrIncrement(product);
             } else {
+                try {
+                    console.log("[cart] scanAndAddToCart: product not found for cleaned barcode:", cleanedBarcode);
+                } catch  {}
                 // Product not found: open add-product modal and prefill barcode
-                if (typeof setContextBarcode === "function") {
-                    setContextBarcode(barcode);
-                }
-                if (typeof openModal === "function") {
-                    openModal("addProduct");
-                } else if (typeof setProductModalOpen === "function") {
-                    setProductModalOpen(true);
-                }
-                setScanError(`Product not found: ${barcode}`);
+                try {
+                    if (typeof setContextBarcode === "function") {
+                        setContextBarcode(cleanedBarcode);
+                    }
+                    if (typeof openModal === "function") {
+                        openModal("addProduct");
+                    } else if (typeof setProductModalOpen === "function") {
+                        setProductModalOpen(true);
+                    }
+                } catch  {}
+                setScanError(`Product not found: ${cleanedBarcode}`);
             }
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : "Error scanning barcode";
@@ -109,84 +167,46 @@ const CartProvider = ({ children })=>{
         openModal,
         setProductModalOpen,
         setContextBarcode,
-        refocusScanner
+        refocusScanner,
+        addOrIncrement
     ]);
     // Listen for product:added events so newly created products can be added immediately
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         const onProductAdded = (e)=>{
             const detail = e?.detail;
+            // Debug: log product:added event payload
+            try {
+                console.log("[cart] product:added event detail:", detail);
+            } catch  {}
             if (!detail) return;
             const addedProduct = detail.product;
             const barcode = detail.barcode;
-            // If product object was returned by the modal, add it directly to cart (no backend round-trip)
             if (addedProduct) {
-                setCart((prevCart)=>{
-                    const existing = prevCart.find((item)=>item.product.barcode === addedProduct.barcode);
-                    if (existing) {
-                        return prevCart.map((item)=>item.product.barcode === addedProduct.barcode ? {
-                                ...item,
-                                quantity: item.quantity + 1
-                            } : item);
-                    } else {
-                        const cartItem = {
-                            product: addedProduct,
-                            quantity: 1,
-                            id: Date.now().toString()
-                        };
-                        return [
-                            ...prevCart,
-                            cartItem
-                        ];
-                    }
-                });
+                addOrIncrement(addedProduct);
             } else if (barcode) {
                 // if only barcode was provided, attempt to fetch product and add (defensive)
                 (async ()=>{
                     try {
                         const product = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["productApi"].getByBarcode(barcode);
-                        if (product) {
-                            setCart((prevCart)=>{
-                                const existing = prevCart.find((item)=>item.product.barcode === product.barcode);
-                                if (existing) {
-                                    return prevCart.map((item)=>item.product.barcode === product.barcode ? {
-                                            ...item,
-                                            quantity: item.quantity + 1
-                                        } : item);
-                                } else {
-                                    const cartItem = {
-                                        product,
-                                        quantity: 1,
-                                        id: Date.now().toString()
-                                    };
-                                    return [
-                                        ...prevCart,
-                                        cartItem
-                                    ];
-                                }
-                            });
-                        }
+                        if (product) addOrIncrement(product);
                     } catch  {
-                    // ignore fetch errors here; modal likely handled creation
+                    // ignore fetch errors here
                     }
                 })();
             }
-            // Clear the hidden scanner input value so the next hardware scan starts fresh,
-            // dispatch an 'input' event so the barcode hook's React state stays in sync, then focus.
+            // Clear and refocus hidden scanner input
             try {
                 const el = scannerInputRef?.current;
                 if (el) {
                     try {
                         el.value = "";
                     } catch  {}
-                    // Sync any listeners (handleBarcodeChange) with an input event
                     el.dispatchEvent(new Event("input", {
                         bubbles: true
                     }));
-                    // Focus after a short delay to ensure scanner writes into the empty field
                     setTimeout(()=>{
                         try {
                             el.focus();
-                            // defensive caret reset
                             if (typeof el.setSelectionRange === "function") {
                                 el.setSelectionRange(0, 0);
                             }
@@ -198,10 +218,11 @@ const CartProvider = ({ children })=>{
         window.addEventListener("product:added", onProductAdded);
         return ()=>window.removeEventListener("product:added", onProductAdded);
     }, [
-        scannerInputRef
+        scannerInputRef,
+        addOrIncrement
     ]);
     const cartTotal = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useMemo"])(()=>{
-        return cart.reduce((total, item)=>total + item.product.price * item.quantity, 0);
+        return cart.reduce((total, item)=>total + Number(item.product.price || 0) * item.quantity, 0);
     }, [
         cart
     ]);
@@ -235,7 +256,7 @@ const CartProvider = ({ children })=>{
         children: children
     }, void 0, false, {
         fileName: "[project]/src/contexts/cart-context.tsx",
-        lineNumber: 250,
+        lineNumber: 286,
         columnNumber: 10
     }, ("TURBOPACK compile-time value", void 0));
 };
@@ -2442,6 +2463,8 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$productRegister$2d$context$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/contexts/productRegister-context.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/alert-dialog.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$global$2f$ProductRegisterModal$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/global/ProductRegisterModal.tsx [app-ssr] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/hooks/products/useProductApi.ts [app-ssr] (ecmascript)");
+;
 ;
 ;
 ;
@@ -2486,15 +2509,38 @@ function POSLeftCol({ step }) {
         refocusScanner();
     };
     // Modified scanAndAddToCart to handle unregistered products
-    function handleScanAndAddToCart(barcode) {
-        const foundProduct = products.find((p)=>p.barcode === barcode);
+    // function handleScanAndAddToCart(barcode: string) {
+    //   const foundProduct = products.find(p => p.barcode === barcode);
+    //   if (foundProduct) {
+    //     scanAndAddToCart(barcode);
+    //     refocusScanner(); // Refocus after successful scan
+    //   } else {
+    //     setUnregisteredBarcode(barcode);
+    //     setShowRegisterDialog(true);
+    //   }
+    // }
+    async function handleScanAndAddToCart(barcode) {
+        const clean = (v)=>v == null ? "" : String(v).replace(/[\u0000-\u001F\u007F-\u009F]/g, "").trim();
+        const cleaned = clean(barcode);
+        // 1) try local cache (cleaned equality)
+        const foundProduct = products.find((p)=>clean(p?.barcode) === cleaned);
         if (foundProduct) {
-            scanAndAddToCart(barcode);
-            refocusScanner(); // Refocus after successful scan
-        } else {
-            setUnregisteredBarcode(barcode);
-            setShowRegisterDialog(true);
+            await scanAndAddToCart(cleaned);
+            refocusScanner();
+            return;
         }
+        // 2) fallback to server lookup (productApi.getByBarcode already cleaned)
+        try {
+            const serverProduct = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["productApi"].getByBarcode(cleaned);
+            if (serverProduct) {
+                await scanAndAddToCart(cleaned);
+                refocusScanner();
+                return;
+            }
+        } catch  {}
+        // 3) still not found -> prompt to register
+        setUnregisteredBarcode(cleaned);
+        setShowRegisterDialog(true);
     }
     function handleRegisterProduct(barcode) {
         setShowRegisterDialog(false);
@@ -2519,7 +2565,7 @@ function POSLeftCol({ step }) {
                             disabled: step === 2 || step === 3
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/index.tsx",
-                            lineNumber: 100,
+                            lineNumber: 129,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_pages$2f$POS$2f$components$2f$leftColumn$2f$ProductSearch$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
@@ -2533,7 +2579,7 @@ function POSLeftCol({ step }) {
                             disabled: step === 2 || step === 3
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/index.tsx",
-                            lineNumber: 107,
+                            lineNumber: 136,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2548,28 +2594,28 @@ function POSLeftCol({ step }) {
                                 disabled: step === 2 || step === 3
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/index.tsx",
-                                lineNumber: 118,
+                                lineNumber: 147,
                                 columnNumber: 13
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/index.tsx",
-                            lineNumber: 117,
+                            lineNumber: 146,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/index.tsx",
-                    lineNumber: 99,
+                    lineNumber: 128,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/index.tsx",
-                lineNumber: 95,
+                lineNumber: 124,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$global$2f$ProductRegisterModal$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {}, void 0, false, {
                 fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/index.tsx",
-                lineNumber: 130,
+                lineNumber: 159,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["AlertDialog"], {
@@ -2583,7 +2629,7 @@ function POSLeftCol({ step }) {
                                     children: "Product Not Registered"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/index.tsx",
-                                    lineNumber: 134,
+                                    lineNumber: 163,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["AlertDialogDescription"], {
@@ -2594,20 +2640,20 @@ function POSLeftCol({ step }) {
                                             children: unregisteredBarcode
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/index.tsx",
-                                            lineNumber: 136,
+                                            lineNumber: 165,
                                             columnNumber: 36
                                         }, this),
                                         ") is not registered. Would you like to register it?"
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/index.tsx",
-                                    lineNumber: 135,
+                                    lineNumber: 164,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/index.tsx",
-                            lineNumber: 133,
+                            lineNumber: 162,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["AlertDialogFooter"], {
@@ -2617,7 +2663,7 @@ function POSLeftCol({ step }) {
                                     children: "Cancel"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/index.tsx",
-                                    lineNumber: 140,
+                                    lineNumber: 169,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["AlertDialogAction"], {
@@ -2625,30 +2671,30 @@ function POSLeftCol({ step }) {
                                     children: "Register Product"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/index.tsx",
-                                    lineNumber: 141,
+                                    lineNumber: 170,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/index.tsx",
-                            lineNumber: 139,
+                            lineNumber: 168,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/index.tsx",
-                    lineNumber: 132,
+                    lineNumber: 161,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/index.tsx",
-                lineNumber: 131,
+                lineNumber: 160,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/index.tsx",
-        lineNumber: 94,
+        lineNumber: 123,
         columnNumber: 5
     }, this);
 } // ...existing code...

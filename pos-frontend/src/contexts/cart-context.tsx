@@ -1,4 +1,3 @@
-// ...existing code...
 import React, {
   createContext,
   useContext,
@@ -34,6 +33,17 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+const genId = () =>
+  typeof crypto !== "undefined" && typeof (crypto as any).randomUUID === "function"
+    ? (crypto as any).randomUUID()
+    : Date.now().toString();
+
+const productEqual = (a: Product, b: Product) => {
+  // Prefer stable id comparison; fallback to barcode equality
+  if (a?.id && b?.id) return a.id === b.id;
+  return Boolean(a?.barcode && b?.barcode && a.barcode === b.barcode);
+};
+
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [scanError, setScanError] = useState<string | null>(null);
@@ -56,7 +66,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         if (scannerInputRef?.current) {
           scannerInputRef.current.focus();
         }
-      } catch {}
+      } catch { }
     }, 100);
   }, [scannerInputRef]);
 
@@ -78,46 +88,103 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     setCart((prevCart) => prevCart.filter((item) => item.id !== id));
   }, []);
 
+  const addOrIncrement = useCallback((product: Product) => {
+    try {
+      console.log("[cart] addOrIncrement called:", {
+        id: product?.id,
+        barcode: product?.barcode,
+        name: product?.name,
+      });
+    } catch { }
+
+    setCart((prevCart) => {
+      const existing = prevCart.find((item) => productEqual(item.product, product));
+      if (existing) {
+        try {
+          console.log("[cart] existing item found, incrementing quantity for:", {
+            existingId: existing.id,
+            productId: existing.product?.id,
+            barcode: existing.product?.barcode,
+          });
+        } catch { }
+        return prevCart.map((item) =>
+          productEqual(item.product, product) ? { ...item, quantity: item.quantity + 1 } : item
+        );
+      }
+      const cartItem: CartItem = {
+        product,
+        quantity: 1,
+        id: genId(),
+      };
+      try {
+        console.log("[cart] pushing new cart item:", {
+          cartItemId: cartItem.id,
+          productId: product?.id,
+          barcode: product?.barcode,
+          name: product?.name,
+        });
+      } catch { }
+      return [...prevCart, cartItem];
+    });
+  }, []);
+
   const scanAndAddToCart = useCallback(
     async (barcode: string): Promise<void> => {
       if (!barcode) return;
+      // Debug helper: show raw, cleaned value, length and char codes
+      const logBarcodeDetails = (label: string, v: string) => {
+        try {
+          const raw = String(v);
+          const cleaned = raw.replace(/[\u0000-\u001F\u007F-\u009F]/g, "").trim();
+          console.log(`[cart][barcode] ${label} -> raw:${JSON.stringify(raw)} length:${raw.length}`);
+          console.log(`[cart][barcode] ${label} -> cleaned:${JSON.stringify(cleaned)} length:${cleaned.length}`);
+          console.log(
+            `[cart][barcode] ${label} charCodes:`,
+            Array.from(raw).map((c) => c.charCodeAt(0))
+          );
+          return cleaned;
+        } catch (err) {
+          console.log("[cart][barcode] logging error", err);
+          return barcode.trim();
+        }
+      };
+
       try {
         setIsScanning(true);
         setScanError(null);
 
-        const product = await productApi.getByBarcode(barcode);
+        const cleanedBarcode = logBarcodeDetails("scanned", barcode);
+
+        // Call API with cleaned barcode
+        const product = await productApi.getByBarcode(cleanedBarcode);
+
+        try {
+          console.log("[cart] scanAndAddToCart scanned barcode:", cleanedBarcode, "-> product:", product);
+          console.log(
+            "[cart] scanAndAddToCart product details:",
+            product ? { id: product.id, barcode: product.barcode, name: product.name } : null
+          );
+        } catch {}
 
         if (product) {
-          setCart((prevCart) => {
-            const existing = prevCart.find(
-              (item) => item.product.barcode === product.barcode
-            );
-            if (existing) {
-              return prevCart.map((item) =>
-                item.product.barcode === product.barcode
-                  ? { ...item, quantity: item.quantity + 1 }
-                  : item
-              );
-            } else {
-              const cartItem: CartItem = {
-                product,
-                quantity: 1,
-                id: Date.now().toString(),
-              };
-              return [...prevCart, cartItem];
-            }
-          });
+          addOrIncrement(product);
         } else {
+          try {
+            console.log("[cart] scanAndAddToCart: product not found for cleaned barcode:", cleanedBarcode);
+          } catch {}
+
           // Product not found: open add-product modal and prefill barcode
-          if (typeof setContextBarcode === "function") {
-            setContextBarcode(barcode);
-          }
-          if (typeof openModal === "function") {
-            openModal("addProduct");
-          } else if (typeof setProductModalOpen === "function") {
-            setProductModalOpen(true);
-          }
-          setScanError(`Product not found: ${barcode}`);
+          try {
+            if (typeof setContextBarcode === "function") {
+              setContextBarcode(cleanedBarcode);
+            }
+            if (typeof openModal === "function") {
+              openModal("addProduct");
+            } else if (typeof setProductModalOpen === "function") {
+              setProductModalOpen(true);
+            }
+          } catch {}
+          setScanError(`Product not found: ${cleanedBarcode}`);
         }
       } catch (error) {
         const errorMessage =
@@ -129,93 +196,62 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         refocusScanner();
       }
     },
-    [openModal, setProductModalOpen, setContextBarcode, refocusScanner]
+    [openModal, setProductModalOpen, setContextBarcode, refocusScanner, addOrIncrement]
   );
 
   // Listen for product:added events so newly created products can be added immediately
   useEffect(() => {
     const onProductAdded = (e: Event) => {
       const detail = (e as CustomEvent)?.detail;
+      // Debug: log product:added event payload
+      try {
+        console.log("[cart] product:added event detail:", detail);
+      } catch { }
       if (!detail) return;
 
       const addedProduct: Product | undefined = detail.product;
       const barcode: string | undefined = detail.barcode;
 
-      // If product object was returned by the modal, add it directly to cart (no backend round-trip)
       if (addedProduct) {
-        setCart((prevCart) => {
-          const existing = prevCart.find((item) => item.product.barcode === addedProduct.barcode);
-          if (existing) {
-            return prevCart.map((item) =>
-              item.product.barcode === addedProduct.barcode ? { ...item, quantity: item.quantity + 1 } : item
-            );
-          } else {
-            const cartItem: CartItem = {
-              product: addedProduct,
-              quantity: 1,
-              id: Date.now().toString(),
-            };
-            return [...prevCart, cartItem];
-          }
-        });
+        addOrIncrement(addedProduct);
       } else if (barcode) {
         // if only barcode was provided, attempt to fetch product and add (defensive)
         (async () => {
           try {
             const product = await productApi.getByBarcode(barcode);
-            if (product) {
-              setCart((prevCart) => {
-                const existing = prevCart.find((item) => item.product.barcode === product.barcode);
-                if (existing) {
-                  return prevCart.map((item) =>
-                    item.product.barcode === product.barcode ? { ...item, quantity: item.quantity + 1 } : item
-                  );
-                } else {
-                  const cartItem: CartItem = {
-                    product,
-                    quantity: 1,
-                    id: Date.now().toString(),
-                  };
-                  return [...prevCart, cartItem];
-                }
-              });
-            }
+            if (product) addOrIncrement(product);
           } catch {
-            // ignore fetch errors here; modal likely handled creation
+            // ignore fetch errors here
           }
         })();
       }
 
-      // Clear the hidden scanner input value so the next hardware scan starts fresh,
-      // dispatch an 'input' event so the barcode hook's React state stays in sync, then focus.
+      // Clear and refocus hidden scanner input
       try {
         const el = scannerInputRef?.current;
         if (el) {
           try {
             el.value = "";
-          } catch {}
-          // Sync any listeners (handleBarcodeChange) with an input event
+          } catch { }
           el.dispatchEvent(new Event("input", { bubbles: true }));
-          // Focus after a short delay to ensure scanner writes into the empty field
           setTimeout(() => {
             try {
               el.focus();
-              // defensive caret reset
               if (typeof el.setSelectionRange === "function") {
                 el.setSelectionRange(0, 0);
               }
-            } catch {}
+            } catch { }
           }, 50);
         }
-      } catch {}
+      } catch { }
     };
 
     window.addEventListener("product:added", onProductAdded as EventListener);
     return () => window.removeEventListener("product:added", onProductAdded as EventListener);
-  }, [scannerInputRef]);
+  }, [scannerInputRef, addOrIncrement]);
 
   const cartTotal = useMemo(() => {
-    return cart.reduce((total, item) => total + item.product.price * item.quantity, 0);
+    return cart.reduce((total, item) => total + Number(item.product.price || 0) * item.quantity, 0);
   }, [cart]);
 
   const value = useMemo(

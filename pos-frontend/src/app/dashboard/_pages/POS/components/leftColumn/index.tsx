@@ -23,6 +23,10 @@ import {
 } from '@/components/ui/alert-dialog'
 import ProductRegisterModal from "@/components/global/ProductRegisterModal";
 
+import { productApi } from "@/hooks/products/useProductApi";
+
+
+
 interface POSLeftColProps {
   step: 1 | 2 | 3;
 }
@@ -72,17 +76,42 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
   };
 
   // Modified scanAndAddToCart to handle unregistered products
-  function handleScanAndAddToCart(barcode: string) {
-    const foundProduct = products.find(p => p.barcode === barcode);
-    if (foundProduct) {
-      scanAndAddToCart(barcode);
-      refocusScanner(); // Refocus after successful scan
-    } else {
-      setUnregisteredBarcode(barcode);
-      setShowRegisterDialog(true);
-    }
-  }
+  // function handleScanAndAddToCart(barcode: string) {
+  //   const foundProduct = products.find(p => p.barcode === barcode);
+  //   if (foundProduct) {
+  //     scanAndAddToCart(barcode);
+  //     refocusScanner(); // Refocus after successful scan
+  //   } else {
+  //     setUnregisteredBarcode(barcode);
+  //     setShowRegisterDialog(true);
+  //   }
+  // }
+  async function handleScanAndAddToCart(barcode: string) {
+    const clean = (v?: string) => (v == null ? "" : String(v).replace(/[\u0000-\u001F\u007F-\u009F]/g, "").trim());
+    const cleaned = clean(barcode);
 
+    // 1) try local cache (cleaned equality)
+    const foundProduct = products.find((p) => clean(p?.barcode) === cleaned);
+    if (foundProduct) {
+      await scanAndAddToCart(cleaned);
+      refocusScanner();
+      return;
+    }
+
+    // 2) fallback to server lookup (productApi.getByBarcode already cleaned)
+    try {
+      const serverProduct = await productApi.getByBarcode(cleaned);
+      if (serverProduct) {
+        await scanAndAddToCart(cleaned);
+        refocusScanner();
+        return;
+      }
+    } catch { /* ignore */ }
+
+    // 3) still not found -> prompt to register
+    setUnregisteredBarcode(cleaned);
+    setShowRegisterDialog(true);
+  }
   function handleRegisterProduct(barcode: string) {
     setShowRegisterDialog(false);
     setBarcode(barcode); // <-- set barcode in context

@@ -86,40 +86,51 @@ export const productApi = {
   },
 
   // Prefer query param endpoint (safe) -> dedicated route -> fallback to local search
+
   async getByBarcode(barcode: string): Promise<Product | null> {
     if (!barcode) return null;
 
-    // 1) query param (returns array, safe 200)
+    const clean = (v: string) => String(v).replace(/[\u0000-\u001F\u007F-\u009F]/g, "").trim();
+    const cleaned = clean(barcode);
+    const encoded = encodeURIComponent(cleaned);
+
+    const exactUrl = `${API_BASE_URL}/products/barcode/${encoded}`;
+    const queryUrl = `${API_BASE_URL}/products?barcode=${encoded}`;
+
     try {
-      const qRes = await fetch(`${API_BASE_URL}/products?barcode=${encodeURIComponent(String(barcode))}`);
-      if (qRes.ok) {
-        const qJson: ApiResponse<Product[]> = await qRes.json().catch(() => ({ data: [] }));
-        const arr = qJson.data ?? [];
-        return arr.length > 0 ? arr[0] : null;
+      console.log("[productApi] getByBarcode -> trying exact:", exactUrl);
+      const res = await fetch(exactUrl);
+      console.log("[productApi] exact status:", res.status, res.statusText);
+      const txt = await res.text().catch(() => "");
+      try { console.log("[productApi] exact body:", txt.length > 0 ? JSON.parse(txt) : txt); } catch { console.log("[productApi] exact body (raw):", txt); }
+      if (res.status === 404) return null;
+      if (res.ok) {
+        const json = typeof txt === "string" && txt.length ? JSON.parse(txt) : {};
+        const product: Product | null = json?.data ?? null;
+        if (product) return product;
       }
-    } catch {
-      /* ignore and try next */
+    } catch (err) {
+      console.warn("[productApi] exact endpoint error:", err);
     }
 
-    // 2) dedicated route (may return data:null or 200/404)
     try {
-      const r = await fetch(`${API_BASE_URL}/products/barcode/${encodeURIComponent(String(barcode))}`);
-      if (r.ok) {
-        const json: ApiResponse<Product | null> = await r.json().catch(() => ({ data: null } as any));
-        return json.data ?? null;
-      }
-    } catch {
-      /* ignore and try fallback */
-    }
-
-    // 3) final fallback: fetch all and search locally
-    try {
-      const all = await productApi.getAll();
-      return all.find(p => String(p.barcode) === String(barcode)) ?? null;
-    } catch {
+      console.log("[productApi] getByBarcode -> falling back to query:", queryUrl);
+      const res2 = await fetch(queryUrl);
+      console.log("[productApi] query status:", res2.status, res2.statusText);
+      const txt2 = await res2.text().catch(() => "");
+      try { console.log("[productApi] query body:", txt2.length > 0 ? JSON.parse(txt2) : txt2); } catch { console.log("[productApi] query body (raw):", txt2); }
+      if (!res2.ok) return null;
+      const qjson = typeof txt2 === "string" && txt2.length ? JSON.parse(txt2) : { data: [] };
+      const list: Product[] = qjson?.data ?? [];
+      if (list.length === 0) return null;
+      const exact = list.find(p => clean(p?.barcode ?? "") === cleaned);
+      return exact ?? list[0];
+    } catch (err) {
+      console.error("[productApi] fallback error:", err);
       return null;
     }
   },
+
 
   async getByName(name: string): Promise<Product | null> {
     if (!name) return null;
@@ -136,7 +147,7 @@ export const productApi = {
         }
         return null;
       }
-    } catch {}
+    } catch { }
 
     // 2) dedicated route
     try {
@@ -145,7 +156,7 @@ export const productApi = {
         const json: ApiResponse<Product | null> = await r.json().catch(() => ({ data: null } as any));
         return json.data ?? null;
       }
-    } catch {}
+    } catch { }
 
     // 3) fallback to local search
     try {
