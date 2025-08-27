@@ -87,7 +87,7 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
   //   }
   // }
   async function handleScanAndAddToCart(barcode: string) {
-    const clean = (v?: string) => (v == null ? "" : String(v).replace(/[\u0000-\u001F\u007F-\u009F]/g, "").trim());
+    const clean = (v: string | null | undefined) => (v == null ? "" : String(v).replace(/[\u0000-\u001F\u007F-\u009F]/g, "").trim());
     const cleaned = clean(barcode);
 
     // 1) try local cache (cleaned equality)

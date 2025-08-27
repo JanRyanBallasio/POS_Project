@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { mutate } from "swr";
-import { productApi, Product } from "@/hooks/products/useProductApi";
-import { PRODUCTS_KEY, useProducts } from "@/hooks/global/fetching/useProducts";
+import { productApi, Product, PRODUCTS_KEY } from "@/hooks/products/useProductApi";
+import { useProducts } from "@/hooks/global/fetching/useProducts";
 
 type CreateInput = Omit<Product, "id">;
 type FieldError = { field?: string; message: string } | null;

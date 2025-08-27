@@ -1958,25 +1958,42 @@ function AddCategoryModal() {
 
 // ...existing code...
 __turbopack_context__.s([
+    "PRODUCTS_KEY",
+    ()=>PRODUCTS_KEY,
     "productApi",
     ()=>productApi
 ]);
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__ = __turbopack_context__.i("[project]/node_modules/swr/dist/_internal/config-context-client-BoS53ST9.mjs [app-ssr] (ecmascript) <export j as mutate>");
 ;
+const PRODUCTS_KEY = "/products";
 const API_BASE_URL = (("TURBOPACK compile-time value", "http://localhost:5000/api") || "").replace(/\/$/, "");
 const BARCODE_CACHE = new Map();
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 const STORAGE_KEY = "pos:barcode-cache";
+let saveTimer = null;
+const SAVE_DEBOUNCE_MS = 500;
+function isPlainObject(v) {
+    return typeof v === "object" && v !== null && !Array.isArray(v);
+}
 function loadCacheFromStorage() {
     try {
-        const raw = ("TURBOPACK compile-time falsy", 0) ? "TURBOPACK unreachable" : null;
         if ("TURBOPACK compile-time truthy", 1) return;
         //TURBOPACK unreachable
         ;
-        const obj = undefined;
+        const raw = undefined;
+        const parsed = undefined;
+    } catch  {
+    // ignore any parse errors
+    }
+}
+function scheduleSaveCacheToStorage() {
+    try {
+        if ("TURBOPACK compile-time truthy", 1) return;
+        //TURBOPACK unreachable
+        ;
     } catch  {}
 }
-function saveCacheToStorage() {
+function saveCacheToStorageImmediate() {
     try {
         if ("TURBOPACK compile-time truthy", 1) return;
         //TURBOPACK unreachable
@@ -1986,31 +2003,101 @@ function saveCacheToStorage() {
 }
 function cacheSet(product) {
     if (!product || !product.barcode) return;
-    BARCODE_CACHE.set(String(product.barcode), {
+    const key = String(product.barcode);
+    BARCODE_CACHE.set(key, {
         product,
         ts: Date.now()
     });
-    // persist (debounced not implemented for simplicity)
-    try {
-        saveCacheToStorage();
-    } catch  {}
+    scheduleSaveCacheToStorage();
 }
 function cacheGet(barcode) {
     if (!barcode) return null;
-    const entry = BARCODE_CACHE.get(barcode);
+    const key = String(barcode);
+    const entry = BARCODE_CACHE.get(key);
     if (!entry) return null;
     if (Date.now() - entry.ts > CACHE_TTL_MS) {
-        BARCODE_CACHE.delete(barcode);
-        try {
-            saveCacheToStorage();
-        } catch  {}
+        BARCODE_CACHE.delete(key);
+        scheduleSaveCacheToStorage();
         return null;
     }
     return entry.product;
 }
+// New helpers: remove cache entries by barcode or by product id
+function cacheDeleteByBarcode(barcode) {
+    try {
+        const key = String(barcode);
+        if (BARCODE_CACHE.delete(key)) {
+            scheduleSaveCacheToStorage();
+        }
+    } catch  {}
+}
+function cacheDeleteById(id) {
+    try {
+        let removed = false;
+        for (const [k, v] of Array.from(BARCODE_CACHE.entries())){
+            if (v?.product?.id === id) {
+                BARCODE_CACHE.delete(k);
+                removed = true;
+            }
+        }
+        if (removed) scheduleSaveCacheToStorage();
+    } catch  {}
+}
 // initialize cache from storage (browser only)
 if ("TURBOPACK compile-time falsy", 0) //TURBOPACK unreachable
 ;
+function prependProductToList(old, created) {
+    if (!old) return [
+        created
+    ];
+    if (Array.isArray(old)) {
+        // cast as Product[]
+        return [
+            created,
+            ...old
+        ];
+    }
+    if (isPlainObject(old) && Array.isArray(old.data)) {
+        const data = old.data;
+        return {
+            ...old,
+            data: [
+                created,
+                ...data
+            ],
+            count: (old.count ?? data.length) + 1
+        };
+    }
+    return old;
+}
+function replaceProductInList(old, updated) {
+    if (!old) return old;
+    if (Array.isArray(old)) {
+        return old.map((p)=>p.id === updated.id ? updated : p);
+    }
+    if (isPlainObject(old) && Array.isArray(old.data)) {
+        return {
+            ...old,
+            data: old.data.map((p)=>p.id === updated.id ? updated : p)
+        };
+    }
+    return old;
+}
+function removeProductFromList(old, id) {
+    if (!old) return old;
+    if (Array.isArray(old)) {
+        return old.filter((p)=>p.id !== id);
+    }
+    if (isPlainObject(old) && Array.isArray(old.data)) {
+        const newData = old.data.filter((p)=>p.id !== id);
+        return {
+            ...old,
+            data: newData,
+            count: Math.max(0, (old.count ?? old.data.length) - 1)
+        };
+    }
+    return old;
+}
 const productApi = {
     async getAll () {
         try {
@@ -2042,35 +2129,12 @@ const productApi = {
             throw new Error(errorMsg);
         }
         const created = json.data;
-        // update local cache so immediate subsequent scans are fast
         try {
             cacheSet(created);
         } catch  {}
         // optimistic update: add to products list SWR cache (don't revalidate)
         try {
-            (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__["mutate"])("/products", (old)=>{
-                if (!old) return [
-                    created
-                ];
-                // if old is object { data: [...] } handle both shapes
-                if (Array.isArray(old)) {
-                    return [
-                        created,
-                        ...old
-                    ];
-                }
-                if (old && Array.isArray(old.data)) {
-                    return {
-                        ...old,
-                        data: [
-                            created,
-                            ...old.data
-                        ],
-                        count: (old.count || old.data.length) + 1
-                    };
-                }
-                return old;
-            }, false).catch(()=>{});
+            (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__["mutate"])("/products", (old)=>prependProductToList(old, created), false).catch(()=>{});
         } catch  {}
         return created;
     },
@@ -2090,24 +2154,16 @@ const productApi = {
             throw new Error(errorMsg);
         }
         const updated = json.data;
+        // remove any stale cache entries for this id (in case barcode changed or was removed)
+        try {
+            cacheDeleteById(updated.id);
+        } catch  {}
         try {
             cacheSet(updated);
         } catch  {}
         // update SWR cache entries for lists and individual product
         try {
-            (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__["mutate"])("/products", (old)=>{
-                if (!old) return old;
-                if (Array.isArray(old)) {
-                    return old.map((p)=>p.id === updated.id ? updated : p);
-                }
-                if (old && Array.isArray(old.data)) {
-                    return {
-                        ...old,
-                        data: old.data.map((p)=>p.id === updated.id ? updated : p)
-                    };
-                }
-                return old;
-            }, false).catch(()=>{});
+            (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__["mutate"])(PRODUCTS_KEY, (old)=>replaceProductInList(old, updated), false).catch(()=>{});
             (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__["mutate"])([
                 "product",
                 id
@@ -2136,43 +2192,37 @@ const productApi = {
         });
         if (!response.ok) {
             const json = await response.json().catch(()=>({}));
-            const errorMsg = json?.error || json?.message || `Failed to delete product: ${response.status}`;
+            const errorMsg = json && json.error || json && json.message || `Failed to delete product: ${response.status}`;
             throw new Error(errorMsg);
         }
         // remove from SWR cache lists
         try {
-            (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__["mutate"])("/products", (old)=>{
-                if (!old) return old;
-                if (Array.isArray(old)) return old.filter((p)=>p.id !== id);
-                if (old && Array.isArray(old.data)) return {
-                    ...old,
-                    data: old.data.filter((p)=>p.id !== id),
-                    count: Math.max(0, (old.count || old.data.length) - 1)
-                };
-                return old;
-            }, false).catch(()=>{});
+            (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__["mutate"])(PRODUCTS_KEY, (old)=>removeProductFromList(old, id), false).catch(()=>{});
             (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__["mutate"])([
                 "product",
                 id
             ], null, false).catch(()=>{});
+        } catch  {}
+        // ALSO remove any barcode cache entries that reference this id
+        try {
+            cacheDeleteById(id);
         } catch  {}
     },
     async getByBarcode (barcode) {
         if (!barcode) return null;
         const clean = (v)=>String(v).replace(/[\u0000-\u001F\u007F-\u009F]/g, "").trim();
         const cleaned = clean(barcode);
-        // check short-lived in-memory cache first
-        try {
-            const cached = cacheGet(cleaned);
-            if (cached) return cached;
-        } catch  {}
+        if (!cleaned) return null;
         const encoded = encodeURIComponent(cleaned);
         const exactUrl = `${API_BASE_URL}/products/barcode/${encoded}`;
         const queryUrl = `${API_BASE_URL}/products?barcode=${encoded}`;
-        // try exact endpoint
+        // Try server first so deletes/updates are honored immediately.
         try {
             const res = await fetch(exactUrl);
-            if (res.status === 404) return null;
+            if (res.status === 404) {
+                // server explicitly says not found
+                return null;
+            }
             if (res.ok) {
                 const json = await res.json().catch(()=>({
                         data: null
@@ -2185,10 +2235,16 @@ const productApi = {
                     return product;
                 }
             }
+        // if non-404 non-ok, fall through to cache/fallback
         } catch  {
-        // ignore exact endpoint errors
+        // network error -> fallback to cache below
         }
-        // fallback to query endpoint
+        // fallback to cache if available (useful when offline)
+        try {
+            const cached = cacheGet(cleaned);
+            if (cached) return cached;
+        } catch  {}
+        // last-resort: query endpoint (returns list)
         try {
             const res2 = await fetch(queryUrl);
             if (!res2.ok) return null;
@@ -2207,7 +2263,11 @@ const productApi = {
             return null;
         }
     }
-}; // ...existing code...
+};
+// ensure cache is saved immediately when unloading page
+if ("TURBOPACK compile-time falsy", 0) //TURBOPACK unreachable
+;
+ // ...existing code...
 }),
 "[project]/src/hooks/global/fetching/useProducts.ts [app-ssr] (ecmascript)", ((__turbopack_context__) => {
 "use strict";
@@ -2388,7 +2448,7 @@ function useAddProduct() {
             }
             // Optimistically update SWR cache
             try {
-                await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__["mutate"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$global$2f$fetching$2f$useProducts$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["PRODUCTS_KEY"], (current)=>{
+                await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__["mutate"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["PRODUCTS_KEY"], (current)=>{
                     const filtered = (current ?? []).filter((p)=>p.id !== createdProduct.id);
                     return [
                         createdProduct,
@@ -2398,7 +2458,7 @@ function useAddProduct() {
             } catch  {
             // ignore mutate errors
             }
-            (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__["mutate"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$global$2f$fetching$2f$useProducts$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["PRODUCTS_KEY"]);
+            (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__["mutate"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["PRODUCTS_KEY"]);
             setSuccess(true);
             setLoading(false);
             return createdProduct;
@@ -2794,175 +2854,6 @@ function ScrollBar({ className, orientation = "vertical", ...props }) {
 }
 ;
 }),
-"[project]/src/components/ui/alert-dialog.tsx [app-ssr] (ecmascript)", ((__turbopack_context__) => {
-"use strict";
-
-__turbopack_context__.s([
-    "AlertDialog",
-    ()=>AlertDialog,
-    "AlertDialogAction",
-    ()=>AlertDialogAction,
-    "AlertDialogCancel",
-    ()=>AlertDialogCancel,
-    "AlertDialogContent",
-    ()=>AlertDialogContent,
-    "AlertDialogDescription",
-    ()=>AlertDialogDescription,
-    "AlertDialogFooter",
-    ()=>AlertDialogFooter,
-    "AlertDialogHeader",
-    ()=>AlertDialogHeader,
-    "AlertDialogOverlay",
-    ()=>AlertDialogOverlay,
-    "AlertDialogPortal",
-    ()=>AlertDialogPortal,
-    "AlertDialogTitle",
-    ()=>AlertDialogTitle,
-    "AlertDialogTrigger",
-    ()=>AlertDialogTrigger
-]);
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/route-modules/app-page/vendored/ssr/react-jsx-dev-runtime.js [app-ssr] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$radix$2d$ui$2f$react$2d$alert$2d$dialog$2f$dist$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/@radix-ui/react-alert-dialog/dist/index.mjs [app-ssr] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$utils$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/lib/utils.ts [app-ssr] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/button.tsx [app-ssr] (ecmascript)");
-"use client";
-;
-;
-;
-;
-function AlertDialog({ ...props }) {
-    return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$radix$2d$ui$2f$react$2d$alert$2d$dialog$2f$dist$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Root"], {
-        "data-slot": "alert-dialog",
-        ...props
-    }, void 0, false, {
-        fileName: "[project]/src/components/ui/alert-dialog.tsx",
-        lineNumber: 12,
-        columnNumber: 10
-    }, this);
-}
-function AlertDialogTrigger({ ...props }) {
-    return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$radix$2d$ui$2f$react$2d$alert$2d$dialog$2f$dist$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Trigger"], {
-        "data-slot": "alert-dialog-trigger",
-        ...props
-    }, void 0, false, {
-        fileName: "[project]/src/components/ui/alert-dialog.tsx",
-        lineNumber: 19,
-        columnNumber: 5
-    }, this);
-}
-function AlertDialogPortal({ ...props }) {
-    return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$radix$2d$ui$2f$react$2d$alert$2d$dialog$2f$dist$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Portal"], {
-        "data-slot": "alert-dialog-portal",
-        ...props
-    }, void 0, false, {
-        fileName: "[project]/src/components/ui/alert-dialog.tsx",
-        lineNumber: 27,
-        columnNumber: 5
-    }, this);
-}
-function AlertDialogOverlay({ className, ...props }) {
-    return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$radix$2d$ui$2f$react$2d$alert$2d$dialog$2f$dist$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Overlay"], {
-        "data-slot": "alert-dialog-overlay",
-        className: (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$utils$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["cn"])("data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/50", className),
-        ...props
-    }, void 0, false, {
-        fileName: "[project]/src/components/ui/alert-dialog.tsx",
-        lineNumber: 36,
-        columnNumber: 5
-    }, this);
-}
-function AlertDialogContent({ className, ...props }) {
-    return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(AlertDialogPortal, {
-        children: [
-            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(AlertDialogOverlay, {}, void 0, false, {
-                fileName: "[project]/src/components/ui/alert-dialog.tsx",
-                lineNumber: 53,
-                columnNumber: 7
-            }, this),
-            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$radix$2d$ui$2f$react$2d$alert$2d$dialog$2f$dist$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Content"], {
-                "data-slot": "alert-dialog-content",
-                className: (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$utils$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["cn"])("bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg", className),
-                ...props
-            }, void 0, false, {
-                fileName: "[project]/src/components/ui/alert-dialog.tsx",
-                lineNumber: 54,
-                columnNumber: 7
-            }, this)
-        ]
-    }, void 0, true, {
-        fileName: "[project]/src/components/ui/alert-dialog.tsx",
-        lineNumber: 52,
-        columnNumber: 5
-    }, this);
-}
-function AlertDialogHeader({ className, ...props }) {
-    return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-        "data-slot": "alert-dialog-header",
-        className: (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$utils$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["cn"])("flex flex-col gap-2 text-center sm:text-left", className),
-        ...props
-    }, void 0, false, {
-        fileName: "[project]/src/components/ui/alert-dialog.tsx",
-        lineNumber: 71,
-        columnNumber: 5
-    }, this);
-}
-function AlertDialogFooter({ className, ...props }) {
-    return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-        "data-slot": "alert-dialog-footer",
-        className: (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$utils$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["cn"])("flex flex-col-reverse gap-2 sm:flex-row sm:justify-end", className),
-        ...props
-    }, void 0, false, {
-        fileName: "[project]/src/components/ui/alert-dialog.tsx",
-        lineNumber: 84,
-        columnNumber: 5
-    }, this);
-}
-function AlertDialogTitle({ className, ...props }) {
-    return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$radix$2d$ui$2f$react$2d$alert$2d$dialog$2f$dist$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Title"], {
-        "data-slot": "alert-dialog-title",
-        className: (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$utils$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["cn"])("text-lg font-semibold", className),
-        ...props
-    }, void 0, false, {
-        fileName: "[project]/src/components/ui/alert-dialog.tsx",
-        lineNumber: 100,
-        columnNumber: 5
-    }, this);
-}
-function AlertDialogDescription({ className, ...props }) {
-    return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$radix$2d$ui$2f$react$2d$alert$2d$dialog$2f$dist$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Description"], {
-        "data-slot": "alert-dialog-description",
-        className: (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$utils$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["cn"])("text-muted-foreground text-sm", className),
-        ...props
-    }, void 0, false, {
-        fileName: "[project]/src/components/ui/alert-dialog.tsx",
-        lineNumber: 113,
-        columnNumber: 5
-    }, this);
-}
-function AlertDialogAction({ className, ...props }) {
-    return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$radix$2d$ui$2f$react$2d$alert$2d$dialog$2f$dist$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Action"], {
-        className: (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$utils$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["cn"])((0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["buttonVariants"])(), className),
-        ...props
-    }, void 0, false, {
-        fileName: "[project]/src/components/ui/alert-dialog.tsx",
-        lineNumber: 126,
-        columnNumber: 5
-    }, this);
-}
-function AlertDialogCancel({ className, ...props }) {
-    return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$radix$2d$ui$2f$react$2d$alert$2d$dialog$2f$dist$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Cancel"], {
-        className: (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$utils$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["cn"])((0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["buttonVariants"])({
-            variant: "outline"
-        }), className),
-        ...props
-    }, void 0, false, {
-        fileName: "[project]/src/components/ui/alert-dialog.tsx",
-        lineNumber: 138,
-        columnNumber: 5
-    }, this);
-}
-;
-}),
 "[project]/src/components/global/ProductRegisterModal.tsx [app-ssr] (ecmascript)", ((__turbopack_context__) => {
 "use strict";
 
@@ -2988,9 +2879,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$l
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/button.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dropdown$2d$menu$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/dropdown-menu.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$scroll$2d$area$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/scroll-area.tsx [app-ssr] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/alert-dialog.tsx [app-ssr] (ecmascript)");
 "use client";
-;
 ;
 ;
 ;
@@ -3650,69 +3539,16 @@ function ProductRegisterModal() {
                 lineNumber: 397,
                 columnNumber: 13
             }, this),
-            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["AlertDialog"], {
-                open: showSuccessDialog,
-                onOpenChange: setShowSuccessDialog,
-                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["AlertDialogContent"], {
-                    onKeyDown: (e)=>{
-                        if (e.key === "Enter") {
-                            e.preventDefault();
-                            closeSuccess();
-                        }
-                    },
-                    children: [
-                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["AlertDialogHeader"], {
-                            children: [
-                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["AlertDialogTitle"], {
-                                    children: "Product Added"
-                                }, void 0, false, {
-                                    fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                    lineNumber: 402,
-                                    columnNumber: 25
-                                }, this),
-                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["AlertDialogDescription"], {
-                                    children: "Congratulations! Your product has been added successfully."
-                                }, void 0, false, {
-                                    fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                    lineNumber: 403,
-                                    columnNumber: 25
-                                }, this)
-                            ]
-                        }, void 0, true, {
-                            fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                            lineNumber: 401,
-                            columnNumber: 21
-                        }, this),
-                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["AlertDialogFooter"], {
-                            children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["AlertDialogAction"], {
-                                onClick: ()=>closeSuccess(),
-                                onKeyDown: (e)=>{
-                                    if (e.key === "Enter") {
-                                        e.preventDefault();
-                                        closeSuccess();
-                                    }
-                                },
-                                children: "OK"
-                            }, void 0, false, {
-                                fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                lineNumber: 406,
-                                columnNumber: 25
-                            }, this)
-                        }, void 0, false, {
-                            fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                            lineNumber: 405,
-                            columnNumber: 21
-                        }, this)
-                    ]
-                }, void 0, true, {
-                    fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                    lineNumber: 400,
-                    columnNumber: 17
-                }, this)
+            toastMessage && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                className: "fixed bottom-6 right-6 z-50 bg-green-600 text-white px-4 py-2 rounded shadow-lg cursor-pointer",
+                role: "status",
+                "aria-live": "polite",
+                onClick: closeToast,
+                children: toastMessage
             }, void 0, false, {
                 fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                lineNumber: 399,
-                columnNumber: 13
+                lineNumber: 401,
+                columnNumber: 17
             }, this)
         ]
     }, void 0, true);
@@ -3720,4 +3556,4 @@ function ProductRegisterModal() {
 }),
 ];
 
-//# sourceMappingURL=%5Broot-of-the-server%5D__c252447f._.js.map
+//# sourceMappingURL=%5Broot-of-the-server%5D__48fdf269._.js.map

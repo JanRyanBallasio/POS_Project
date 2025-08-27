@@ -92,9 +92,8 @@ export default function ProductRegisterModal() {
 
     // local UI state
     const [categorySearch, setCategorySearch] = useState("");
-    const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+    const [toastMessage, setToastMessage] = useState<string | null>(null);
     const [globalError, setGlobalError] = useState<string | null>(null);
-
     // react-hook-form
     const { register, handleSubmit, setValue, reset: resetForm, formState: { errors }, setError } = useForm<ProductFormValues>({
         resolver: zodResolver(productSchema) as any,
@@ -209,13 +208,41 @@ export default function ProductRegisterModal() {
 
         const result = await addProduct(values as any);
         if (result) {
-            setShowSuccessDialog(true);
+            // Close modal immediately so focus is returned to scanner quickly
+            setOpen(false);
+
+            // notify other parts immediately so cart/scanner update without waiting
+            try {
+                window.dispatchEvent(new CustomEvent("product:added", {
+                    detail: {
+                        product: (result as any)?.data ?? result,
+                        barcode: values.barcode ?? ""
+                    }
+                }));
+            } catch { }
+
+            // reset forms/stores immediately
             resetForm();
             resetFormStore();
-            try { await refetch(); } catch { /* ignore */ }
-            setOpen(false);
+
+            // schedule background refetch (don't block UI)
+            try { refetch?.().catch(() => { }); } catch { }
+
+            // show a lightweight toast (non-modal) so scanner focus isn't stolen
+            setToastMessage("Product added successfully");
+            window.setTimeout(() => setToastMessage(null), 3000);
         }
     };
+
+
+    const closeToast = useCallback(() => {
+        setToastMessage(null);
+        // ask the hidden scanner input to focus/clear
+        try {
+            window.dispatchEvent(new Event("focusBarcodeScanner"));
+        } catch { }
+    }, []);
+
 
     /* -------------------------
        Render
@@ -369,17 +396,17 @@ export default function ProductRegisterModal() {
 
             <AddCategoryModal />
 
-            <AlertDialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Product Added</AlertDialogTitle>
-                        <AlertDialogDescription>Congratulations! Your product has been added successfully.</AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogAction onClick={() => setShowSuccessDialog(false)}>OK</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            {/* Non-modal toast (won't trap focus) */}
+            {toastMessage && (
+                <div
+                    className="fixed bottom-6 right-6 z-50 bg-green-600 text-white px-4 py-2 rounded shadow-lg cursor-pointer"
+                    role="status"
+                    aria-live="polite"
+                    onClick={closeToast}
+                >
+                    {toastMessage}
+                </div>
+            )}
         </>
     );
 }
