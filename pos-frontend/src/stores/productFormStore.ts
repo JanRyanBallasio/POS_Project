@@ -5,14 +5,14 @@ type ProductFormState = {
   barcode: string;
   category_id: string;
   category_name: string;
-  price: number;
-  quantity: number;
+  price: string;
+  quantity: string;
   setName: (v: string) => void;
   setBarcode: (v: string) => void;
   setCategoryId: (v: string) => void;
   setCategoryName: (v: string) => void;
-  setPrice: (v: number) => void;
-  setQuantity: (v: number) => void;
+  setPrice: (v: string) => void;
+  setQuantity: (v: string) => void;
   reset: () => void;
 };
 
@@ -21,8 +21,8 @@ export const useProductFormStore = create<ProductFormState>((set) => ({
   barcode: "",
   category_id: "",
   category_name: "",
-  price: 0,
-  quantity: 0,
+  price: "",
+  quantity: "",
   setName: (v) => set({ name: v }),
   setBarcode: (v) => set({ barcode: v }),
   setCategoryId: (v) => set({ category_id: v }),
@@ -35,7 +35,7 @@ export const useProductFormStore = create<ProductFormState>((set) => ({
       barcode: "",
       category_id: "",
       category_name: "",
-      price: 0,
-      quantity: 0,
+      price: "",
+      quantity: "",
     }),
 }));
