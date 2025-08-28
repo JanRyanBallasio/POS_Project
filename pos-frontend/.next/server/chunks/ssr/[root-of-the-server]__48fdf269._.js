@@ -1137,6 +1137,7 @@ __turbopack_context__.s([
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/route-modules/app-page/vendored/ssr/react-jsx-dev-runtime.js [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$calculator$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Calculator$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/calculator.js [app-ssr] (ecmascript) <export default as Calculator>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$notebook$2d$pen$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__NotebookPen$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/notebook-pen.js [app-ssr] (ecmascript) <export default as NotebookPen>");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$truck$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Truck$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/truck.js [app-ssr] (ecmascript) <export default as Truck>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$house$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Home$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/house.js [app-ssr] (ecmascript) <export default as Home>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$client$2f$app$2d$dir$2f$link$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/client/app-dir/link.js [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$navigation$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/navigation.js [app-ssr] (ecmascript)");
@@ -1166,6 +1167,11 @@ const inventory = [
         title: "Products",
         url: "/dashboard/products",
         icon: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$notebook$2d$pen$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__NotebookPen$3e$__["NotebookPen"]
+    },
+    {
+        title: "Stock Movements",
+        url: "/dashboard/stock",
+        icon: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$truck$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Truck$3e$__["Truck"]
     }
 ];
 function AppSidebar() {
@@ -2101,13 +2107,19 @@ function removeProductFromList(old, id) {
 const productApi = {
     async getAll () {
         try {
-            const response = await fetch(`${API_BASE_URL}/products`);
+            const url = `${API_BASE_URL}/products`;
+            // debug: log the URL and (briefly) the response status to help diagnose missing data
+            // remove these logs after debugging
+            console.debug('[productApi.getAll] fetching', url);
+            const response = await fetch(url);
+            console.debug('[productApi.getAll] status', response.status);
             if (!response.ok) {
                 return [];
             }
             const json = await response.json().catch(()=>({
                     data: []
                 }));
+            console.debug('[productApi.getAll] got', Array.isArray(json.data) ? json.data.length : 0, 'items');
             return json.data ?? [];
         } catch  {
             return [];
@@ -2283,7 +2295,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/hooks/products/useProductApi.ts [app-ssr] (ecmascript)");
 ;
 ;
-const PRODUCTS_KEY = "/api/products";
+const PRODUCTS_KEY = "/products";
 const fetcher = async ()=>{
     try {
         return await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["productApi"].getAll();

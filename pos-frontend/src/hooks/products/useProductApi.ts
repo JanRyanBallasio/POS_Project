@@ -180,11 +180,17 @@ function removeProductFromList(old: ProductsListShape | undefined | null, id: nu
 export const productApi = {
   async getAll(): Promise<Product[]> {
     try {
-      const response = await fetch(`${API_BASE_URL}/products`);
+      const url = `${API_BASE_URL}/products`;
+      // debug: log the URL and (briefly) the response status to help diagnose missing data
+      // remove these logs after debugging
+      console.debug('[productApi.getAll] fetching', url);
+      const response = await fetch(url);
+      console.debug('[productApi.getAll] status', response.status);
       if (!response.ok) {
         return [];
       }
       const json = (await response.json().catch(() => ({ data: [] }))) as ApiResponse<Product[]>;
+      console.debug('[productApi.getAll] got', Array.isArray(json.data) ? json.data.length : 0, 'items');
       return json.data ?? [];
     } catch {
       return [];

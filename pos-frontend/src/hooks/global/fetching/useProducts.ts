@@ -3,7 +3,7 @@ import useSWR from "swr";
 import { productApi, Product } from "@/hooks/products/useProductApi";
 
 // canonical SWR key used across app
-export const PRODUCTS_KEY = "/api/products";
+export const PRODUCTS_KEY = "/products";
 
 const fetcher = async (): Promise<Product[]> => {
   try {

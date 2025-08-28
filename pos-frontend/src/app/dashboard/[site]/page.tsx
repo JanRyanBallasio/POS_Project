@@ -4,6 +4,7 @@ import { use } from "react";
 import MainDashboard from "../_pages/POS/pos-screen";
 import ProductsPage from "../_pages/Products/productsScreen";
 import DashboardScreen from "../_pages/Dashboard/dashboardScreen";
+import StockMovementScreen from "../_pages/StockMovements/stockMScreen";  
 
 export default function SiteDashboardPage({
   params,
@@ -19,6 +20,8 @@ export default function SiteDashboardPage({
       return <MainDashboard />;
     case "products":
       return <ProductsPage />;
+    case "stock":
+      return <StockMovementScreen />;
     default:
       return <div>{site}</div>;
   }
