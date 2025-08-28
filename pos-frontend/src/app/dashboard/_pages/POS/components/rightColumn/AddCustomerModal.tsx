@@ -128,3 +128,4 @@ export default function AddCustomerModal({ open, onOpenChange, onCustomerAdded }
             </DialogContent>
         </Dialog>
     );
+};

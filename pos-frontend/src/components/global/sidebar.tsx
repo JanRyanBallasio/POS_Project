@@ -1,6 +1,6 @@
 "use client";
 
-import { Calculator, NotebookPen, Home as IconInnerShadowTop, LayoutDashboard} from "lucide-react";
+import { Calculator, NotebookPen, Truck, ShoppingCart, Home as IconInnerShadowTop, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -37,11 +37,11 @@ const inventory = [
     url: "/dashboard/products",
     icon: NotebookPen,
   },
-  // {
-  //   title: "Inventory",
-  //   url: "/dashboard/asdass",
-  //   icon: Calculator,
-  // },
+  {
+    title: "Stock Movements",
+    url: "/dashboard/stock",
+    icon: Truck,
+  },
   // {
   //   title: "Categories",
   //   url: "/dashboard/asdasda",
