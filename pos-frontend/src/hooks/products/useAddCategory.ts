@@ -1,6 +1,6 @@
 // ...existing code...
 import { useState } from "react";
-import type { Category } from "@/hooks/global/fetching/useCategories";
+import type { Category } from "@/hooks/categories/useCategoryApi";
 
 type Payload = { name: string };
 type Options = { onSuccess?: (created: Category | any) => void };
