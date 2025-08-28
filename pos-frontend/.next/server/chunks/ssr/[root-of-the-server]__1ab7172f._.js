@@ -856,6 +856,7 @@ function Receipt({ selectedCustomer, cartTotal }) {
 "[project]/src/app/dashboard/_pages/POS/components/rightColumn/AddCustomerModal.tsx [app-ssr] (ecmascript)", ((__turbopack_context__) => {
 "use strict";
 
+// ...existing code...
 __turbopack_context__.s([
     "default",
     ()=>AddCustomerModal
@@ -875,31 +876,75 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist
 function AddCustomerModal({ open, onOpenChange, onCustomerAdded }) {
     const [name, setName] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])("");
     const [loading, setLoading] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(false);
+    const [validating, setValidating] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(false);
     const [error, setError] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(null);
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
+        if (!open) {
+            setName("");
+            setError(null);
+            setLoading(false);
+            setValidating(false);
+        }
+    }, [
+        open
+    ]);
+    // Utility: normalize a name for exact, case-insensitive comparison
+    const normalize = (s)=>s.trim().toLowerCase();
     const handleAdd = async ()=>{
-        setLoading(true);
+        const trimmed = name.trim();
         setError(null);
+        if (trimmed.length === 0) {
+            setError("Name cannot be empty.");
+            return;
+        }
+        setLoading(true);
+        setValidating(true);
         try {
-            const res = await fetch(`${("TURBOPACK compile-time value", "http://localhost:5000/api")}/customers`, {
+            // 1) Check for exact case-insensitive duplicate (only when Add is pressed)
+            // Backend may return a list under `data` or a raw array; handle both.
+            const backendBase = (("TURBOPACK compile-time value", "http://localhost:5000/api") || "").replace(/\/$/, "");
+            const url = `${backendBase}/customers?name=${encodeURIComponent(trimmed)}`;
+            const checkRes = await fetch(url);
+            const checkJson = await checkRes.json().catch(()=>({}));
+            const candidates = Array.isArray(checkJson) ? checkJson : Array.isArray(checkJson?.data) ? checkJson.data : [];
+            const foundExact = candidates.some((c)=>{
+                if (!c || typeof c.name !== "string") return false;
+                return normalize(c.name) === normalize(trimmed);
+            });
+            if (foundExact) {
+                setError("A customer with this name already exists.");
+                setLoading(false);
+                setValidating(false);
+                return;
+            }
+            // 2) No exact duplicate -> create customer
+            const createRes = await fetch(`${backendBase}/customers`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    name
+                    name: trimmed
                 })
             });
-            const json = await res.json();
-            if (!json.success) throw new Error(json.message || "Failed to add customer");
+            const createJson = await createRes.json().catch(()=>({}));
+            if (!createRes.ok || createJson.success === false) {
+                const msg = createJson.message || createJson.error || "Failed to add customer";
+                throw new Error(msg);
+            }
+            // success: notify parent and close modal
+            const newCustomer = createJson.data ?? createJson; // handle different backends
             setName("");
             onOpenChange(false);
-            onCustomerAdded(json.data); // <-- pass the new customer object
+            onCustomerAdded(newCustomer);
         } catch (err) {
-            setError(err.message || "Failed to add customer");
+            setError(err?.message || "Failed to add customer");
         } finally{
             setLoading(false);
+            setValidating(false);
         }
     };
+    const isAddDisabled = loading || validating || name.trim().length === 0;
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Dialog"], {
         open: open,
         onOpenChange: onOpenChange,
@@ -910,12 +955,12 @@ function AddCustomerModal({ open, onOpenChange, onCustomerAdded }) {
                         children: "Add Customer"
                     }, void 0, false, {
                         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/AddCustomerModal.tsx",
-                        lineNumber: 43,
+                        lineNumber: 101,
                         columnNumber: 21
                     }, this)
                 }, void 0, false, {
                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/AddCustomerModal.tsx",
-                    lineNumber: 42,
+                    lineNumber: 100,
                     columnNumber: 17
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -926,32 +971,43 @@ function AddCustomerModal({ open, onOpenChange, onCustomerAdded }) {
                             children: "Name"
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/AddCustomerModal.tsx",
-                            lineNumber: 46,
+                            lineNumber: 105,
                             columnNumber: 21
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
                             id: "customer-name",
                             value: name,
-                            onChange: (e)=>setName(e.target.value),
+                            onChange: (e)=>{
+                                setName(e.target.value);
+                                setError(null);
+                            },
                             placeholder: "Enter customer name",
                             disabled: loading
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/AddCustomerModal.tsx",
-                            lineNumber: 47,
+                            lineNumber: 106,
                             columnNumber: 21
+                        }, this),
+                        validating && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                            className: "text-gray-500 text-sm",
+                            children: "Checking name..."
+                        }, void 0, false, {
+                            fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/AddCustomerModal.tsx",
+                            lineNumber: 116,
+                            columnNumber: 36
                         }, this),
                         error && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                             className: "text-red-500 text-sm",
                             children: error
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/AddCustomerModal.tsx",
-                            lineNumber: 54,
+                            lineNumber: 117,
                             columnNumber: 31
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/AddCustomerModal.tsx",
-                    lineNumber: 45,
+                    lineNumber: 104,
                     columnNumber: 17
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DialogFooter"], {
@@ -963,33 +1019,33 @@ function AddCustomerModal({ open, onOpenChange, onCustomerAdded }) {
                             children: "Cancel"
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/AddCustomerModal.tsx",
-                            lineNumber: 57,
+                            lineNumber: 121,
                             columnNumber: 21
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
                             onClick: handleAdd,
-                            disabled: loading || !name.trim(),
+                            disabled: isAddDisabled,
                             children: loading ? "Adding..." : "Add"
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/AddCustomerModal.tsx",
-                            lineNumber: 60,
+                            lineNumber: 124,
                             columnNumber: 21
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/AddCustomerModal.tsx",
-                    lineNumber: 56,
+                    lineNumber: 120,
                     columnNumber: 17
                 }, this)
             ]
         }, void 0, true, {
             fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/AddCustomerModal.tsx",
-            lineNumber: 41,
+            lineNumber: 99,
             columnNumber: 13
         }, this)
     }, void 0, false, {
         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/AddCustomerModal.tsx",
-        lineNumber: 40,
+        lineNumber: 98,
         columnNumber: 9
     }, this);
 }
