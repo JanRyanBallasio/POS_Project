@@ -49,13 +49,13 @@ export default function ProductSearch({
               onClick={() => handleSearchSelect(product)}
             >
               <div className="flex justify-between items-center">
-                <div>
-                  <div className="font-medium">{product.name}</div>
+                <div className="min-w-0"> {/* allow left column to shrink and wrap */}
+                  <div className="font-medium break-words whitespace-normal">{product.name}</div>
                   <div className="text-sm text-gray-500">
                     Barcode: {product.barcode}
                   </div>
                 </div>
-                <div className="text-right">
+                <div className="text-right ml-4 flex-shrink-0">
                   <div className="font-medium">
                     ₱ {product.price.toFixed(2)}
                   </div>

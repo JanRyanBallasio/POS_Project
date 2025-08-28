@@ -8,7 +8,7 @@ import {
   useReactTable,
   SortingState,
 } from "@tanstack/react-table"
-import { useState } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 
 import {
   Table,
@@ -18,7 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { useEffect } from "react";
+
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
@@ -36,25 +36,55 @@ export function DataTable<TData, TValue>({
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([])
 
+  // create the table instance (react-table hook internally memoizes heavy parts)
   const table = useReactTable({
     data,
     columns,
-    state: { sorting },
+    state: { sorting, pagination: { pageIndex: page } as any },
     onSortingChange: setSorting,
+    // keep pagination control outside of react-table to avoid internal pageIndex churn
+    onPaginationChange: (() => {}) as any,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
   })
 
-  // Notify parent of filtered/sorted row count
-  useEffect(() => {
-    if (onFilteredCountChange) {
-      onFilteredCountChange(table.getRowModel().rows.length)
-    }
-  }, [table, onFilteredCountChange])
-
-  // Paginate the sorted/filtered rows
+  // derived rows and paginated rows (memoized to avoid extra work on unrelated renders)
   const rows = table.getRowModel().rows
-  const paginatedRows = rows.slice(page * pageSize, (page + 1) * pageSize)
+  const paginatedRows = useMemo(
+    () => rows.slice(page * pageSize, (page + 1) * pageSize),
+    [rows, page, pageSize]
+  )
+
+  // notify parent of filtered/sorted count with a deferred callback to avoid sync updates
+  const prevCountRef = useRef<number | null>(null)
+  const notifyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const rowCount = rows.length
+
+  useEffect(() => {
+    if (!onFilteredCountChange) return
+
+    if (prevCountRef.current !== rowCount) {
+      prevCountRef.current = rowCount
+
+      if (notifyTimerRef.current) {
+        clearTimeout(notifyTimerRef.current)
+        notifyTimerRef.current = null
+      }
+
+      // defer notification so parent state updates don't run synchronously here
+      notifyTimerRef.current = setTimeout(() => {
+        onFilteredCountChange(rowCount)
+        notifyTimerRef.current = null
+      }, 0)
+    }
+
+    return () => {
+      if (notifyTimerRef.current) {
+        clearTimeout(notifyTimerRef.current)
+        notifyTimerRef.current = null
+      }
+    }
+  }, [rowCount, onFilteredCountChange])
 
   return (
     <div className="rounded-md border">
@@ -62,28 +92,19 @@ export function DataTable<TData, TValue>({
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => {
-                return (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
-                  </TableHead>
-                )
-              })}
+              {headerGroup.headers.map((header) => (
+                <TableHead key={header.id}>
+                  {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                </TableHead>
+              ))}
             </TableRow>
           ))}
         </TableHeader>
+
         <TableBody>
-          {paginatedRows.length ? (
+          {paginatedRows.length > 0 ? (
             paginatedRows.map((row) => (
-              <TableRow
-                key={row.id}
-                data-state={row.getIsSelected() && "selected"}
-              >
+              <TableRow key={row.id} data-state={row.getIsSelected() ? "selected" : undefined}>
                 {row.getVisibleCells().map((cell) => (
                   <TableCell key={cell.id}>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}

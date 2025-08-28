@@ -9,6 +9,7 @@ const positionRoutes = require('./src/routes/positionRoutes');
 const salesRoutes = require('./src/routes/salesRoutes');
 const salesItemsRoutes = require('./src/routes/salesItemsRoutes');
 const customerRoutes = require('./src/routes/customerRoutes');
+const stockTransactionRoutes = require('./src/routes/stockTransactionRoutes');
 
 const app = express();
 const PORT = 5000;
@@ -18,6 +19,7 @@ app.use(cors());
 app.use(express.json());
 
 // API Routes
+app.use('/api/stock-transactions', stockTransactionRoutes)
 app.use('/api/customers', customerRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);

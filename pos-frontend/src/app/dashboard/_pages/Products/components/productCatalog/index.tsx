@@ -2,16 +2,14 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import ProductCatalogToolbar from "./ProductCatalogToolbar";
 import ProductTable from "./ProductTable";
 import { useState } from "react";
-import type { Product } from "@/hooks/products/useProductApi"; // adjust import if needed
 
 interface IndexProps {
-  products: Product[];
   onProductDeleted?: (id: number) => void;
 }
 
-export default function Index({ products, onProductDeleted }: IndexProps) {
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [selectedStatus, setSelectedStatus] = useState<string>("all");
+export default function Index({ onProductDeleted }: IndexProps) {
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedProducts, setSelectedProducts] = useState("all");
   const [search, setSearch] = useState("");
 
   return (
@@ -23,15 +21,14 @@ export default function Index({ products, onProductDeleted }: IndexProps) {
         <ProductCatalogToolbar
           selectedCategory={selectedCategory}
           setSelectedCategory={setSelectedCategory}
-          selectedProducts={selectedStatus}
-          setSelectedProducts={setSelectedStatus}
+          selectedProducts={selectedProducts}
+          setSelectedProducts={setSelectedProducts}
           search={search}
           setSearch={setSearch}
         />
-        {/* Pass products to ProductTable */}
         <ProductTable
           selectedCategory={selectedCategory}
-          selectedStatus={selectedStatus}
+          selectedStatus={selectedProducts}
           onProductDeleted={onProductDeleted}
           search={search}
         />
