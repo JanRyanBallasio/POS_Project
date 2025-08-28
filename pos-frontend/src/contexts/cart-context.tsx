@@ -1,4 +1,4 @@
-
+// ...existing code...
 import React, {
   createContext,
   useContext,
@@ -7,9 +7,10 @@ import React, {
   ReactNode,
   RefObject,
   useEffect,
-  useCallback
+  useCallback,
 } from "react";
 import { productApi, Product } from "@/hooks/products/useProductApi";
+import { useProductModal } from "@/contexts/productRegister-context";
 
 interface CartItem {
   product: Product;
@@ -26,12 +27,22 @@ interface CartContextType {
   refocusScanner: () => void;
   setScannerRef: (ref: RefObject<HTMLInputElement>) => void;
   updateCartItemQuantity: (id: string, quantity: number) => void;
-  updateCartItemPrice: (id: string, price: number) => void; // <--- added
-  deleteCartItem: (id: string) => void; // <--- added
+  updateCartItemPrice: (id: string, price: number) => void;
+  deleteCartItem: (id: string) => void;
   clearCart: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
+
+const genId = () =>
+  typeof crypto !== "undefined" && typeof (crypto as any).randomUUID === "function"
+    ? (crypto as any).randomUUID()
+    : Date.now().toString();
+
+const productEqual = (a: Product, b: Product) => {
+  if (a?.id && b?.id) return a.id === b.id;
+  return Boolean(a?.barcode && b?.barcode && a.barcode === b.barcode);
+};
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -40,97 +51,170 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [scannerInputRef, setScannerInputRef] =
     useState<RefObject<HTMLInputElement> | null>(null);
 
-  const clearCart = () => setCart([]);
-  const setScannerRef = (ref: RefObject<HTMLInputElement>) => {
-    setScannerInputRef(ref);
-  };
+  const { setBarcode: setContextBarcode, openModal, setOpen: setProductModalOpen } =
+    useProductModal();
 
-  const refocusScanner = () => {
-    setTimeout(() => {
+  const clearCart = useCallback(() => setCart([]), []);
+
+  const setScannerRef = useCallback((ref: RefObject<HTMLInputElement>) => {
+    setScannerInputRef(ref);
+  }, []);
+
+  const refocusScanner = useCallback(() => {
+    try {
       if (scannerInputRef?.current) {
         scannerInputRef.current.focus();
       }
-    }, 100);
-  };
+    } catch { }
+  }, [scannerInputRef]);
 
-  const updateCartItemQuantity = (id: string, quantity: number) => {
+  const updateCartItemQuantity = useCallback((id: string, quantity: number) => {
     setCart((prevCart) =>
       prevCart.map((item) => (item.id === id ? { ...item, quantity } : item))
     );
-  };
+  }, []);
 
-  // new: update price for a cart item (updates only the cart's product.price)
-  const updateCartItemPrice = (id: string, price: number) => {
+  const updateCartItemPrice = useCallback((id: string, price: number) => {
     setCart((prevCart) =>
       prevCart.map((item) =>
         item.id === id ? { ...item, product: { ...item.product, price } } : item
       )
     );
-  };
+  }, []);
 
-  // new: remove item from cart by id
-  const deleteCartItem = (id: string) => {
+  const deleteCartItem = useCallback((id: string) => {
     setCart((prevCart) => prevCart.filter((item) => item.id !== id));
-  };
+  }, []);
 
-  const scanAndAddToCart = async (barcode: string): Promise<void> => {
-    try {
-      setIsScanning(true);
-      setScanError(null);
-
-      const product = await productApi.getByBarcode(barcode);
-
-      if (product) {
-        setCart((prevCart) => {
-          const existing = prevCart.find(
-            (item) => item.product.barcode === product.barcode
-          );
-          if (existing) {
-            return prevCart.map((item) =>
-              item.product.barcode === product.barcode
-                ? { ...item, quantity: item.quantity + 1 }
-                : item
-            );
-          } else {
-            const cartItem: CartItem = {
-              product,
-              quantity: 1,
-              id: Date.now().toString(),
-            };
-            return [...prevCart, cartItem];
-          }
-        });
-      } else {
-        setScanError(`Product not found: ${barcode}`);
+  const addOrIncrement = useCallback((product: Product) => {
+    setCart((prevCart) => {
+      const existing = prevCart.find((item) => productEqual(item.product, product));
+      if (existing) {
+        return prevCart.map((item) =>
+          productEqual(item.product, product) ? { ...item, quantity: item.quantity + 1 } : item
+        );
       }
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Error scanning barcode";
-      setScanError(errorMessage);
-    } finally {
-      setIsScanning(false);
-    }
-  };
+      const cartItem: CartItem = {
+        product,
+        quantity: 1,
+        id: genId(),
+      };
+      return [...prevCart, cartItem];
+    });
+  }, []);
+
+  const scanAndAddToCart = useCallback(
+    async (barcode: string): Promise<void> => {
+      if (!barcode) return;
+
+      try {
+        setIsScanning(true);
+        setScanError(null);
+
+        const cleanedBarcode = String(barcode).replace(/[\u0000-\u001F\u007F-\u009F]/g, "").trim();
+        if (!cleanedBarcode) {
+          setScanError("Invalid barcode");
+          return;
+        }
+
+        const product = await productApi.getByBarcode(cleanedBarcode);
+
+        if (product) {
+          addOrIncrement(product);
+        } else {
+          try {
+            if (typeof setContextBarcode === "function") {
+              setContextBarcode(cleanedBarcode);
+            }
+            if (typeof openModal === "function") {
+              openModal("addProduct");
+            } else if (typeof setProductModalOpen === "function") {
+              setProductModalOpen(true);
+            }
+          } catch { }
+          setScanError(`Product not found: ${cleanedBarcode}`);
+        }
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : "Error scanning barcode";
+        setScanError(errorMessage);
+      } finally {
+        setIsScanning(false);
+        refocusScanner();
+      }
+    },
+    [openModal, setProductModalOpen, setContextBarcode, refocusScanner, addOrIncrement]
+  );
+
+  // Listen for product:added events so newly created products can be added immediately
+  useEffect(() => {
+    const onProductAdded = (e: Event) => {
+      const detail = (e as CustomEvent)?.detail;
+      if (!detail) return;
+
+      const addedProduct: Product | undefined = detail.product;
+      const barcode: string | undefined = detail.barcode;
+
+      if (addedProduct) {
+        addOrIncrement(addedProduct);
+      } else if (barcode) {
+        (async () => {
+          try {
+            const product = await productApi.getByBarcode(barcode);
+            if (product) addOrIncrement(product);
+          } catch {
+            // ignore fetch errors here
+          }
+        })();
+      }
+
+      // Clear and refocus hidden scanner input
+      try {
+        const el = scannerInputRef?.current;
+        if (el) {
+          try { el.value = ""; } catch { }
+          el.dispatchEvent(new Event("input", { bubbles: true }));
+          try { el.focus(); } catch { }
+        }
+      } catch { }
+    };
+
+    window.addEventListener("product:added", onProductAdded as EventListener);
+    return () => window.removeEventListener("product:added", onProductAdded as EventListener);
+  }, [scannerInputRef, addOrIncrement]);
 
   const cartTotal = useMemo(() => {
-    return cart.reduce((total, item) => {
-      return total + item.product.price * item.quantity;
-    }, 0);
+    return cart.reduce((total, item) => total + Number(item.product.price || 0) * item.quantity, 0);
   }, [cart]);
 
-  const value = {
-    cart,
-    cartTotal,
-    scanError,
-    isScanning,
-    scanAndAddToCart,
-    refocusScanner,
-    setScannerRef,
-    updateCartItemQuantity,
-    updateCartItemPrice, // <--- added to value
-    deleteCartItem, // <--- added to value
-    clearCart,
-  };
+  const value = useMemo(
+    () => ({
+      cart,
+      cartTotal,
+      scanError,
+      isScanning,
+      scanAndAddToCart,
+      refocusScanner,
+      setScannerRef,
+      updateCartItemQuantity,
+      updateCartItemPrice,
+      deleteCartItem,
+      clearCart,
+    }),
+    [
+      cart,
+      cartTotal,
+      scanError,
+      isScanning,
+      scanAndAddToCart,
+      refocusScanner,
+      setScannerRef,
+      updateCartItemQuantity,
+      updateCartItemPrice,
+      deleteCartItem,
+      clearCart,
+    ]
+  );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 };

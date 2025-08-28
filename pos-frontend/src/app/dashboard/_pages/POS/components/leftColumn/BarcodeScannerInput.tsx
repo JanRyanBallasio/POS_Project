@@ -1,5 +1,5 @@
 import { Input } from "@/components/ui/input";
-import React from "react";
+import React, { useEffect } from "react";
 
 interface BarcodeScannerInputProps {
   inputRef: React.RefObject<HTMLInputElement | null>;
@@ -16,6 +16,58 @@ export default function BarcodeScannerInput({
   handleKeyPress,
   disabled = false,
 }: BarcodeScannerInputProps) {
+  useEffect(() => {
+    const onProductAdded = (e: Event) => {
+      const detail = (e as CustomEvent)?.detail;
+      // if sender asked to prevent focusing (e.g., product added from Products tab), do nothing
+      if (detail?.preventScan) return;
+
+      const el = inputRef?.current;
+      if (!el) return;
+
+      try {
+        el.focus();
+      } catch {}
+
+      // clear DOM value so next hardware scan starts fresh
+      try {
+        el.value = "";
+      } catch {}
+
+      const syntheticEvent = { target: el } as unknown as React.ChangeEvent<HTMLInputElement>;
+      try {
+        handleBarcodeChange(syntheticEvent);
+      } catch {
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+    };
+
+    const onFocusRequest = () => {
+      const el = inputRef?.current;
+      if (!el) return;
+      try {
+        el.focus();
+      } catch {}
+      try {
+        el.value = "";
+      } catch {}
+      const syntheticEvent = { target: el } as unknown as React.ChangeEvent<HTMLInputElement>;
+      try {
+        handleBarcodeChange(syntheticEvent);
+      } catch {
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+    };
+
+    window.addEventListener("product:added", onProductAdded as EventListener);
+    window.addEventListener("focusBarcodeScanner", onFocusRequest as EventListener);
+
+    return () => {
+      window.removeEventListener("product:added", onProductAdded as EventListener);
+      window.removeEventListener("focusBarcodeScanner", onFocusRequest as EventListener);
+    };
+  }, [inputRef, handleBarcodeChange]);
+
   return (
     <Input
       ref={inputRef}

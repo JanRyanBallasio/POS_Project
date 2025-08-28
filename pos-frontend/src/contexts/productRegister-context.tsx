@@ -1,15 +1,18 @@
+// ...existing code...
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode } from "react";
 
-type ModalName = string | null;
+type ModalName = string;
 
 interface ProductModalContextValue {
-  // new preferred API
-  activeModal: ModalName;
-  modalProps?: any;
-  openModal: (name: string, props?: any) => void;
-  closeModal: () => void;
+  // stacked modals API
+  activeModals: ModalName[]; // stack of opened modal names (first opened -> last opened)
+  activeModal: ModalName | null; // convenience: last opened modal or null
+  isOpen: (name: ModalName) => boolean;
+  modalProps?: Record<string, any>;
+  openModal: (name: ModalName, props?: any) => void;
+  closeModal: (name?: ModalName) => void;
   // backward compatibility helpers (kept for existing components)
   open: boolean; // convenience for product modal specifically
   setOpen: (v: boolean) => void;
@@ -18,7 +21,9 @@ interface ProductModalContextValue {
 }
 
 const ProductModalContext = createContext<ProductModalContextValue>({
+  activeModals: [],
   activeModal: null,
+  isOpen: () => false,
   modalProps: undefined,
   openModal: () => {},
   closeModal: () => {},
@@ -29,35 +34,55 @@ const ProductModalContext = createContext<ProductModalContextValue>({
 });
 
 export const ProductModalProvider = ({ children }: { children: ReactNode }) => {
-  const [activeModal, setActiveModal] = useState<ModalName>(null);
-  const [modalProps, setModalProps] = useState<any>(undefined);
+  const [activeModals, setActiveModals] = useState<ModalName[]>([]);
+  const [modalProps, setModalProps] = useState<Record<string, any> | undefined>(undefined);
   const [barcode, setBarcode] = useState<string>("");
 
-  const openModal = (name: string, props?: any) => {
-    setActiveModal(name);
-    setModalProps(props);
+  const openModal = (name: ModalName, props?: any) => {
+    setActiveModals((prev) => {
+      if (prev.includes(name)) return prev;
+      return [...prev, name];
+    });
+    setModalProps((prev) => ({ ...(prev || {}), [name]: props }));
   };
 
-  const closeModal = () => {
-    setActiveModal(null);
-    setModalProps(undefined);
+  const closeModal = (name?: ModalName) => {
+    if (typeof name === "string") {
+      setActiveModals((prev) => prev.filter((m) => m !== name));
+      setModalProps((prev) => {
+        if (!prev) return prev;
+        const next = { ...prev };
+        delete next[name];
+        return Object.keys(next).length ? next : undefined;
+      });
+    } else {
+      // no name -> close all
+      setActiveModals([]);
+      setModalProps(undefined);
+    }
   };
+
+  const isOpen = (name: ModalName) => activeModals.includes(name);
 
   // backward compat: treat the "product register" modal name as "addProduct"
-  const open = activeModal === "addProduct";
+  const open = isOpen("addProduct");
   const setOpen = (v: boolean) => {
     if (v) {
       openModal("addProduct");
     } else {
-      // only close if the product modal is currently open
-      if (activeModal === "addProduct") closeModal();
+      // only remove the product modal entry
+      closeModal("addProduct");
     }
   };
+
+  const activeModal = activeModals.length ? activeModals[activeModals.length - 1] : null;
 
   return (
     <ProductModalContext.Provider
       value={{
+        activeModals,
         activeModal,
+        isOpen,
         modalProps,
         openModal,
         closeModal,
@@ -73,3 +98,4 @@ export const ProductModalProvider = ({ children }: { children: ReactNode }) => {
 };
 
 export const useProductModal = () => useContext(ProductModalContext);
+// ...existing code...

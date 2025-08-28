@@ -65,10 +65,12 @@ export default function CartTable({
               }`}
             onClick={() => selectRow(item.id)}
           >
-            <TableCell className="font-medium">
+            <TableCell className="font-medium max-w-[140px] break-words whitespace-normal">
               {item.product.barcode || "N/A"}
             </TableCell>
-            <TableCell>{item.product.name}</TableCell>
+            <TableCell className="min-w-0 max-w-[320px] break-words whitespace-normal">
+              {item.product.name}
+            </TableCell>
 
             <TableCell>
               <Input

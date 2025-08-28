@@ -2,36 +2,43 @@ import { Card, CardContent } from "@/components/ui/card";
 import useSWR from "swr";
 import { productApi } from "@/hooks/products/useProductApi";
 import type { Product } from "@/hooks/products/useProductApi";
+import { useMemo } from "react";
 
 const fetcher = () => productApi.getAll();
 
 export default function ProductStats() {
-  const { data: products = [], isLoading } = useSWR("/api/products", fetcher, { revalidateOnFocus: false });
+  const { data: products = [], isLoading } = useSWR("/api/products", fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 60_000,
+  });
 
-  const validProducts = products.filter(p => p && typeof p.quantity === "number" && typeof p.price === "number");
+  const { totalProducts, lowStockItems, outOfStockItems, totalValueFormatted } = useMemo(() => {
+    let totalProducts = 0;
+    let lowStockItems = 0;
+    let outOfStockItems = 0;
+    let totalValue = 0;
 
-  const totalProducts = validProducts.length;
-  const lowStockItems = validProducts.filter(p => p.quantity < 5 && p.quantity > 0).length;
-  const outOfStockItems = validProducts.filter(p => p.quantity === 0).length;
-  const totalValue = validProducts.reduce((sum, p) => sum + (p.price * p.quantity), 0);
+    for (const p of products as Product[]) {
+      if (!p || typeof p.quantity !== "number" || typeof p.price !== "number") continue;
+      totalProducts++;
+      if (p.quantity === 0) outOfStockItems++;
+      else if (p.quantity < 5) lowStockItems++;
+      totalValue += p.price * p.quantity;
+    }
+
+    const totalValueFormatted = `₱ ${totalValue.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+
+    return { totalProducts, lowStockItems, outOfStockItems, totalValueFormatted };
+  }, [products]);
 
   const statsData = [
-    {
-      title: "Total Products",
-      content: isLoading ? "..." : totalProducts,
-    },
-    {
-      title: "Low Stock Items",
-      content: isLoading ? "..." : lowStockItems,
-    },
-    {
-      title: "Out of Stock",
-      content: isLoading ? "..." : outOfStockItems,
-    },
-    {
-      title: "Total Value",
-      content: isLoading ? "..." : `₱ ${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-    }
+    { title: "Total Products", content: isLoading ? "..." : totalProducts },
+    { title: "Low Stock Items", content: isLoading ? "..." : lowStockItems },
+    { title: "Out of Stock", content: isLoading ? "..." : outOfStockItems },
+    { title: "Total Value", content: isLoading ? "..." : totalValueFormatted },
   ];
 
   return (
