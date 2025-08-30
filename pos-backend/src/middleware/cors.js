@@ -2,6 +2,8 @@ const cors = require('cors');
 
 const allowedOrigins = [
     "http://localhost:5000",
+    "http://localhost:3000",
+    "http://3.25.180.232:3000",
     "http://13.211.162.106:5000"
 ];
 
