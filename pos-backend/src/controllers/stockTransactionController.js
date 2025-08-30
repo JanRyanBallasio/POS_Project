@@ -1,3 +1,4 @@
+// ...existing code...
 const { supabase } = require('../config/db')
 
 const cleanNumber = (v) => {
@@ -73,6 +74,7 @@ const stockTransactionController = {
   },
 
   // GET /api/stock-transactions/:id
+  // returns transaction and items; items include joined product (id, name) as "product"
   getStockTransaction: async (req, res) => {
     try {
       const { id } = req.params
@@ -85,15 +87,28 @@ const stockTransactionController = {
       if (txErr) throw txErr
       if (!tx) return res.status(404).json({ success: false, message: 'Transaction not found' })
 
+      // fetch items and include product name via relationship join (product_id -> Products.id)
+      // adjust "Products" to the exact name of your products table if different
       const { data: items, error: itemsErr } = await supabase
         .from('StockItems')
-        .select('*')
+        .select(`
+          *,
+          product:Products(id, name)
+        `)
         .eq('stock_transaction_id', id)
         .order('created_at', { ascending: true })
 
       if (itemsErr) throw itemsErr
 
-      return res.json({ success: true, transaction: tx, items })
+      // Normalize item shape: add product_name for convenience (fallback to product_id)
+      const normalizedItems = (items || []).map((it) => {
+        return {
+          ...it,
+          product_name: it.product?.name ?? it.product_name ?? (it.product_id ? `#${it.product_id}` : null)
+        }
+      })
+
+      return res.json({ success: true, transaction: tx, items: normalizedItems })
     } catch (err) {
       console.error('getStockTransaction error', err)
       return res.status(500).json({ success: false, error: err.message || 'Internal error' })
@@ -102,3 +117,4 @@ const stockTransactionController = {
 }
 
 module.exports = stockTransactionController
+// ...existing code...

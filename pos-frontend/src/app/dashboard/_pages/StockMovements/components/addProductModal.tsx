@@ -42,7 +42,7 @@ const FALLBACK_PRODUCTS = [
   { value: 'part-123', label: 'Part 123' },
 ]
 
-type Props = { onAdd: (p: { name: string; qty: number; unitPrice: number }) => void }
+type Props = { onAdd: (p: { name: string; qty: number; unitPrice: number; productId?: string | number | null }) => void }
 
 export default function AddProductModal({ onAdd }: Props) {
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -137,14 +137,15 @@ export default function AddProductModal({ onAdd }: Props) {
       e.preventDefault()
       if (!selected || qty < 1 || unitPrice === '' || Number(unitPrice) < 0) return
       const label = productItems.find((p) => p.value === selected)?.label ?? selected
-
+      // if selection corresponds to an API product, pass its id along
+      const apiId = apiProducts?.find((ap: any) => String(ap.id) === selected)?.id ?? null
       if (typeof onAdd === 'function') {
-        onAdd({ name: label, qty, unitPrice: Number(unitPrice) })
+        onAdd({ name: label, qty, unitPrice: Number(unitPrice), productId: apiId })
       } else {
         try {
           window.dispatchEvent(
             new CustomEvent('stock:addProduct', {
-              detail: { name: label, qty, unitPrice: Number(unitPrice) },
+              detail: { name: label, qty, unitPrice: Number(unitPrice), productId: apiId },
             })
           )
         } catch {
@@ -239,7 +240,7 @@ export default function AddProductModal({ onAdd }: Props) {
                               }}
                             >
                               <span className="flex-1 truncate">{String(it.label)}</span>
-                              
+
                             </button>
                           </li>
                         ))}
