@@ -2,42 +2,42 @@ const puppeteer = require("puppeteer");
 
 let browserPromise = null;
 async function getBrowser() {
-    if (!browserPromise) {
-        browserPromise = puppeteer.launch({
-            args: ["--no-sandbox", "--disable-setuid-sandbox"],
-            headless: true,
-        });
-        const closeBrowser = async () => {
-            try {
-                const b = await browserPromise;
-                await b.close();
-            } catch (_) { }
-        };
-        process.on("exit", closeBrowser);
-        process.on("SIGINT", closeBrowser);
-        process.on("SIGTERM", closeBrowser);
-    }
-    return browserPromise;
+  if (!browserPromise) {
+    browserPromise = puppeteer.launch({
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      headless: true,
+    });
+    const closeBrowser = async () => {
+      try {
+        const b = await browserPromise;
+        await b.close();
+      } catch (_) { }
+    };
+    process.on("exit", closeBrowser);
+    process.on("SIGINT", closeBrowser);
+    process.on("SIGTERM", closeBrowser);
+  }
+  return browserPromise;
 }
 
 function escapeHtml(s) {
-    if (s == null) return "";
-    return String(s).replace(/[&<>"']/g, (ch) =>
-        ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch])
-    );
+  if (s == null) return "";
+  return String(s).replace(/[&<>"']/g, (ch) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch])
+  );
 }
 function fmt(n) {
-    return "₱" + Number(n || 0).toFixed(2);
+  return "₱" + Number(n || 0).toFixed(2);
 }
 
 function renderHtml({ customer, cartTotal, amount, change, items }) {
-    const dateStr = new Date().toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "2-digit",
-    });
+  const dateStr = new Date().toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "2-digit",
+  });
 
-    return `<!doctype html>
+  return `<!doctype html>
   <html>
   <head>
     <meta charset="utf-8"/>
@@ -162,72 +162,75 @@ function renderHtml({ customer, cartTotal, amount, change, items }) {
 }
 
 exports.generate = async function (req, res) {
-    try {
-        const raw = req.body || {};
-        const data = {
-            customer: raw.customer || { name: "N/A" },
-            cartTotal: Number(raw.cartTotal || 0),
-            amount: Number(raw.amount || 0),
-            change: Number(raw.change || 0),
-            items: Array.isArray(raw.items)
-                ? raw.items.map((it) => ({
-                    desc: it && it.desc ? String(it.desc) : "",
-                    qty: Number(it.qty || 0),
-                    amount: Number(it.amount || 0),
-                }))
-                : [],
-        };
+  try {
+    const raw = req.body || {};
+    const data = {
+      customer: raw.customer || { name: "N/A" },
+      cartTotal: Number(raw.cartTotal || 0),
+      amount: Number(raw.amount || 0),
+      change: Number(raw.change || 0),
+      items: Array.isArray(raw.items)
+        ? raw.items.map((it) => ({
+          desc: it && it.desc ? String(it.desc) : "",
+          qty: Number(it.qty || 0),
+          amount: Number(it.amount || 0),
+        }))
+        : [],
+    };
 
-        const MAX_ITEMS = 2000;
-        if (data.items.length > MAX_ITEMS) data.items = data.items.slice(0, MAX_ITEMS);
+    const MAX_ITEMS = 2000;
+    if (data.items.length > MAX_ITEMS) data.items = data.items.slice(0, MAX_ITEMS);
 
-        const html = renderHtml(data);
+    const html = renderHtml(data);
 
-        const browser = await getBrowser();
-        const page = await (await browser).newPage();
+    const browser = await getBrowser();
+    const page = await (await browser).newPage();
 
-        // viewport width roughly equals 80mm at 96dpi (1mm ≈ 3.78px)
-        const widthPx = Math.round(80 * 3.78);
-        await page.setViewport({ width: widthPx, height: 800 });
+    // viewport width roughly equals 80mm at 96dpi (1mm ≈ 3.78px)
+    const widthPx = Math.round(80 * 3.78);
+    await page.setViewport({ width: widthPx, height: 800 });
 
-        // render and wait for fonts/resources
-        await page.setContent(html, { waitUntil: "networkidle0" });
+    // render and wait for fonts/resources
+    await page.setContent(html, { waitUntil: "networkidle0" });
 
-        // measure the .paper element height in CSS pixels
-        const paperHeightPx = await page.evaluate(() => {
-            const el = document.getElementById('receipt') || document.querySelector('.paper') || document.body;
-            const rect = el.getBoundingClientRect();
-            const style = window.getComputedStyle(el);
-            const mt = parseFloat(style.marginTop || 0);
-            const mb = parseFloat(style.marginBottom || 0);
-            return Math.ceil(rect.height + mt + mb);
-        });
+    // measure the .paper element height in CSS pixels
+    const paperHeightPx = await page.evaluate(() => {
+      const el = document.getElementById('receipt') || document.querySelector('.paper') || document.body;
+      const rect = el.getBoundingClientRect();
+      const style = window.getComputedStyle(el);
+      const mt = parseFloat(style.marginTop || 0);
+      const mb = parseFloat(style.marginBottom || 0);
+      return Math.ceil(rect.height + mt + mb);
+    });
 
-        // convert px -> mm (assuming 96dpi)
-        const pxToMm = 25.4 / 96;
-        let heightMm = Math.ceil(paperHeightPx * pxToMm) + 2; // small padding to avoid clipping
+    // convert px -> mm (assuming 96dpi)
+    const pxToMm = 25.4 / 96;
+    let heightMm = Math.ceil(paperHeightPx * pxToMm) + 2; // small padding to avoid clipping
 
-        // clamp size
-        const MIN_HEIGHT_MM = 40;
-        const MAX_HEIGHT_MM = 4000;
-        if (heightMm < MIN_HEIGHT_MM) heightMm = MIN_HEIGHT_MM;
-        if (heightMm > MAX_HEIGHT_MM) heightMm = MAX_HEIGHT_MM;
+    // clamp size
+    const MIN_HEIGHT_MM = 40;
+    const MAX_HEIGHT_MM = 4000;
+    if (heightMm < MIN_HEIGHT_MM) heightMm = MIN_HEIGHT_MM;
+    if (heightMm > MAX_HEIGHT_MM) heightMm = MAX_HEIGHT_MM;
 
-        const pdfBuffer = await page.pdf({
-            printBackground: true,
-            width: "80mm",
-            height: `${heightMm}mm`,
-            margin: { top: "0mm", bottom: "0mm", left: "0mm", right: "0mm" },
-        });
+    const pdfBuffer = await page.pdf({
+      printBackground: true,
+      width: "80mm",
+      height: `${heightMm}mm`,
+      margin: { top: "0mm", bottom: "0mm", left: "0mm", right: "0mm" },
+    });
 
-        await page.close();
+    await page.close();
 
-        res.setHeader("Content-Type", "application/pdf");
-        res.setHeader("Content-Disposition", "inline; filename=receipt.pdf");
-        res.setHeader("Content-Length", Buffer.byteLength(pdfBuffer));
-        return res.send(pdfBuffer);
-    } catch (err) {
-        console.error("PDF generation error:", err && err.message ? err.message : err);
-        return res.status(500).json({ error: "PDF generation failed", details: String(err) });
-    }
+    const filename = `receipt-${Date.now()}.pdf`;
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.setHeader("Content-Length", Buffer.byteLength(pdfBuffer));
+    // expose Content-Disposition so browsers on other origins can read filename if needed
+    res.setHeader("Access-Control-Expose-Headers", "Content-Disposition,Content-Length");
+    return res.send(pdfBuffer);
+  } catch (err) {
+    console.error("PDF generation error:", err && err.message ? err.message : err);
+    return res.status(500).json({ error: "PDF generation failed", details: String(err) });
+  }
 }

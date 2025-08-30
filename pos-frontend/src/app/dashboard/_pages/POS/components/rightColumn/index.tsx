@@ -84,11 +84,19 @@ export default function RightColumn({ step, setStep }: POSRightColProps) {
         return;
       }
 
+      // get PDF blob and force download
       const blob = await res.blob();
+      const cd = res.headers.get("content-disposition") || "";
+      const m = cd.match(/filename="?(.+?)"?($|;)/);
+      const filename = m ? m[1] : `receipt-${Date.now()}.pdf`;
       const url = URL.createObjectURL(blob);
-      window.open(url, "_blank");
-      // revoke after a short delay
-      setTimeout(() => URL.revokeObjectURL(url), 30000);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Print receipt error:", err);
       alert("Error generating receipt");
