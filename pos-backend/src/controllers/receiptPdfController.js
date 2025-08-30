@@ -1,16 +1,55 @@
 const puppeteer = require("puppeteer");
 
 let browserPromise = null;
+async function tryLaunchWithCandidates(candidates, baseOpts) {
+  for (const exe of candidates) {
+    if (!exe) continue;
+    try {
+      const opts = Object.assign({}, baseOpts, { executablePath: exe });
+      return await puppeteer.launch(opts);
+    } catch (err) {
+      /* try next */
+    }
+  }
+  // final attempt without executablePath (default)
+  return await puppeteer.launch(baseOpts);
+}
 async function getBrowser() {
   if (!browserPromise) {
-    browserPromise = puppeteer.launch({
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-      headless: true,
-    });
+    browserPromise = (async () => {
+      const baseOpts = {
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+        headless: true,
+      };
+
+      // allow explicit override
+      const envPath = process.env.PUPPETEER_EXECUTABLE_PATH;
+      const candidates = [
+        envPath,
+        "/usr/bin/chromium-browser",
+        "/usr/bin/chromium",
+        "/usr/bin/google-chrome",
+        "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+      ].filter(Boolean);
+
+      try {
+        return await tryLaunchWithCandidates(candidates, baseOpts);
+      } catch (err) {
+        // rethrow with more context for easier debugging
+        const msg = [
+          "Puppeteer launch failed. Ensure Chrome/Chromium is installed or set PUPPETEER_EXECUTABLE_PATH.",
+          `Original error: ${err && err.message ? err.message : String(err)}`,
+        ].join(" ");
+        const e = new Error(msg);
+        e.cause = err;
+        throw e;
+      }
+    })();
+
     const closeBrowser = async () => {
       try {
         const b = await browserPromise;
-        await b.close();
+        if (b && typeof b.close === "function") await b.close();
       } catch (_) { }
     };
     process.on("exit", closeBrowser);
