@@ -6756,11 +6756,14 @@ function AddProductModal({ onAdd }) {
         e.preventDefault();
         if (!selected || qty < 1 || unitPrice === '' || Number(unitPrice) < 0) return;
         const label = productItems.find((p)=>p.value === selected)?.label ?? selected;
+        // if selection corresponds to an API product, pass its id along
+        const apiId = apiProducts?.find((ap)=>String(ap.id) === selected)?.id ?? null;
         if (typeof onAdd === 'function') {
             onAdd({
                 name: label,
                 qty,
-                unitPrice: Number(unitPrice)
+                unitPrice: Number(unitPrice),
+                productId: apiId
             });
         } else {
             try {
@@ -6768,7 +6771,8 @@ function AddProductModal({ onAdd }) {
                     detail: {
                         name: label,
                         qty,
-                        unitPrice: Number(unitPrice)
+                        unitPrice: Number(unitPrice),
+                        productId: apiId
                     }
                 }));
             } catch  {
@@ -6807,12 +6811,12 @@ function AddProductModal({ onAdd }) {
                     children: "Add"
                 }, void 0, false, {
                     fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addProductModal.tsx",
-                    lineNumber: 172,
+                    lineNumber: 173,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addProductModal.tsx",
-                lineNumber: 171,
+                lineNumber: 172,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DialogContent"], {
@@ -6826,7 +6830,7 @@ function AddProductModal({ onAdd }) {
                                     children: "Add Product"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addProductModal.tsx",
-                                    lineNumber: 180,
+                                    lineNumber: 181,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -6834,13 +6838,13 @@ function AddProductModal({ onAdd }) {
                                     children: "Search and add a product with quantity and unit price."
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addProductModal.tsx",
-                                    lineNumber: 181,
+                                    lineNumber: 182,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addProductModal.tsx",
-                            lineNumber: 179,
+                            lineNumber: 180,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -6854,7 +6858,7 @@ function AddProductModal({ onAdd }) {
                                             children: "Product"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addProductModal.tsx",
-                                            lineNumber: 186,
+                                            lineNumber: 187,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$popover$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Popover"], {
@@ -6878,25 +6882,25 @@ function AddProductModal({ onAdd }) {
                                                                 children: selected ? productItems.find((p)=>p.value === selected)?.label ?? selected : 'Select product...'
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addProductModal.tsx",
-                                                                lineNumber: 200,
+                                                                lineNumber: 201,
                                                                 columnNumber: 21
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$chevrons$2d$up$2d$down$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__ChevronsUpDownIcon$3e$__["ChevronsUpDownIcon"], {
                                                                 className: "opacity-50"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addProductModal.tsx",
-                                                                lineNumber: 203,
+                                                                lineNumber: 204,
                                                                 columnNumber: 21
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addProductModal.tsx",
-                                                        lineNumber: 190,
+                                                        lineNumber: 191,
                                                         columnNumber: 19
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addProductModal.tsx",
-                                                    lineNumber: 189,
+                                                    lineNumber: 190,
                                                     columnNumber: 17
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$popover$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["PopoverContent"], {
@@ -6916,7 +6920,7 @@ function AddProductModal({ onAdd }) {
                                                                 autoFocus: true
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addProductModal.tsx",
-                                                                lineNumber: 214,
+                                                                lineNumber: 215,
                                                                 columnNumber: 21
                                                             }, this),
                                                             loading ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -6924,14 +6928,14 @@ function AddProductModal({ onAdd }) {
                                                                 children: "Loading products..."
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addProductModal.tsx",
-                                                                lineNumber: 223,
+                                                                lineNumber: 224,
                                                                 columnNumber: 23
                                                             }, this) : filtered.length === 0 ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                                 className: "p-2 text-sm text-muted-foreground",
                                                                 children: `No product found for "${query}". products=${productItems.length} filtered=${filtered.length}`
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addProductModal.tsx",
-                                                                lineNumber: 225,
+                                                                lineNumber: 226,
                                                                 columnNumber: 23
                                                             }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("ul", {
                                                                 className: "max-h-56 overflow-auto divide-y rounded-md bg-background",
@@ -6949,45 +6953,45 @@ function AddProductModal({ onAdd }) {
                                                                                 children: String(it.label)
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addProductModal.tsx",
-                                                                                lineNumber: 241,
+                                                                                lineNumber: 242,
                                                                                 columnNumber: 31
                                                                             }, this)
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addProductModal.tsx",
-                                                                            lineNumber: 232,
+                                                                            lineNumber: 233,
                                                                             columnNumber: 29
                                                                         }, this)
                                                                     }, it.value, false, {
                                                                         fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addProductModal.tsx",
-                                                                        lineNumber: 231,
+                                                                        lineNumber: 232,
                                                                         columnNumber: 27
                                                                     }, this))
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addProductModal.tsx",
-                                                                lineNumber: 229,
+                                                                lineNumber: 230,
                                                                 columnNumber: 23
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addProductModal.tsx",
-                                                        lineNumber: 213,
+                                                        lineNumber: 214,
                                                         columnNumber: 19
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addProductModal.tsx",
-                                                    lineNumber: 207,
+                                                    lineNumber: 208,
                                                     columnNumber: 17
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addProductModal.tsx",
-                                            lineNumber: 188,
+                                            lineNumber: 189,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addProductModal.tsx",
-                                    lineNumber: 185,
+                                    lineNumber: 186,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -6998,7 +7002,7 @@ function AddProductModal({ onAdd }) {
                                             children: "Quantity"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addProductModal.tsx",
-                                            lineNumber: 254,
+                                            lineNumber: 255,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -7010,13 +7014,13 @@ function AddProductModal({ onAdd }) {
                                             onChange: (e)=>setQty(Math.max(1, Number(e.target.value) || 1))
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addProductModal.tsx",
-                                            lineNumber: 255,
+                                            lineNumber: 256,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addProductModal.tsx",
-                                    lineNumber: 253,
+                                    lineNumber: 254,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -7027,7 +7031,7 @@ function AddProductModal({ onAdd }) {
                                             children: "Unit price (purchased)"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addProductModal.tsx",
-                                            lineNumber: 266,
+                                            lineNumber: 267,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -7040,19 +7044,19 @@ function AddProductModal({ onAdd }) {
                                             placeholder: "0.00"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addProductModal.tsx",
-                                            lineNumber: 267,
+                                            lineNumber: 268,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addProductModal.tsx",
-                                    lineNumber: 265,
+                                    lineNumber: 266,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addProductModal.tsx",
-                            lineNumber: 184,
+                            lineNumber: 185,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DialogFooter"], {
@@ -7064,12 +7068,12 @@ function AddProductModal({ onAdd }) {
                                         children: "Cancel"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addProductModal.tsx",
-                                        lineNumber: 281,
+                                        lineNumber: 282,
                                         columnNumber: 15
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addProductModal.tsx",
-                                    lineNumber: 280,
+                                    lineNumber: 281,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
@@ -7078,30 +7082,30 @@ function AddProductModal({ onAdd }) {
                                     children: "Add"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addProductModal.tsx",
-                                    lineNumber: 283,
+                                    lineNumber: 284,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addProductModal.tsx",
-                            lineNumber: 279,
+                            lineNumber: 280,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addProductModal.tsx",
-                    lineNumber: 178,
+                    lineNumber: 179,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addProductModal.tsx",
-                lineNumber: 177,
+                lineNumber: 178,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addProductModal.tsx",
-        lineNumber: 170,
+        lineNumber: 171,
         columnNumber: 5
     }, this);
 }
@@ -7118,11 +7122,15 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$chevron$2d$left$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__ChevronLeft$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/chevron-left.js [app-ssr] (ecmascript) <export default as ChevronLeft>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$plus$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Plus$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/plus.js [app-ssr] (ecmascript) <export default as Plus>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$x$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__X$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/x.js [app-ssr] (ecmascript) <export default as X>");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$calendar$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Calendar$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/calendar.js [app-ssr] (ecmascript) <export default as Calendar>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$locals$3e$__ = __turbopack_context__.i("[project]/node_modules/swr/dist/_internal/index.mjs [app-ssr] (ecmascript) <locals>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/button.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/dialog.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$scroll$2d$area$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/scroll-area.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/input.tsx [app-ssr] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$popover$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/popover.tsx [app-ssr] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$calendar$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/calendar.tsx [app-ssr] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/card.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_pages$2f$StockMovements$2f$components$2f$addProductModal$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/app/dashboard/_pages/StockMovements/components/addProductModal.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/table.tsx [app-ssr] (ecmascript)");
 'use client';
@@ -7136,8 +7144,12 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$t
 ;
 ;
 ;
+;
+;
+;
 function AddStockModal({ onSave }) {
     const [open, setOpen] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(false);
+    const [month, setMonth] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(new Date());
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         const handler = (e)=>{
             const ce = e;
@@ -7149,7 +7161,7 @@ function AddStockModal({ onSave }) {
         return ()=>window.removeEventListener('stock:addProduct', handler);
     }, []);
     const [company, setCompany] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])("");
-    const [date, setDate] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])("");
+    const [date, setDate] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(undefined);
     const [price, setPrice] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])("");
     const [products, setProducts] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])([]);
     const [saving, setSaving] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(false);
@@ -7162,11 +7174,10 @@ function AddStockModal({ onSave }) {
         }
         const payload = {
             company_name: company,
-            date: date || new Date().toISOString(),
+            date: date ? date.toISOString() : new Date().toISOString(),
             total: Number(price) || 0,
             items: products.map((p)=>({
-                    // frontend doesn't have product_id in this sample; send null so backend can handle
-                    product_id: null,
+                    product_id: p.productId ?? null,
                     purchased_price: p.unitPrice ?? (Number(price) || 0),
                     quantity: p.qty
                 }))
@@ -7187,7 +7198,7 @@ function AddStockModal({ onSave }) {
             // notify parent if needed
             onSave?.({
                 company,
-                date,
+                date: date ? date.toISOString() : new Date().toISOString(),
                 price: Number(price) || 0,
                 products
             });
@@ -7195,7 +7206,7 @@ function AddStockModal({ onSave }) {
             mutate(endpoint);
             // reset and close
             setCompany("");
-            setDate("");
+            setDate(undefined);
             setPrice("");
             setProducts([]);
             setOpen(false);
@@ -7209,7 +7220,8 @@ function AddStockModal({ onSave }) {
     // Merge same product by name: increase qty and update unitPrice to the newly provided one
     const handleAddProduct = (p)=>{
         setProducts((prev)=>{
-            const idx = prev.findIndex((x)=>x.name === p.name);
+            // prefer matching by productId when available, otherwise fallback to name
+            const idx = prev.findIndex((x)=>p.productId != null ? x.productId === p.productId : x.name === p.name);
             if (idx !== -1) {
                 const updated = [
                     ...prev
@@ -7217,7 +7229,8 @@ function AddStockModal({ onSave }) {
                 updated[idx] = {
                     ...updated[idx],
                     qty: updated[idx].qty + p.qty,
-                    unitPrice: p.unitPrice
+                    unitPrice: p.unitPrice,
+                    productId: updated[idx].productId ?? p.productId
                 };
                 return updated;
             }
@@ -7225,6 +7238,7 @@ function AddStockModal({ onSave }) {
                 ...prev,
                 {
                     id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+                    productId: p.productId ?? null,
                     name: p.name,
                     qty: p.qty,
                     unitPrice: p.unitPrice
@@ -7260,23 +7274,23 @@ function AddStockModal({ onSave }) {
                             size: 16
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                            lineNumber: 146,
+                            lineNumber: 163,
                             columnNumber: 21
                         }, this),
                         "Add Stocks"
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                    lineNumber: 145,
+                    lineNumber: 162,
                     columnNumber: 17
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                lineNumber: 144,
+                lineNumber: 161,
                 columnNumber: 13
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DialogContent"], {
-                className: " flex h-[calc(100vh-2rem)] min-w-[calc(100vw-2rem)] flex-col justify-between gap-0 p-0",
+                className: " flex h-[calc(80vh-2rem)] min-w-[calc(80vw-2rem)] flex-col justify-between gap-0 p-0",
                 children: [
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$scroll$2d$area$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["ScrollArea"], {
                         className: "flex-1 overflow-hidden",
@@ -7289,7 +7303,7 @@ function AddStockModal({ onSave }) {
                                         children: "Add Stock"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                        lineNumber: 154,
+                                        lineNumber: 171,
                                         columnNumber: 25
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DialogDescription"], {
@@ -7301,41 +7315,42 @@ function AddStockModal({ onSave }) {
                                                 children: "Enter stock details and add products."
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                                lineNumber: 157,
+                                                lineNumber: 174,
                                                 columnNumber: 33
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                            lineNumber: 156,
+                                            lineNumber: 173,
                                             columnNumber: 29
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                        lineNumber: 155,
+                                        lineNumber: 172,
                                         columnNumber: 25
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                lineNumber: 153,
+                                lineNumber: 170,
                                 columnNumber: 21
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                 className: "px-6 pt-2",
                                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                    className: "grid grid-cols-1 md:grid-cols-2 gap-6",
+                                    className: "flex w-full gap-6",
                                     children: [
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                            className: "space-y-4",
+                                            className: "flex-[40%] ",
                                             children: [
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                    className: "mt-2",
                                                     children: [
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
                                                             className: "text-sm block mb-1",
                                                             children: "Company"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                                            lineNumber: 167,
+                                                            lineNumber: 184,
                                                             columnNumber: 37
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -7344,48 +7359,171 @@ function AddStockModal({ onSave }) {
                                                             placeholder: "Company name"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                                            lineNumber: 168,
+                                                            lineNumber: 185,
                                                             columnNumber: 37
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                                    lineNumber: 166,
+                                                    lineNumber: 183,
                                                     columnNumber: 33
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                    className: "mt-2",
                                                     children: [
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
                                                             className: "text-sm block mb-1",
                                                             children: "Date"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                                            lineNumber: 172,
+                                                            lineNumber: 189,
                                                             columnNumber: 37
                                                         }, this),
-                                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
-                                                            type: "date",
-                                                            value: date,
-                                                            onChange: (e)=>setDate(e.target.value)
-                                                        }, void 0, false, {
+                                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$popover$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Popover"], {
+                                                            children: [
+                                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$popover$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["PopoverTrigger"], {
+                                                                    asChild: true,
+                                                                    children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
+                                                                        variant: "outline",
+                                                                        className: "w-full h-10 justify-between text-left px-3",
+                                                                        type: "button",
+                                                                        "aria-label": "Choose date",
+                                                                        children: [
+                                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                                                className: "truncate",
+                                                                                children: date ? date.toLocaleDateString() : 'mm/dd/yyyy'
+                                                                            }, void 0, false, {
+                                                                                fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
+                                                                                lineNumber: 198,
+                                                                                columnNumber: 49
+                                                                            }, this),
+                                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$calendar$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Calendar$3e$__["Calendar"], {
+                                                                                className: "ml-2 opacity-70"
+                                                                            }, void 0, false, {
+                                                                                fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
+                                                                                lineNumber: 201,
+                                                                                columnNumber: 49
+                                                                            }, this)
+                                                                        ]
+                                                                    }, void 0, true, {
+                                                                        fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
+                                                                        lineNumber: 192,
+                                                                        columnNumber: 45
+                                                                    }, this)
+                                                                }, void 0, false, {
+                                                                    fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
+                                                                    lineNumber: 191,
+                                                                    columnNumber: 41
+                                                                }, this),
+                                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$popover$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["PopoverContent"], {
+                                                                    className: "w-auto p-2",
+                                                                    children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Card"], {
+                                                                        className: "w-[290px]",
+                                                                        children: [
+                                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardHeader"], {
+                                                                                className: "flex items-start gap-2",
+                                                                                children: [
+                                                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                                                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardDescription"], {
+                                                                                            className: "text-xs text-muted-foreground",
+                                                                                            children: [
+                                                                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardTitle"], {
+                                                                                                    className: "text-sm",
+                                                                                                    children: "Choose date"
+                                                                                                }, void 0, false, {
+                                                                                                    fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
+                                                                                                    lineNumber: 210,
+                                                                                                    columnNumber: 61
+                                                                                                }, this),
+                                                                                                "Select a date for this stock entry"
+                                                                                            ]
+                                                                                        }, void 0, true, {
+                                                                                            fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
+                                                                                            lineNumber: 209,
+                                                                                            columnNumber: 57
+                                                                                        }, this)
+                                                                                    }, void 0, false, {
+                                                                                        fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
+                                                                                        lineNumber: 208,
+                                                                                        columnNumber: 53
+                                                                                    }, this),
+                                                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardAction"], {
+                                                                                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
+                                                                                            size: "sm",
+                                                                                            variant: "outline",
+                                                                                            onClick: ()=>{
+                                                                                                const now = new Date();
+                                                                                                setMonth(now);
+                                                                                                setDate(now);
+                                                                                            },
+                                                                                            children: "Today"
+                                                                                        }, void 0, false, {
+                                                                                            fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
+                                                                                            lineNumber: 215,
+                                                                                            columnNumber: 57
+                                                                                        }, this)
+                                                                                    }, void 0, false, {
+                                                                                        fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
+                                                                                        lineNumber: 214,
+                                                                                        columnNumber: 53
+                                                                                    }, this)
+                                                                                ]
+                                                                            }, void 0, true, {
+                                                                                fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
+                                                                                lineNumber: 207,
+                                                                                columnNumber: 49
+                                                                            }, this),
+                                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardContent"], {
+                                                                                className: "p-2",
+                                                                                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$calendar$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Calendar"], {
+                                                                                    mode: "single",
+                                                                                    month: month,
+                                                                                    onMonthChange: setMonth,
+                                                                                    selected: date,
+                                                                                    onSelect: setDate,
+                                                                                    className: "bg-transparent p-0 rounded-md"
+                                                                                }, void 0, false, {
+                                                                                    fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
+                                                                                    lineNumber: 229,
+                                                                                    columnNumber: 53
+                                                                                }, this)
+                                                                            }, void 0, false, {
+                                                                                fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
+                                                                                lineNumber: 228,
+                                                                                columnNumber: 49
+                                                                            }, this)
+                                                                        ]
+                                                                    }, void 0, true, {
+                                                                        fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
+                                                                        lineNumber: 206,
+                                                                        columnNumber: 45
+                                                                    }, this)
+                                                                }, void 0, false, {
+                                                                    fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
+                                                                    lineNumber: 205,
+                                                                    columnNumber: 41
+                                                                }, this)
+                                                            ]
+                                                        }, void 0, true, {
                                                             fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                                            lineNumber: 173,
+                                                            lineNumber: 190,
                                                             columnNumber: 37
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                                    lineNumber: 171,
+                                                    lineNumber: 188,
                                                     columnNumber: 33
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                    className: "mt-2",
                                                     children: [
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
                                                             className: "text-sm block mb-1",
                                                             children: "Price"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                                            lineNumber: 177,
+                                                            lineNumber: 244,
                                                             columnNumber: 37
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -7396,23 +7534,23 @@ function AddStockModal({ onSave }) {
                                                             placeholder: "0.00"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                                            lineNumber: 178,
+                                                            lineNumber: 245,
                                                             columnNumber: 37
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                                    lineNumber: 176,
+                                                    lineNumber: 243,
                                                     columnNumber: 33
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                            lineNumber: 165,
+                                            lineNumber: 182,
                                             columnNumber: 29
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                            className: "flex flex-col h-full",
+                                            className: "flex flex-col h-full flex-[60%]",
                                             children: [
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                     className: "flex items-center justify-between mb-3",
@@ -7422,20 +7560,20 @@ function AddStockModal({ onSave }) {
                                                             children: "Products"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                                            lineNumber: 191,
+                                                            lineNumber: 258,
                                                             columnNumber: 37
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_pages$2f$StockMovements$2f$components$2f$addProductModal$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
                                                             onAdd: handleAddProduct
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                                            lineNumber: 192,
+                                                            lineNumber: 259,
                                                             columnNumber: 37
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                                    lineNumber: 190,
+                                                    lineNumber: 257,
                                                     columnNumber: 33
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -7454,7 +7592,7 @@ function AddStockModal({ onSave }) {
                                                                                 children: "Product"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                                                                lineNumber: 200,
+                                                                                lineNumber: 267,
                                                                                 columnNumber: 53
                                                                             }, this),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableHead"], {
@@ -7462,7 +7600,7 @@ function AddStockModal({ onSave }) {
                                                                                 children: "Quantity"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                                                                lineNumber: 201,
+                                                                                lineNumber: 268,
                                                                                 columnNumber: 53
                                                                             }, this),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableHead"], {
@@ -7470,25 +7608,25 @@ function AddStockModal({ onSave }) {
                                                                                 children: "Unit Price"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                                                                lineNumber: 202,
+                                                                                lineNumber: 269,
                                                                                 columnNumber: 53
                                                                             }, this),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableHead"], {
                                                                                 className: "w-[8%]"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                                                                lineNumber: 204,
+                                                                                lineNumber: 271,
                                                                                 columnNumber: 53
                                                                             }, this)
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                                                        lineNumber: 199,
+                                                                        lineNumber: 266,
                                                                         columnNumber: 49
                                                                     }, this)
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                                                    lineNumber: 198,
+                                                                    lineNumber: 265,
                                                                     columnNumber: 45
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableBody"], {
@@ -7500,17 +7638,17 @@ function AddStockModal({ onSave }) {
                                                                                 children: "No products added."
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                                                                lineNumber: 212,
+                                                                                lineNumber: 279,
                                                                                 columnNumber: 61
                                                                             }, this)
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                                                            lineNumber: 211,
+                                                                            lineNumber: 278,
                                                                             columnNumber: 57
                                                                         }, this)
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                                                        lineNumber: 210,
+                                                                        lineNumber: 277,
                                                                         columnNumber: 53
                                                                     }, this) : products.map((p)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableRow"], {
                                                                             children: [
@@ -7521,12 +7659,12 @@ function AddStockModal({ onSave }) {
                                                                                         children: p.name
                                                                                     }, void 0, false, {
                                                                                         fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                                                                        lineNumber: 222,
+                                                                                        lineNumber: 289,
                                                                                         columnNumber: 65
                                                                                     }, this)
                                                                                 }, void 0, false, {
                                                                                     fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                                                                    lineNumber: 221,
+                                                                                    lineNumber: 288,
                                                                                     columnNumber: 61
                                                                                 }, this),
                                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableCell"], {
@@ -7541,12 +7679,12 @@ function AddStockModal({ onSave }) {
                                                                                         "aria-label": `qty-${p.id}`
                                                                                     }, void 0, false, {
                                                                                         fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                                                                        lineNumber: 227,
+                                                                                        lineNumber: 294,
                                                                                         columnNumber: 65
                                                                                     }, this)
                                                                                 }, void 0, false, {
                                                                                     fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                                                                    lineNumber: 226,
+                                                                                    lineNumber: 293,
                                                                                     columnNumber: 61
                                                                                 }, this),
                                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableCell"], {
@@ -7562,12 +7700,12 @@ function AddStockModal({ onSave }) {
                                                                                         "aria-label": `unit-${p.id}`
                                                                                     }, void 0, false, {
                                                                                         fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                                                                        lineNumber: 240,
+                                                                                        lineNumber: 307,
                                                                                         columnNumber: 65
                                                                                     }, this)
                                                                                 }, void 0, false, {
                                                                                     fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                                                                    lineNumber: 239,
+                                                                                    lineNumber: 306,
                                                                                     columnNumber: 61
                                                                                 }, this),
                                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableCell"], {
@@ -7581,67 +7719,67 @@ function AddStockModal({ onSave }) {
                                                                                             className: "h-4 w-4"
                                                                                         }, void 0, false, {
                                                                                             fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                                                                            lineNumber: 255,
+                                                                                            lineNumber: 322,
                                                                                             columnNumber: 69
                                                                                         }, this)
                                                                                     }, void 0, false, {
                                                                                         fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                                                                        lineNumber: 254,
+                                                                                        lineNumber: 321,
                                                                                         columnNumber: 65
                                                                                     }, this)
                                                                                 }, void 0, false, {
                                                                                     fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                                                                    lineNumber: 253,
+                                                                                    lineNumber: 320,
                                                                                     columnNumber: 61
                                                                                 }, this)
                                                                             ]
                                                                         }, p.id, true, {
                                                                             fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                                                            lineNumber: 219,
+                                                                            lineNumber: 286,
                                                                             columnNumber: 57
                                                                         }, this))
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                                                    lineNumber: 208,
+                                                                    lineNumber: 275,
                                                                     columnNumber: 45
                                                                 }, this)
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                                            lineNumber: 197,
+                                                            lineNumber: 264,
                                                             columnNumber: 41
                                                         }, this)
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                                        lineNumber: 196,
+                                                        lineNumber: 263,
                                                         columnNumber: 37
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                                    lineNumber: 195,
+                                                    lineNumber: 262,
                                                     columnNumber: 33
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                            lineNumber: 189,
+                                            lineNumber: 256,
                                             columnNumber: 29
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                    lineNumber: 163,
+                                    lineNumber: 180,
                                     columnNumber: 25
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                lineNumber: 162,
+                                lineNumber: 179,
                                 columnNumber: 21
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                        lineNumber: 152,
+                        lineNumber: 169,
                         columnNumber: 17
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DialogFooter"], {
@@ -7656,19 +7794,19 @@ function AddStockModal({ onSave }) {
                                     children: [
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$chevron$2d$left$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__ChevronLeft$3e$__["ChevronLeft"], {}, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                            lineNumber: 274,
+                                            lineNumber: 341,
                                             columnNumber: 29
                                         }, this),
                                         "Back"
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                    lineNumber: 273,
+                                    lineNumber: 340,
                                     columnNumber: 25
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                lineNumber: 272,
+                                lineNumber: 339,
                                 columnNumber: 21
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
@@ -7677,25 +7815,25 @@ function AddStockModal({ onSave }) {
                                 children: saving ? 'Saving...' : 'Save'
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                                lineNumber: 279,
+                                lineNumber: 346,
                                 columnNumber: 21
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                        lineNumber: 271,
+                        lineNumber: 338,
                         columnNumber: 17
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-                lineNumber: 151,
+                lineNumber: 168,
                 columnNumber: 13
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/addStockModal.tsx",
-        lineNumber: 143,
+        lineNumber: 160,
         columnNumber: 9
     }, this);
 }
@@ -7774,6 +7912,7 @@ function useStockTransactions() {
 "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx [app-ssr] (ecmascript)", ((__turbopack_context__) => {
 "use strict";
 
+// ...existing code...
 __turbopack_context__.s([
     "columns",
     ()=>columns,
@@ -7781,14 +7920,23 @@ __turbopack_context__.s([
     ()=>__TURBOPACK__default__export__
 ]);
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/route-modules/app-page/vendored/ssr/react-jsx-dev-runtime.js [app-ssr] (ecmascript)");
-// ...existing code...
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/route-modules/app-page/vendored/ssr/react.js [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$tanstack$2f$react$2d$table$2f$build$2f$lib$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$locals$3e$__ = __turbopack_context__.i("[project]/node_modules/@tanstack/react-table/build/lib/index.mjs [app-ssr] (ecmascript) <locals>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$tanstack$2f$table$2d$core$2f$build$2f$lib$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/@tanstack/table-core/build/lib/index.mjs [app-ssr] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/button.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/input.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/table.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$stocks$2f$useStockTransactions$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/hooks/stocks/useStockTransactions.ts [app-ssr] (ecmascript)");
+/* ------------------ NEW IMPORTS ------------------ */ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$eye$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Eye$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/eye.js [app-ssr] (ecmascript) <export default as Eye>");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$chevron$2d$left$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__ChevronLeft$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/chevron-left.js [app-ssr] (ecmascript) <export default as ChevronLeft>");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/dialog.tsx [app-ssr] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$scroll$2d$area$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/scroll-area.tsx [app-ssr] (ecmascript)");
 'use client';
+;
+;
+;
+;
+;
 ;
 ;
 ;
@@ -7804,7 +7952,7 @@ const columns = [
                 children: row.getValue('company_name')
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
-                lineNumber: 36,
+                lineNumber: 52,
                 columnNumber: 28
             }, ("TURBOPACK compile-time value", void 0))
     },
@@ -7819,7 +7967,7 @@ const columns = [
                 children: formatted
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
-                lineNumber: 44,
+                lineNumber: 60,
                 columnNumber: 20
             }, ("TURBOPACK compile-time value", void 0));
         }
@@ -7831,7 +7979,7 @@ const columns = [
                 children: "Total"
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
-                lineNumber: 49,
+                lineNumber: 65,
                 columnNumber: 23
             }, ("TURBOPACK compile-time value", void 0)),
         cell: ({ row })=>{
@@ -7845,8 +7993,445 @@ const columns = [
                 children: formatted
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
-                lineNumber: 53,
+                lineNumber: 69,
                 columnNumber: 20
+            }, ("TURBOPACK compile-time value", void 0));
+        }
+    },
+    {
+        id: 'actions',
+        header: '',
+        cell: ({ row })=>{
+            const company = String(row.getValue('company_name') ?? '');
+            const rawDate = String(row.getValue('date') ?? '');
+            const formattedDate = rawDate ? new Date(rawDate).toLocaleDateString() : '';
+            const total = parseFloat(String(row.getValue('total') ?? 0));
+            const formattedTotal = new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD'
+            }).format(total);
+            // transaction id from original row
+            const txId = row.original?.id;
+            const TransactionDetailsDialog = ({ id })=>{
+                const [open, setOpen] = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"].useState(false);
+                const [items, setItems] = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"].useState(null);
+                const [loadingItems, setLoadingItems] = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"].useState(false);
+                const [loadError, setLoadError] = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"].useState(null);
+                __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"].useEffect(()=>{
+                    if (!open) return;
+                    let mounted = true;
+                    const load = async ()=>{
+                        setLoadingItems(true);
+                        setLoadError(null);
+                        try {
+                            const base = ("TURBOPACK compile-time value", "http://localhost:5000/api") ?? '';
+                            const endpoint = `${base}/stock-transactions/${id}`;
+                            const res = await fetch(endpoint);
+                            const json = await res.json();
+                            if (!res.ok) throw new Error(json?.message || json?.error || 'Failed to load');
+                            // backend now returns items with joined product object and product_name normalization
+                            const fetched = json?.items ?? json?.data?.items ?? [];
+                            if (mounted) setItems(Array.isArray(fetched) ? fetched : []);
+                        } catch (err) {
+                            console.error('load transaction items error', err);
+                            if (mounted) setLoadError(err?.message ?? String(err));
+                        } finally{
+                            if (mounted) setLoadingItems(false);
+                        }
+                    };
+                    load();
+                    return ()=>{
+                        mounted = false;
+                    };
+                }, [
+                    open,
+                    id
+                ]);
+                // fallback to original row items if remote not available yet
+                const origItems = row.original?.items ?? row.original?.products ?? [];
+                const shownItems = items ?? (Array.isArray(origItems) ? origItems : []);
+                return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Dialog"], {
+                    open: open,
+                    onOpenChange: setOpen,
+                    children: [
+                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DialogTrigger"], {
+                            asChild: true,
+                            children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
+                                variant: "ghost",
+                                size: "sm",
+                                "aria-label": "View details",
+                                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$eye$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Eye$3e$__["Eye"], {
+                                    className: "h-4 w-4"
+                                }, void 0, false, {
+                                    fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                                    lineNumber: 126,
+                                    columnNumber: 33
+                                }, ("TURBOPACK compile-time value", void 0))
+                            }, void 0, false, {
+                                fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                                lineNumber: 125,
+                                columnNumber: 29
+                            }, ("TURBOPACK compile-time value", void 0))
+                        }, void 0, false, {
+                            fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                            lineNumber: 124,
+                            columnNumber: 25
+                        }, ("TURBOPACK compile-time value", void 0)),
+                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DialogContent"], {
+                            className: "flex max-h-[min(640px,84vh)] flex-col gap-0 p-0 sm:max-w-lg",
+                            children: [
+                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DialogHeader"], {
+                                    className: "contents space-y-0 text-left",
+                                    children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$scroll$2d$area$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["ScrollArea"], {
+                                        className: "flex max-h-full flex-col overflow-hidden",
+                                        children: [
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DialogTitle"], {
+                                                className: "px-6 pt-6 text-lg md:text-xl font-semibold text-foreground",
+                                                children: "Transaction Details"
+                                            }, void 0, false, {
+                                                fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                                                lineNumber: 133,
+                                                columnNumber: 37
+                                            }, ("TURBOPACK compile-time value", void 0)),
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DialogDescription"], {
+                                                asChild: true,
+                                                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                    className: "p-6",
+                                                    children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                        className: "space-y-4",
+                                                        children: [
+                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                                className: "flex flex-col gap-2",
+                                                                children: [
+                                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                                        className: "flex items-baseline gap-3",
+                                                                        children: [
+                                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                                                className: "text-sm text-muted-foreground",
+                                                                                children: "Company:"
+                                                                            }, void 0, false, {
+                                                                                fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                                                                                lineNumber: 139,
+                                                                                columnNumber: 57
+                                                                            }, ("TURBOPACK compile-time value", void 0)),
+                                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                                                className: "text-base font-medium text-foreground",
+                                                                                children: company
+                                                                            }, void 0, false, {
+                                                                                fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                                                                                lineNumber: 140,
+                                                                                columnNumber: 57
+                                                                            }, ("TURBOPACK compile-time value", void 0))
+                                                                        ]
+                                                                    }, void 0, true, {
+                                                                        fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                                                                        lineNumber: 138,
+                                                                        columnNumber: 53
+                                                                    }, ("TURBOPACK compile-time value", void 0)),
+                                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                                        className: "flex items-baseline gap-3",
+                                                                        children: [
+                                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                                                className: "text-sm text-muted-foreground",
+                                                                                children: "Date:"
+                                                                            }, void 0, false, {
+                                                                                fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                                                                                lineNumber: 143,
+                                                                                columnNumber: 57
+                                                                            }, ("TURBOPACK compile-time value", void 0)),
+                                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                                                className: "text-sm text-foreground",
+                                                                                children: formattedDate
+                                                                            }, void 0, false, {
+                                                                                fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                                                                                lineNumber: 144,
+                                                                                columnNumber: 57
+                                                                            }, ("TURBOPACK compile-time value", void 0))
+                                                                        ]
+                                                                    }, void 0, true, {
+                                                                        fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                                                                        lineNumber: 142,
+                                                                        columnNumber: 53
+                                                                    }, ("TURBOPACK compile-time value", void 0)),
+                                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                                        className: "flex items-baseline gap-3",
+                                                                        children: [
+                                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                                                className: "text-sm text-muted-foreground",
+                                                                                children: "Total:"
+                                                                            }, void 0, false, {
+                                                                                fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                                                                                lineNumber: 147,
+                                                                                columnNumber: 57
+                                                                            }, ("TURBOPACK compile-time value", void 0)),
+                                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                                                className: "text-base font-semibold text-foreground",
+                                                                                children: formattedTotal
+                                                                            }, void 0, false, {
+                                                                                fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                                                                                lineNumber: 148,
+                                                                                columnNumber: 57
+                                                                            }, ("TURBOPACK compile-time value", void 0))
+                                                                        ]
+                                                                    }, void 0, true, {
+                                                                        fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                                                                        lineNumber: 146,
+                                                                        columnNumber: 53
+                                                                    }, ("TURBOPACK compile-time value", void 0))
+                                                                ]
+                                                            }, void 0, true, {
+                                                                fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                                                                lineNumber: 137,
+                                                                columnNumber: 49
+                                                            }, ("TURBOPACK compile-time value", void 0)),
+                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                                className: "mt-3",
+                                                                children: [
+                                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("h4", {
+                                                                        className: "text-sm font-medium text-muted-foreground",
+                                                                        children: "Products"
+                                                                    }, void 0, false, {
+                                                                        fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                                                                        lineNumber: 153,
+                                                                        columnNumber: 53
+                                                                    }, ("TURBOPACK compile-time value", void 0)),
+                                                                    loadingItems ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                                        className: "text-sm text-muted-foreground mt-3",
+                                                                        children: "Loading products…"
+                                                                    }, void 0, false, {
+                                                                        fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                                                                        lineNumber: 156,
+                                                                        columnNumber: 57
+                                                                    }, ("TURBOPACK compile-time value", void 0)) : loadError ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                                        className: "text-sm text-destructive mt-3",
+                                                                        children: [
+                                                                            "Failed to load products: ",
+                                                                            loadError
+                                                                        ]
+                                                                    }, void 0, true, {
+                                                                        fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                                                                        lineNumber: 158,
+                                                                        columnNumber: 57
+                                                                    }, ("TURBOPACK compile-time value", void 0)) : !shownItems || shownItems.length === 0 ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                                        className: "text-sm text-muted-foreground mt-3",
+                                                                        children: "No products available for this transaction."
+                                                                    }, void 0, false, {
+                                                                        fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                                                                        lineNumber: 160,
+                                                                        columnNumber: 57
+                                                                    }, ("TURBOPACK compile-time value", void 0)) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                                        className: "mt-3 overflow-auto rounded-sm border",
+                                                                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("table", {
+                                                                            className: "w-full text-sm",
+                                                                            children: [
+                                                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("thead", {
+                                                                                    children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("tr", {
+                                                                                        className: "bg-muted/5",
+                                                                                        children: [
+                                                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
+                                                                                                className: "px-4 py-3 text-left text-xs text-muted-foreground",
+                                                                                                children: "Product"
+                                                                                            }, void 0, false, {
+                                                                                                fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                                                                                                lineNumber: 166,
+                                                                                                columnNumber: 73
+                                                                                            }, ("TURBOPACK compile-time value", void 0)),
+                                                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
+                                                                                                className: "px-4 py-3 text-right text-xs text-muted-foreground",
+                                                                                                children: "Qty"
+                                                                                            }, void 0, false, {
+                                                                                                fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                                                                                                lineNumber: 167,
+                                                                                                columnNumber: 73
+                                                                                            }, ("TURBOPACK compile-time value", void 0)),
+                                                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
+                                                                                                className: "px-4 py-3 text-right text-xs text-muted-foreground",
+                                                                                                children: "Unit"
+                                                                                            }, void 0, false, {
+                                                                                                fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                                                                                                lineNumber: 168,
+                                                                                                columnNumber: 73
+                                                                                            }, ("TURBOPACK compile-time value", void 0)),
+                                                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
+                                                                                                className: "px-4 py-3 text-right text-xs text-muted-foreground",
+                                                                                                children: "Subtotal"
+                                                                                            }, void 0, false, {
+                                                                                                fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                                                                                                lineNumber: 169,
+                                                                                                columnNumber: 73
+                                                                                            }, ("TURBOPACK compile-time value", void 0))
+                                                                                        ]
+                                                                                    }, void 0, true, {
+                                                                                        fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                                                                                        lineNumber: 165,
+                                                                                        columnNumber: 69
+                                                                                    }, ("TURBOPACK compile-time value", void 0))
+                                                                                }, void 0, false, {
+                                                                                    fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                                                                                    lineNumber: 164,
+                                                                                    columnNumber: 65
+                                                                                }, ("TURBOPACK compile-time value", void 0)),
+                                                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("tbody", {
+                                                                                    children: shownItems.map((it, i)=>{
+                                                                                        const name = it.product?.name ?? it.product_name ?? it.name ?? (it.product_id ? `#${it.product_id}` : `Item ${i + 1}`);
+                                                                                        const qty = Number(it.quantity ?? it.qty ?? 0);
+                                                                                        const unit = Number(it.purchased_price ?? it.unit_price ?? it.price ?? 0);
+                                                                                        const subtotal = qty * unit;
+                                                                                        const formattedUnit = new Intl.NumberFormat('en-US', {
+                                                                                            style: 'currency',
+                                                                                            currency: 'USD'
+                                                                                        }).format(unit);
+                                                                                        const formattedSubtotal = new Intl.NumberFormat('en-US', {
+                                                                                            style: 'currency',
+                                                                                            currency: 'USD'
+                                                                                        }).format(subtotal);
+                                                                                        return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("tr", {
+                                                                                            className: "border-t last:border-b",
+                                                                                            children: [
+                                                                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
+                                                                                                    className: "px-4 py-3 align-top text-sm text-foreground max-w-[260px] break-words whitespace-normal",
+                                                                                                    children: name
+                                                                                                }, void 0, false, {
+                                                                                                    fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                                                                                                    lineNumber: 187,
+                                                                                                    columnNumber: 81
+                                                                                                }, ("TURBOPACK compile-time value", void 0)),
+                                                                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
+                                                                                                    className: "px-4 py-3 align-top text-sm text-right text-foreground",
+                                                                                                    children: qty
+                                                                                                }, void 0, false, {
+                                                                                                    fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                                                                                                    lineNumber: 188,
+                                                                                                    columnNumber: 81
+                                                                                                }, ("TURBOPACK compile-time value", void 0)),
+                                                                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
+                                                                                                    className: "px-4 py-3 align-top text-sm text-right text-foreground",
+                                                                                                    children: formattedUnit
+                                                                                                }, void 0, false, {
+                                                                                                    fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                                                                                                    lineNumber: 189,
+                                                                                                    columnNumber: 81
+                                                                                                }, ("TURBOPACK compile-time value", void 0)),
+                                                                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
+                                                                                                    className: "px-4 py-3 align-top text-sm text-right font-medium text-foreground",
+                                                                                                    children: formattedSubtotal
+                                                                                                }, void 0, false, {
+                                                                                                    fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                                                                                                    lineNumber: 190,
+                                                                                                    columnNumber: 81
+                                                                                                }, ("TURBOPACK compile-time value", void 0))
+                                                                                            ]
+                                                                                        }, i, true, {
+                                                                                            fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                                                                                            lineNumber: 186,
+                                                                                            columnNumber: 77
+                                                                                        }, ("TURBOPACK compile-time value", void 0));
+                                                                                    })
+                                                                                }, void 0, false, {
+                                                                                    fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                                                                                    lineNumber: 172,
+                                                                                    columnNumber: 65
+                                                                                }, ("TURBOPACK compile-time value", void 0))
+                                                                            ]
+                                                                        }, void 0, true, {
+                                                                            fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                                                                            lineNumber: 163,
+                                                                            columnNumber: 61
+                                                                        }, ("TURBOPACK compile-time value", void 0))
+                                                                    }, void 0, false, {
+                                                                        fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                                                                        lineNumber: 162,
+                                                                        columnNumber: 57
+                                                                    }, ("TURBOPACK compile-time value", void 0))
+                                                                ]
+                                                            }, void 0, true, {
+                                                                fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                                                                lineNumber: 152,
+                                                                columnNumber: 49
+                                                            }, ("TURBOPACK compile-time value", void 0))
+                                                        ]
+                                                    }, void 0, true, {
+                                                        fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                                                        lineNumber: 136,
+                                                        columnNumber: 45
+                                                    }, ("TURBOPACK compile-time value", void 0))
+                                                }, void 0, false, {
+                                                    fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                                                    lineNumber: 135,
+                                                    columnNumber: 41
+                                                }, ("TURBOPACK compile-time value", void 0))
+                                            }, void 0, false, {
+                                                fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                                                lineNumber: 134,
+                                                columnNumber: 37
+                                            }, ("TURBOPACK compile-time value", void 0))
+                                        ]
+                                    }, void 0, true, {
+                                        fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                                        lineNumber: 132,
+                                        columnNumber: 33
+                                    }, ("TURBOPACK compile-time value", void 0))
+                                }, void 0, false, {
+                                    fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                                    lineNumber: 131,
+                                    columnNumber: 29
+                                }, ("TURBOPACK compile-time value", void 0)),
+                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DialogFooter"], {
+                                    className: "flex-row items-center justify-end border-t px-6 py-4",
+                                    children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DialogClose"], {
+                                        asChild: true,
+                                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
+                                            variant: "outline",
+                                            size: "sm",
+                                            children: [
+                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$chevron$2d$left$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__ChevronLeft$3e$__["ChevronLeft"], {}, void 0, false, {
+                                                    fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                                                    lineNumber: 208,
+                                                    columnNumber: 41
+                                                }, ("TURBOPACK compile-time value", void 0)),
+                                                "Back"
+                                            ]
+                                        }, void 0, true, {
+                                            fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                                            lineNumber: 207,
+                                            columnNumber: 37
+                                        }, ("TURBOPACK compile-time value", void 0))
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                                        lineNumber: 206,
+                                        columnNumber: 33
+                                    }, ("TURBOPACK compile-time value", void 0))
+                                }, void 0, false, {
+                                    fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                                    lineNumber: 205,
+                                    columnNumber: 29
+                                }, ("TURBOPACK compile-time value", void 0))
+                            ]
+                        }, void 0, true, {
+                            fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                            lineNumber: 130,
+                            columnNumber: 25
+                        }, ("TURBOPACK compile-time value", void 0))
+                    ]
+                }, void 0, true, {
+                    fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                    lineNumber: 123,
+                    columnNumber: 21
+                }, ("TURBOPACK compile-time value", void 0));
+            };
+            return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                className: "flex justify-end",
+                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(TransactionDetailsDialog, {
+                    id: txId
+                }, void 0, false, {
+                    fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                    lineNumber: 220,
+                    columnNumber: 21
+                }, ("TURBOPACK compile-time value", void 0))
+            }, void 0, false, {
+                fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
+                lineNumber: 219,
+                columnNumber: 17
             }, ("TURBOPACK compile-time value", void 0));
         }
     }
@@ -7895,12 +8480,12 @@ const StockMovementTable = ()=>{
                             className: "max-w-sm"
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
-                            lineNumber: 94,
+                            lineNumber: 263,
                             columnNumber: 21
                         }, ("TURBOPACK compile-time value", void 0))
                     }, void 0, false, {
                         fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
-                        lineNumber: 93,
+                        lineNumber: 262,
                         columnNumber: 17
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -7918,7 +8503,7 @@ const StockMovementTable = ()=>{
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
-                                    lineNumber: 104,
+                                    lineNumber: 273,
                                     columnNumber: 29
                                 }, ("TURBOPACK compile-time value", void 0)),
                                 loading && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -7926,7 +8511,7 @@ const StockMovementTable = ()=>{
                                     children: "Loading..."
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
-                                    lineNumber: 108,
+                                    lineNumber: 277,
                                     columnNumber: 37
                                 }, ("TURBOPACK compile-time value", void 0)),
                                 error && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -7937,24 +8522,24 @@ const StockMovementTable = ()=>{
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
-                                    lineNumber: 109,
+                                    lineNumber: 278,
                                     columnNumber: 35
                                 }, ("TURBOPACK compile-time value", void 0))
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
-                            lineNumber: 102,
+                            lineNumber: 271,
                             columnNumber: 21
                         }, ("TURBOPACK compile-time value", void 0))
                     }, void 0, false, {
                         fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
-                        lineNumber: 101,
+                        lineNumber: 270,
                         columnNumber: 17
                     }, ("TURBOPACK compile-time value", void 0))
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
-                lineNumber: 92,
+                lineNumber: 261,
                 columnNumber: 13
             }, ("TURBOPACK compile-time value", void 0)),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -7968,18 +8553,18 @@ const StockMovementTable = ()=>{
                                             children: header.isPlaceholder ? null : (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$tanstack$2f$react$2d$table$2f$build$2f$lib$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$locals$3e$__["flexRender"])(header.column.columnDef.header, header.getContext())
                                         }, header.id, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
-                                            lineNumber: 121,
+                                            lineNumber: 290,
                                             columnNumber: 41
                                         }, ("TURBOPACK compile-time value", void 0));
                                     })
                                 }, headerGroup.id, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
-                                    lineNumber: 118,
+                                    lineNumber: 287,
                                     columnNumber: 29
                                 }, ("TURBOPACK compile-time value", void 0)))
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
-                            lineNumber: 116,
+                            lineNumber: 285,
                             columnNumber: 21
                         }, ("TURBOPACK compile-time value", void 0)),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableBody"], {
@@ -7989,12 +8574,12 @@ const StockMovementTable = ()=>{
                                             children: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$tanstack$2f$react$2d$table$2f$build$2f$lib$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$locals$3e$__["flexRender"])(cell.column.columnDef.cell, cell.getContext())
                                         }, cell.id, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
-                                            lineNumber: 134,
+                                            lineNumber: 303,
                                             columnNumber: 41
                                         }, ("TURBOPACK compile-time value", void 0)))
                                 }, row.id, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
-                                    lineNumber: 132,
+                                    lineNumber: 301,
                                     columnNumber: 33
                                 }, ("TURBOPACK compile-time value", void 0))) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableRow"], {
                                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableCell"], {
@@ -8003,38 +8588,39 @@ const StockMovementTable = ()=>{
                                     children: "No results."
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
-                                    lineNumber: 140,
+                                    lineNumber: 309,
                                     columnNumber: 33
                                 }, ("TURBOPACK compile-time value", void 0))
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
-                                lineNumber: 139,
+                                lineNumber: 308,
                                 columnNumber: 29
                             }, ("TURBOPACK compile-time value", void 0))
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
-                            lineNumber: 129,
+                            lineNumber: 298,
                             columnNumber: 21
                         }, ("TURBOPACK compile-time value", void 0))
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
-                    lineNumber: 115,
+                    lineNumber: 284,
                     columnNumber: 17
                 }, ("TURBOPACK compile-time value", void 0))
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
-                lineNumber: 114,
+                lineNumber: 283,
                 columnNumber: 13
             }, ("TURBOPACK compile-time value", void 0))
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/dashboard/_pages/StockMovements/components/stockTable.tsx",
-        lineNumber: 91,
+        lineNumber: 260,
         columnNumber: 9
     }, ("TURBOPACK compile-time value", void 0));
 };
-const __TURBOPACK__default__export__ = StockMovementTable;
+const __TURBOPACK__default__export__ = StockMovementTable // ...existing
+;
 }),
 "[project]/src/app/dashboard/_pages/StockMovements/components/cardTable.tsx [app-ssr] (ecmascript)", ((__turbopack_context__) => {
 "use strict";

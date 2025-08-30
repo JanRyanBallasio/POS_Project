@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from "react";
-import { ChevronLeft as ChevronLeftIcon, Plus, X } from "lucide-react";
+import { ChevronLeft as ChevronLeftIcon, Plus, X, Calendar as CalendarIcon } from "lucide-react";
 import { useSWRConfig } from 'swr'
 
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,16 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import {
+    Card,
+    CardAction,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
 import AddProductModal from "./addProductModal";
 import {
     Table,
@@ -27,12 +37,13 @@ import {
     TableRow
 } from '@/components/ui/table'
 
-type ProductItem = { id: string; name: string; qty: number; unitPrice: number };
+type ProductItem = { id: string; productId?: string | number | null; name: string; qty: number; unitPrice: number };
 type StockPayload = { company: string; date: string; price: number; products: ProductItem[] };
 type Props = { onSave?: (payload: StockPayload) => void };
 
 export default function AddStockModal({ onSave }: Props) {
     const [open, setOpen] = useState(false);
+    const [month, setMonth] = useState<Date | undefined>(new Date());
     useEffect(() => {
         const handler = (e: Event) => {
             const ce = e as CustomEvent<{ name: string; qty: number; unitPrice: number }>;
@@ -45,7 +56,7 @@ export default function AddStockModal({ onSave }: Props) {
     }, [])
 
     const [company, setCompany] = useState("");
-    const [date, setDate] = useState("");
+    const [date, setDate] = useState<Date | undefined>(undefined);
     const [price, setPrice] = useState<number | "">("");
     const [products, setProducts] = useState<ProductItem[]>([])
     const [saving, setSaving] = useState(false);
@@ -60,11 +71,10 @@ export default function AddStockModal({ onSave }: Props) {
 
         const payload = {
             company_name: company,
-            date: date || new Date().toISOString(),
+            date: date ? date.toISOString() : new Date().toISOString(),
             total: Number(price) || 0,
             items: products.map(p => ({
-                // frontend doesn't have product_id in this sample; send null so backend can handle
-                product_id: null,
+                product_id: p.productId ?? null,
                 purchased_price: p.unitPrice ?? (Number(price) || 0),
                 quantity: p.qty
             }))
@@ -83,14 +93,19 @@ export default function AddStockModal({ onSave }: Props) {
             if (!res.ok) throw new Error(json?.message || json?.error || 'Save failed')
 
             // notify parent if needed
-            onSave?.({ company, date, price: Number(price) || 0, products })
+            onSave?.({
+                company,
+                date: date ? date.toISOString() : new Date().toISOString(),
+                price: Number(price) || 0,
+                products,
+            })
 
             // revalidate stock transactions SWR cache
             mutate(endpoint)
 
             // reset and close
             setCompany("")
-            setDate("")
+            setDate(undefined)
             setPrice("")
             setProducts([])
             setOpen(false)
@@ -103,21 +118,23 @@ export default function AddStockModal({ onSave }: Props) {
     };
 
     // Merge same product by name: increase qty and update unitPrice to the newly provided one
-    const handleAddProduct = (p: { name: string; qty: number; unitPrice: number }) => {
+    const handleAddProduct = (p: { name: string; qty: number; unitPrice: number; productId?: string | number | null }) => {
         setProducts(prev => {
-            const idx = prev.findIndex(x => x.name === p.name)
+            // prefer matching by productId when available, otherwise fallback to name
+            const idx = prev.findIndex(x => (p.productId != null ? x.productId === p.productId : x.name === p.name))
             if (idx !== -1) {
                 const updated = [...prev]
                 updated[idx] = {
                     ...updated[idx],
                     qty: updated[idx].qty + p.qty,
-                    unitPrice: p.unitPrice
+                    unitPrice: p.unitPrice,
+                    productId: updated[idx].productId ?? p.productId
                 }
                 return updated
             }
             return [
                 ...prev,
-                { id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`, name: p.name, qty: p.qty, unitPrice: p.unitPrice }
+                { id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`, productId: p.productId ?? null, name: p.name, qty: p.qty, unitPrice: p.unitPrice }
             ]
         })
     };
@@ -148,7 +165,7 @@ export default function AddStockModal({ onSave }: Props) {
                 </Button>
             </DialogTrigger>
 
-            <DialogContent className=" flex h-[calc(100vh-2rem)] min-w-[calc(100vw-2rem)] flex-col justify-between gap-0 p-0">
+            <DialogContent className=" flex h-[calc(80vh-2rem)] min-w-[calc(80vw-2rem)] flex-col justify-between gap-0 p-0">
                 <ScrollArea className="flex-1 overflow-hidden">
                     <DialogHeader className="contents space-y-0 text-left">
                         <DialogTitle className="px-6 pt-6">Add Stock</DialogTitle>
@@ -160,20 +177,70 @@ export default function AddStockModal({ onSave }: Props) {
                     </DialogHeader>
 
                     <div className="px-6 pt-2">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="flex w-full gap-6">
                             {/* Left column - basic info */}
-                            <div className="space-y-4">
-                                <div>
+                            <div className="flex-[40%] ">
+                                <div className="mt-2">
                                     <label className="text-sm block mb-1">Company</label>
                                     <Input value={company} onChange={(e) => setCompany(e.target.value)} placeholder="Company name" />
                                 </div>
 
-                                <div>
+                                <div className="mt-2">
                                     <label className="text-sm block mb-1">Date</label>
-                                    <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                className="w-full h-10 justify-between text-left px-3"
+                                                type="button"
+                                                aria-label="Choose date"
+                                            >
+                                                <span className="truncate">
+                                                    {date ? date.toLocaleDateString() : 'mm/dd/yyyy'}
+                                                </span>
+                                                <CalendarIcon className="ml-2 opacity-70" />
+                                            </Button>
+                                        </PopoverTrigger>
+
+                                        <PopoverContent className="w-auto p-2">
+                                            <Card className="w-[290px]">
+                                                <CardHeader className="flex items-start gap-2">
+                                                    <div>
+                                                        <CardDescription className="text-xs text-muted-foreground">
+                                                            <CardTitle className="text-sm">Choose date</CardTitle>
+                                                            Select a date for this stock entry
+                                                        </CardDescription>
+                                                    </div>
+                                                    <CardAction>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            onClick={() => {
+                                                                const now = new Date()
+                                                                setMonth(now)
+                                                                setDate(now)
+                                                            }}
+                                                        >
+                                                            Today
+                                                        </Button>
+                                                    </CardAction>
+                                                </CardHeader>
+                                                <CardContent className="p-2">
+                                                    <Calendar
+                                                        mode="single"
+                                                        month={month}
+                                                        onMonthChange={setMonth}
+                                                        selected={date}
+                                                        onSelect={setDate}
+                                                        className="bg-transparent p-0 rounded-md"
+                                                    />
+                                                </CardContent>
+                                            </Card>
+                                        </PopoverContent>
+                                    </Popover>
                                 </div>
 
-                                <div>
+                                <div className="mt-2">
                                     <label className="text-sm block mb-1">Price</label>
                                     <Input
                                         type="number"
@@ -186,7 +253,7 @@ export default function AddStockModal({ onSave }: Props) {
                             </div>
 
                             {/* Right column - products */}
-                            <div className="flex flex-col h-full">
+                            <div className="flex flex-col h-full flex-[60%]">
                                 <div className="flex items-center justify-between mb-3">
                                     <h3 className="font-medium">Products</h3>
                                     <AddProductModal onAdd={handleAddProduct} />
