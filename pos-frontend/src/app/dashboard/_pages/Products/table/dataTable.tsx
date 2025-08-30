@@ -43,7 +43,7 @@ export function DataTable<TData, TValue>({
     state: { sorting, pagination: { pageIndex: page } as any },
     onSortingChange: setSorting,
     // keep pagination control outside of react-table to avoid internal pageIndex churn
-    onPaginationChange: (() => {}) as any,
+    onPaginationChange: (() => { }) as any,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
   })
@@ -106,7 +106,7 @@ export function DataTable<TData, TValue>({
             paginatedRows.map((row) => (
               <TableRow key={row.id} data-state={row.getIsSelected() ? "selected" : undefined}>
                 {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
+                  <TableCell key={cell.id} className="align-top break-words whitespace-normal">
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}

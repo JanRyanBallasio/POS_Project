@@ -1,9 +1,9 @@
 import React from "react";
 
 interface Customer {
-  id: string;
+  id?: string;
   name: string;
-  points: number;
+  points?: number;
 }
 
 interface ReceiptProps {

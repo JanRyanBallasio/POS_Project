@@ -7,12 +7,8 @@ import Calculator from "./Calculator";
 import CustomerSearch from "./CustomerSearch";
 import PaymentSummary from "./PaymentSummary";
 import Receipt from "./Receipt";
-import { PDFViewer } from "@react-pdf/renderer";
 import AddCustomerModal from "./AddCustomerModal";
 import type { Customer } from "@/hooks/pos/rightCol/useCustomerTagging";
-
-import ReceiptPDF from "./ReceiptPDF";
-import { pdf } from "@react-pdf/renderer";
 
 interface POSRightColProps {
   step: 1 | 2 | 3;
@@ -38,8 +34,8 @@ export default function RightColumn({ step, setStep }: POSRightColProps) {
     selectCustomer,
     clearCustomer,
     fetchCustomers,
-    allCustomers, // make sure you return this from your hook
-    setAllCustomers, // make sure you return this from your hook
+    allCustomers,
+    setAllCustomers,
   } = useCustomerTagging();
 
   // Calculator
@@ -53,46 +49,72 @@ export default function RightColumn({ step, setStep }: POSRightColProps) {
     }
   };
 
-  // Print Receipt
+  // Print Receipt -> call backend /api/receipt
   const handlePrintReceipt = async () => {
-    const blob = await pdf(
-      <ReceiptPDF
-        cartTotal={cartTotal}
-        amount={amount}
-        change={change}
-        customer={selectedCustomer}
-        items={cart.map((item) => ({
-          desc: item.product.name, // or whatever field is the product name
-          qty: item.quantity,
-          amount: item.product.price * item.quantity,
-        }))}
-      />
-    ).toBlob();
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `receipt-${Date.now()}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    const API_BASE =
+      (process.env.NEXT_PUBLIC_backend_api_url &&
+        process.env.NEXT_PUBLIC_backend_api_url.replace(/\/$/, "")) ||
+      "http://localhost:5000/api";
+
+    const items = cart.map((item) => ({
+      desc: item.product?.name ?? item.product?.title ?? item.product?.barcode ?? "Item",
+      qty: Number(item.quantity || 0),
+      amount: Number(((item.product?.price || 0) * item.quantity).toFixed(2)),
+    }));
+
+    const payload = {
+      customer: selectedCustomer || { name: "N/A" },
+      cartTotal: Number(cartTotal || 0),
+      amount: Number(parseFloat(amount) || cartTotal || 0),
+      change: Number(change || 0),
+      items,
+    };
+
+    try {
+      const res = await fetch(`${API_BASE}/receipt`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const txt = await res.text().catch(() => "");
+        console.error("Receipt API error:", res.status, res.statusText, txt);
+        alert("Failed to generate receipt PDF");
+        return;
+      }
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+      // revoke after a short delay
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
+    } catch (err) {
+      console.error("Print receipt error:", err);
+      alert("Error generating receipt");
+    }
   };
+
   // New Transaction
   const handleNewTransaction = async () => {
-    // Save sale to backend
-    await fetch(process.env.NEXT_PUBLIC_backend_api_url + "/sales", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        customer_id: selectedCustomer?.id || null,
-        total_purchase: cartTotal,
-        items: cart.map(item => ({
-          product_id: item.product.id,
-          quantity: item.quantity,
-          price: item.product.price,
-        })),
-      }),
-    });
+    try {
+      await fetch((process.env.NEXT_PUBLIC_backend_api_url || "http://localhost:5000/api") + "/sales", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customer_id: selectedCustomer?.id || null,
+          total_purchase: cartTotal,
+          items: cart.map((item) => ({
+            product_id: item.product.id,
+            quantity: item.quantity,
+            price: item.product.price,
+          })),
+        }),
+      });
+    } catch (err) {
+      console.error("Save sale error:", err);
+    }
+
     setStep(1);
     setAmount("");
     clearCustomer();
@@ -103,10 +125,8 @@ export default function RightColumn({ step, setStep }: POSRightColProps) {
 
   const handleCustomerAdded = (newCustomer: Customer) => {
     setAllCustomers((prev) => [...prev, newCustomer]);
-    selectCustomer(newCustomer); // <-- select the new customer
-    setCustomerQuery(newCustomer.name); // <-- show name in input
-    // Optionally refetch from backend if needed
-    // refetchCustomers();
+    selectCustomer(newCustomer);
+    setCustomerQuery(newCustomer.name);
   };
 
   return (
@@ -127,16 +147,12 @@ export default function RightColumn({ step, setStep }: POSRightColProps) {
               cartTotal={cartTotal}
               refocusScanner={refocusScanner}
               onNext={handleNext}
-              cartIsEmpty={cart.length === 0} // <-- add this prop
+              cartIsEmpty={cart.length === 0}
             />
           )}
           {step === 2 && (
             <>
-              <PaymentSummary
-                amount={amount}
-                cartTotal={cartTotal}
-                change={change}
-              />
+              <PaymentSummary amount={amount} cartTotal={cartTotal} change={change} />
               <div className="flex-1" />
               <CustomerSearch
                 customerQuery={customerQuery}
@@ -144,7 +160,7 @@ export default function RightColumn({ step, setStep }: POSRightColProps) {
                 filteredCustomers={filteredCustomers}
                 selectedCustomer={selectedCustomer}
                 selectCustomer={selectCustomer}
-                clearCustomer={clearCustomer} // <-- pass this!
+                clearCustomer={clearCustomer}
                 onAddCustomer={() => setAddCustomerOpen(true)}
               />
               <AddCustomerModal
@@ -153,17 +169,10 @@ export default function RightColumn({ step, setStep }: POSRightColProps) {
                 onCustomerAdded={handleCustomerAdded}
               />
               <CardFooter className="px-4 pb-4 pt-4 flex flex-col gap-3">
-                <Button
-                  className="w-full h-14 text-xl font-medium"
-                  variant="outline"
-                  onClick={() => setStep(1)}
-                >
+                <Button className="w-full h-14 text-xl font-medium" variant="outline" onClick={() => setStep(1)}>
                   Back
                 </Button>
-                <Button
-                  className="w-full h-14 text-xl font-medium"
-                  onClick={() => setStep(3)}
-                >
+                <Button className="w-full h-14 text-xl font-medium" onClick={() => setStep(3)}>
                   Finish Transaction
                 </Button>
               </CardFooter>
@@ -171,22 +180,12 @@ export default function RightColumn({ step, setStep }: POSRightColProps) {
           )}
           {step === 3 && (
             <>
-              <Receipt
-                selectedCustomer={selectedCustomer}
-                cartTotal={cartTotal}
-              />
+              <Receipt selectedCustomer={selectedCustomer} cartTotal={cartTotal} />
               <CardFooter className="px-4 pb-4 pt-4 flex flex-col gap-2">
-                <Button
-                  className="w-full h-14 text-xl font-medium"
-                  onClick={handlePrintReceipt}
-                >
+                <Button className="w-full h-14 text-xl font-medium" onClick={handlePrintReceipt}>
                   Print Receipt
                 </Button>
-                <Button
-                  className="w-full h-14 text-xl font-medium"
-                  variant="outline"
-                  onClick={handleNewTransaction}
-                >
+                <Button className="w-full h-14 text-xl font-medium" variant="outline" onClick={handleNewTransaction}>
                   Close
                 </Button>
               </CardFooter>
