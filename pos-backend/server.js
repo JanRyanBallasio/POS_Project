@@ -10,6 +10,7 @@ const salesRoutes = require('./src/routes/salesRoutes');
 const salesItemsRoutes = require('./src/routes/salesItemsRoutes');
 const customerRoutes = require('./src/routes/customerRoutes');
 const stockTransactionRoutes = require('./src/routes/stockTransactionRoutes');
+const receiptRoutes = require("./src/routes/receiptRoutes");
 
 const app = express();
 const PORT = 5000;
@@ -27,6 +28,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/positions', positionRoutes);
 app.use('/api/sales', salesRoutes);
 app.use('/api/sales-items', salesItemsRoutes);
+app.use("/api", receiptRoutes);
 
 // 404 fallback (optional)
 app.use((req, res, next) => {
