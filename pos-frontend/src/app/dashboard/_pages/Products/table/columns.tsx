@@ -37,11 +37,14 @@ export const columns: ColumnDef<Products>[] = [
       </button>
     ),
     cell: ({ row }) => (
-      <div
-        className="flex items-center font-medium max-w-[420px] whitespace-normal break-words leading-tight"
-        title={String(row.getValue("productName"))}
-      >
-        {row.getValue("productName")}
+      <div className="flex w-full">
+        <div
+          className="flex-1 flex flex-col items-start font-medium break-words whitespace-normal leading-tight"
+          title={String(row.getValue("productName"))}
+          style={{ wordBreak: "break-word", whiteSpace: "normal" }}
+        >
+          {row.getValue("productName")}
+        </div>
       </div>
     ),
   },
