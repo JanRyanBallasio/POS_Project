@@ -18,7 +18,7 @@ async function getBrowser() {
   if (!browserPromise) {
     browserPromise = (async () => {
       const baseOpts = {
-        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+        args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
         headless: true,
       };
 
@@ -29,21 +29,42 @@ async function getBrowser() {
         "/usr/bin/chromium-browser",
         "/usr/bin/chromium",
         "/usr/bin/google-chrome",
+        "/usr/bin/google-chrome-stable",
         "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
       ].filter(Boolean);
 
-      try {
-        return await tryLaunchWithCandidates(candidates, baseOpts);
-      } catch (err) {
-        // rethrow with more context for easier debugging
-        const msg = [
-          "Puppeteer launch failed. Ensure Chrome/Chromium is installed or set PUPPETEER_EXECUTABLE_PATH.",
-          `Original error: ${err && err.message ? err.message : String(err)}`,
-        ].join(" ");
-        const e = new Error(msg);
-        e.cause = err;
-        throw e;
+      console.log("Puppeteer: executable candidates =", candidates);
+
+      // prefer candidates that actually exist on disk
+      const existing = candidates.filter((p) => {
+        try {
+          return fs.existsSync(p);
+        } catch (e) {
+          return false;
+        }
+      });
+
+      console.log("Puppeteer: existing candidates =", existing);
+
+      const tryList = existing.length ? existing.concat(candidates.filter(p => !existing.includes(p))) : candidates;
+
+      // try each candidate explicitly and log failures
+      for (const exe of tryList) {
+        if (!exe) continue;
+        try {
+          console.log("Puppeteer: attempting launch with executablePath =", exe);
+          const opts = Object.assign({}, baseOpts, { executablePath: exe });
+          const b = await puppeteer.launch(opts);
+          console.log("Puppeteer: launched successfully with", exe);
+          return b;
+        } catch (err) {
+          console.error("Puppeteer: launch failed with", exe, "-", err && err.message ? err.message : err);
+        }
       }
+
+      // final attempt without executablePath (will use puppeteer's cache if available)
+      console.log("Puppeteer: attempting launch without executablePath (final attempt)");
+      return await puppeteer.launch(baseOpts);
     })();
 
     const closeBrowser = async () => {
