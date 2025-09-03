@@ -9,6 +9,7 @@ import PaymentSummary from "./PaymentSummary";
 import Receipt from "./Receipt";
 import AddCustomerModal from "./AddCustomerModal";
 import type { Customer } from "@/hooks/pos/rightCol/useCustomerTagging";
+import { API_BASE } from "@/lib/axios";
 
 interface POSRightColProps {
   step: 1 | 2 | 3;
@@ -51,11 +52,7 @@ export default function RightColumn({ step, setStep }: POSRightColProps) {
 
   // Print Receipt -> call backend /api/receipt
   const handlePrintReceipt = async () => {
-    const API_BASE =
-      (process.env.NEXT_PUBLIC_backend_api_url &&
-        process.env.NEXT_PUBLIC_backend_api_url.replace(/\/$/, "")) ||
-      "http://localhost:5000/api";
-
+    const base = API_BASE.replace(/\/+$/, ""); // ensures no trailing slash
     const items = cart.map((item) => ({
       desc: item.product?.name ?? item.product?.title ?? item.product?.barcode ?? "Item",
       qty: Number(item.quantity || 0),
@@ -71,7 +68,7 @@ export default function RightColumn({ step, setStep }: POSRightColProps) {
     };
 
     try {
-      const res = await fetch(`${API_BASE}/receipt`, {
+      const res = await fetch(`${base}/receipt`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -106,7 +103,8 @@ export default function RightColumn({ step, setStep }: POSRightColProps) {
   // New Transaction
   const handleNewTransaction = async () => {
     try {
-      await fetch((process.env.NEXT_PUBLIC_backend_api_url || "http://localhost:5000/api") + "/sales", {
+      const base = API_BASE.replace(/\/+$/, "");
+      await fetch(`${base}/sales`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
