@@ -1,6 +1,9 @@
+// ...existing code...
 const express = require('express');
 // const cors = require('cors');
 const customCors = require('./src/middleware/cors');
+const cookieParser = require('cookie-parser');
+const auth = require('./src/middleware/auth');
 
 // Routes
 const userRoutes = require('./src/routes/userRoutes');
@@ -12,6 +15,7 @@ const salesItemsRoutes = require('./src/routes/salesItemsRoutes');
 const customerRoutes = require('./src/routes/customerRoutes');
 const stockTransactionRoutes = require('./src/routes/stockTransactionRoutes');
 const receiptRoutes = require("./src/routes/receiptRoutes");
+const authRoutes = require('./src/routes/auth.routes');
 
 const app = express();
 const PORT = 5000;
@@ -20,17 +24,21 @@ const PORT = 5000;
 // app.use(cors());
 app.use(customCors);
 app.use(express.json());
+app.use(cookieParser());
 
-// API Routes
-app.use('/api/stock-transactions', stockTransactionRoutes)
-app.use('/api/customers', customerRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/products', productRoutes);
-app.use('/api/categories', categoryRoutes);
-app.use('/api/positions', positionRoutes);
-app.use('/api/sales', salesRoutes);
-app.use('/api/sales-items', salesItemsRoutes);
-app.use("/api", receiptRoutes);
+// Public Auth routes
+app.use('/api/auth', authRoutes);
+
+// Protect API routes (require valid access token)
+app.use('/api/users', auth, userRoutes);
+app.use('/api/customers', auth, customerRoutes);
+app.use('/api/products', productRoutes); // productRoutes already applies auth at router level
+app.use('/api/categories', auth, categoryRoutes);
+app.use('/api/positions', auth, positionRoutes);
+app.use('/api/sales', auth, salesRoutes);
+app.use('/api/sales-items', auth, salesItemsRoutes);
+app.use('/api/stock-transactions', auth, stockTransactionRoutes);
+app.use('/api', auth, receiptRoutes);
 
 // 404 fallback (optional)
 app.use((req, res, next) => {
@@ -49,3 +57,4 @@ app.use((error, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
+// ...existing code...
