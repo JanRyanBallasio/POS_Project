@@ -1,21 +1,25 @@
 // ...existing code...
 const cors = require('cors');
 
-const allowedOrigins = [
-  "http://localhost:5000",
-  "http://localhost:3000",
-  "http://3.25.180.232:3000",
-  "http://13.211.162.106:5000"
+const defaultOrigins = [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://3.25.180.232:3000',
 ];
+
+// you can set ALLOWED_ORIGINS as a comma-separated env var
+const allowedOrigins = (process.env.ALLOWED_ORIGINS && process.env.ALLOWED_ORIGINS.split(',')) || defaultOrigins;
 
 const options = {
   origin: (origin, callback) => {
-    // allow requests with no origin (e.g. mobile clients, curl) or allowed origins
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
+    // allow requests with no origin (curl, mobile, same-origin server-to-server)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
     }
+
+    return callback(new Error('Not allowed by CORS'));
   },
   credentials: true, // IMPORTANT: allow cookies to be sent
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
