@@ -1,8 +1,11 @@
 "use client";
 
-import { Calculator, NotebookPen, Truck, ShoppingCart, Home as IconInnerShadowTop, LayoutDashboard } from "lucide-react";
+import { Calculator, NotebookPen, Truck, ShoppingCart, Home as IconInnerShadowTop, LayoutDashboard, LogOut } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import Image from "next/image";
+import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
+import axios from "@/lib/axios";
 
 import {
   Sidebar,
@@ -16,7 +19,7 @@ import {
   SidebarHeader
 } from "@/components/ui/sidebar";
 
-// Main items.
+// ...existing code...
 const main = [
   // {
   //   title: "Dashboardsssss",
@@ -51,6 +54,26 @@ const inventory = [
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [loadingLogout, setLoadingLogout] = useState(false);
+
+  async function handleLogout() {
+    setLoadingLogout(true);
+    try {
+      // call backend to clear refresh token cookie / server-side state
+      await axios.post('/auth/logout');
+    } catch (err) {
+      // ignore network/backend errors — still clear client state and redirect
+      console.warn('Logout request failed', err);
+    } finally {
+      try {
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('user');
+      } catch (e) { }
+      setLoadingLogout(false);
+      router.push('/login');
+    }
+  }
 
   return (
     <Sidebar collapsible="icon">
@@ -61,10 +84,10 @@ export function AppSidebar() {
               asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
-              <a href="#">
-                <IconInnerShadowTop className="!size-5" />
-                <span className="text-base font-semibold">ISTORE DA</span>
-              </a>
+              <div className=" h-full w-full flex items-center justify-center">
+                <Image src="/img/logo1.png" alt="App logo" width={50} height={50} />
+
+              </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -101,6 +124,28 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Account / Logout group */}
+        <SidebarGroup>
+          <SidebarGroupLabel>Account</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 w-full text-left"
+                    type="button"
+                    disabled={loadingLogout}
+                  >
+                    <LogOut />
+                    <span>{loadingLogout ? 'Logging out...' : 'Logout'}</span>
+                  </button>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
