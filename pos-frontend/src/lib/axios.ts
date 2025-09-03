@@ -101,5 +101,6 @@ axios.interceptors.response.use(
   }
 );
 
+export { API_BASE }; // <-- export canonical API base for other modules to import
 export default axios;
 // ...existing code...
