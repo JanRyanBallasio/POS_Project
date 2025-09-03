@@ -126,6 +126,44 @@ const productController = {
   deleteProduct: async (req, res) => {
     try {
       const { id } = req.params;
+
+      // check references in StockItems
+      const { data: stockRefs, error: stockErr } = await supabase
+        .from('StockItems')
+        .select('id')
+        .eq('product_id', id)
+        .limit(1);
+
+      if (stockErr) {
+        console.error('check StockItems error:', stockErr);
+        throw stockErr;
+      }
+      if (stockRefs && stockRefs.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: `Cannot delete product ${id}: referenced by StockItems`
+        });
+      }
+
+      // check references in SaleItems
+      const { data: saleRefs, error: saleErr } = await supabase
+        .from('SaleItems')
+        .select('id')
+        .eq('product_id', id)
+        .limit(1);
+
+      if (saleErr) {
+        console.error('check SaleItems error:', saleErr);
+        throw saleErr;
+      }
+      if (saleRefs && saleRefs.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: `Cannot delete product ${id}: referenced by SaleItems`
+        });
+      }
+
+      // no references found — safe to delete
       const { error } = await supabase
         .from('Products')
         .delete()
