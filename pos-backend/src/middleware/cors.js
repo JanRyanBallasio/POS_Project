@@ -23,5 +23,8 @@ const options = {
   preflightContinue: false,
 };
 
-module.exports = cors(options);
+module.exports = cors({
+  origin: process.env.FRONTEND_ORIGIN || 'http://3.25.180.232:3000',
+  credentials: true,
+});
 // ...existing code...
