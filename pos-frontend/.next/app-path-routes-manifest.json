@@ -1,8 +1,8 @@
 {
+  "/_not-found/page": "/_not-found",
   "/favicon.ico/route": "/favicon.ico",
   "/page": "/",
-  "/(authentication)/register/page": "/register",
   "/(authentication)/login/page": "/login",
-  "/dashboard/[site]/page": "/dashboard/[site]",
-  "/_not-found/page": "/_not-found"
+  "/(authentication)/register/page": "/register",
+  "/dashboard/[site]/page": "/dashboard/[site]"
 }
