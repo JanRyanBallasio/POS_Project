@@ -1,6 +1,8 @@
 import Axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const rawEnv = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const env = rawEnv.replace(/\/+$/g, ''); // remove trailing slash
+const API_BASE = env.includes('/api') ? env : `${env}/api`;
 
 const axios = Axios.create({
   baseURL: API_BASE,
@@ -29,7 +31,7 @@ axios.interceptors.request.use((config) => {
     if (token && config.headers) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
-  } catch (e) {}
+  } catch (e) { }
   return config;
 });
 
@@ -58,7 +60,7 @@ axios.interceptors.response.use(
         if (newToken) {
           try {
             localStorage.setItem('accessToken', newToken);
-          } catch (e) {}
+          } catch (e) { }
         }
         processQueue(null, newToken);
         return axios(originalConfig);
@@ -68,7 +70,7 @@ axios.interceptors.response.use(
         try {
           localStorage.removeItem('accessToken');
           localStorage.removeItem('user');
-        } catch (e) {}
+        } catch (e) { }
         return Promise.reject(refreshErr);
       } finally {
         isRefreshing = false;
