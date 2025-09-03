@@ -1,6 +1,18 @@
 import Axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 
-const rawEnv = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const rawFromEnv =
+  process.env.NEXT_PUBLIC_API_URL ??
+  process.env.NEXT_PUBLIC_backend_api_url ??
+  '';
+
+const browserFallback =
+  typeof window !== 'undefined'
+    ? `${window.location.protocol}//${window.location.hostname}${window.location.port ? ':' + window.location.port : ''}`
+    : '';
+
+// normalize env: trim and remove surrounding quotes
+const normalize = (v: unknown) => (v ? String(v).trim().replace(/^["']|["']$/g, '') : '');
+const rawEnv = normalize(rawFromEnv) || browserFallback || 'http://localhost:5000';
 const env = rawEnv.replace(/\/+$/g, ''); // remove trailing slash
 const API_BASE = env.includes('/api') ? env : `${env}/api`;
 
@@ -9,12 +21,20 @@ const axios = Axios.create({
   withCredentials: true, // send refresh cookie
 });
 
+// log the baseURL in browser console to verify which backend is used
+if (typeof window !== 'undefined') {
+  // eslint-disable-next-line no-console
+  console.debug('[api] axios baseURL =', API_BASE);
+}
+
+// ...existing code (interceptors, queue handling)...
 let isRefreshing = false;
 let failedQueue: {
   resolve: (value?: unknown) => void;
   reject: (error: any) => void;
   config: AxiosRequestConfig;
 }[] = [];
+
 
 const processQueue = (error: any, token: string | null = null) => {
   failedQueue.forEach(({ resolve, reject, config }) => {
@@ -82,3 +102,4 @@ axios.interceptors.response.use(
 );
 
 export default axios;
+// ...existing code...
