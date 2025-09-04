@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { ChevronLeft as ChevronLeftIcon, Plus, X, Calendar as CalendarIcon } from "lucide-react";
 import { useSWRConfig } from 'swr'
-
+import axios from "@/lib/axios";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -82,15 +82,10 @@ export default function AddStockModal({ onSave }: Props) {
 
         try {
             setSaving(true)
-            const base = process.env.NEXT_PUBLIC_backend_api_url ?? ''
-            const endpoint = `${base}/stock-transactions`
-            const res = await fetch(endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            })
-            const json = await res.json()
-            if (!res.ok) throw new Error(json?.message || json?.error || 'Save failed')
+            const endpoint = `/stock-transactions`;
+            const res = await axios.post(endpoint, payload);
+            const json = res.data;
+            if (res.status >= 400) throw new Error(json?.message || json?.error || 'Save failed')
 
             // notify parent if needed
             onSave?.({

@@ -5,7 +5,7 @@ import useSWR from 'swr'
 import { CalendarIcon, ChevronDown, ChevronUp, List } from 'lucide-react'
 import type { DateRange } from 'react-day-picker'
 import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts'
-
+import axios from "@/lib/axios";
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import {
@@ -43,12 +43,8 @@ const chartConfig: ChartConfig = {
     color: 'var(--color-primary)'
   }
 }
+const fetcher = async (url: string) => (await axios.get(url)).data.data;
 
-const fetcher = async (url: string) => {
-  const res = await fetch(url)
-  const json = await res.json()
-  return json.data
-}
 
 export default function ProductStats() {
   const API_URL = process.env.NEXT_PUBLIC_backend_api_url
