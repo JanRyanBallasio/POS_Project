@@ -2,6 +2,7 @@ import { useState } from "react";
 import { mutate } from "swr";
 import { productApi, Product, PRODUCTS_KEY } from "@/hooks/products/useProductApi";
 import { useProducts } from "@/hooks/global/fetching/useProducts";
+import { API_BASE } from "@/lib/axios"; // Import the centralized API_BASE
 
 type CreateInput = Omit<Product, "id">;
 type FieldError = { field?: string; message: string } | null;
@@ -40,13 +41,13 @@ export function useAddProduct() {
             }
 
             // Create on server - use productApi if available; fallback to fetch
-            const API_BASE = (process.env.NEXT_PUBLIC_backend_api_url || "").replace(/\/$/, "");
             let createdProduct: Product | null = null;
             try {
                 if (productApi && typeof productApi.create === "function") {
                     // productApi.create should throw on non-2xx; we still wrap for structured parsing below
                     createdProduct = await productApi.create(product);
                 } else {
+                    // Use the centralized API_BASE instead of environment variable
                     const res = await fetch(`${API_BASE}/products`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
