@@ -1,31 +1,29 @@
-// ...existing code...
 const REFRESH_TOKEN_COOKIE = 'refreshToken';
 const REFRESH_TOKEN_EXPIRES_DAYS = Number(process.env.REFRESH_TOKEN_EXPIRES_DAYS) || 30;
 const FORCE_COOKIE_SAMESITE_NONE = process.env.FORCE_COOKIE_SAMESITE_NONE === 'true';
 const FORCE_COOKIE_SECURE = process.env.FORCE_COOKIE_SECURE === 'true';
 
-// now accept optional req to detect HTTPS via x-forwarded-proto (useful behind proxies)
 function cookieOptions(req) {
-  // Force development mode to use non-secure cookies
-  if (process.env.NODE_ENV === 'development') {
+  // Check if we're in development mode
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  
+  if (isDevelopment) {
     return {
       httpOnly: true,
       sameSite: 'lax',
-      secure: false,
+      secure: false, // Allow HTTP in development
       maxAge: REFRESH_TOKEN_EXPIRES_DAYS * 24 * 60 * 60 * 1000,
       path: '/',
     };
   }
 
-  // detect if request is secure (https) when behind proxies
+  // Production mode - detect HTTPS
   const proto = req && (req.headers && (req.headers['x-forwarded-proto'] || req.protocol));
   const isReqHttps = String(proto || '').toLowerCase() === 'https';
-
-  // default secure: env true OR production OR request is https
-  let secure = FORCE_COOKIE_SECURE || process.env.NODE_ENV === 'production' || isReqHttps;
-
-  // choose sameSite: if cookie is secure we use 'none' for cross-site; dev uses 'lax'
+  
+  let secure = FORCE_COOKIE_SECURE || isReqHttps;
   let sameSite = secure ? 'none' : 'lax';
+  
   if (FORCE_COOKIE_SAMESITE_NONE) sameSite = 'none';
 
   return {
