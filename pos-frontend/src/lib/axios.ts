@@ -1,11 +1,12 @@
 import Axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 
 // Force the proxy - remove ALL environment variable logic
-const API_BASE = '/api';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+
 
 const axios = Axios.create({
   baseURL: API_BASE,
-  withCredentials: true, // send refresh cookie
+  withCredentials: true,
 });
 
 // log the baseURL in browser console to verify which backend is used
