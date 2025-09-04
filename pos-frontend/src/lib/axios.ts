@@ -17,7 +17,7 @@ const browserFallback =
 const normalize = (v: unknown) => (v ? String(v).trim().replace(/^["']|["']$/g, '') : '');
 const rawEnv = useSameOriginProxy ? '/api' : normalize(rawFromEnv) || browserFallback || 'http://localhost:5000';
 const env = (typeof rawEnv === 'string' ? rawEnv : String(rawEnv)).replace(/\/+$/g, ''); // remove trailing slash
-const API_BASE = env.includes('/api') ? env : `${env}/api`;
+const API_BASE = '/api';
 
 const axios = Axios.create({
   baseURL: API_BASE,
