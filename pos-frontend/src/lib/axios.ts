@@ -5,6 +5,9 @@ const rawFromEnv =
   process.env.NEXT_PUBLIC_backend_api_url ??
   '';
 
+const useSameOriginProxy = typeof window !== 'undefined';
+
+
 const browserFallback =
   typeof window !== 'undefined'
     ? `${window.location.protocol}//${window.location.hostname}${window.location.port ? ':' + window.location.port : ''}`
@@ -12,8 +15,8 @@ const browserFallback =
 
 // normalize env: trim and remove surrounding quotes
 const normalize = (v: unknown) => (v ? String(v).trim().replace(/^["']|["']$/g, '') : '');
-const rawEnv = normalize(rawFromEnv) || browserFallback || 'http://localhost:5000';
-const env = rawEnv.replace(/\/+$/g, ''); // remove trailing slash
+const rawEnv = useSameOriginProxy ? '/api' : normalize(rawFromEnv) || browserFallback || 'http://localhost:5000';
+const env = (typeof rawEnv === 'string' ? rawEnv : String(rawEnv)).replace(/\/+$/g, ''); // remove trailing slash
 const API_BASE = env.includes('/api') ? env : `${env}/api`;
 
 const axios = Axios.create({
