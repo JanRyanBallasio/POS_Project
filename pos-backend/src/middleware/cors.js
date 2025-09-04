@@ -3,9 +3,6 @@ const cors = require('cors');
 const defaultOrigins = [
   'http://localhost:3000',
   'http://127.0.0.1:3000',
-  'http://3.25.180.232:3000',
-  // Add the proxy origin
-  'http://3.25.180.232:3000',
 ];
 
 // you can set ALLOWED_ORIGINS as a comma-separated env var
