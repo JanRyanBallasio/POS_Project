@@ -1,8 +1,10 @@
+"use client"
+
 import { useState, useEffect, useMemo, useCallback } from "react";
 import useSWR, { mutate } from "swr";
 import { DataTable } from "../../table/dataTable";
 import { columns, Products } from "../../table/columns";
-import { Product, productApi } from "@/hooks/products/useProductApi";
+import { Product, productApi, PRODUCTS_KEY } from "@/hooks/products/useProductApi";
 import Pagination from "./Pagination";
 import {
     Dialog,
@@ -59,10 +61,17 @@ export default function ProductTable({
     onProductDeleted,
     search = "",
 }: ProductTableProps) {
-    const { data: products = [], isLoading, error } = useSWR("/api/products", fetcher, {
-        revalidateOnFocus: false,
-        dedupingInterval: 60_000, // reduce unnecessary refetches
+    const { data: products = [], isLoading, error, mutate: refetchProducts } = useSWR(PRODUCTS_KEY, fetcher, {
+        revalidateOnFocus: true,
+        revalidateOnReconnect: true,
+        dedupingInterval: 30_000, // Reduced for more real-time feel
+        errorRetryCount: 3,
+        onSuccess: (data) => {
+            // Optional: Log successful data fetch for debugging
+            console.debug(`[ProductTable] Loaded ${data?.length || 0} products`);
+        }
     });
+
 
     const [page, setPage] = useState(0);
     const [pageSize, setPageSize] = useState(PAGE_SIZE);
@@ -85,6 +94,34 @@ export default function ProductTable({
         price: 0,
         quantity: 0,
     });
+
+    useEffect(() => {
+        const handleProductAdded = (event: CustomEvent) => {
+            console.debug('[ProductTable] Product added event received');
+            // Trigger immediate revalidation
+            refetchProducts();
+        };
+
+        const handleProductUpdated = (event: CustomEvent) => {
+            console.debug('[ProductTable] Product updated event received');
+            refetchProducts();
+        };
+
+        const handleProductDeleted = (event: CustomEvent) => {
+            console.debug('[ProductTable] Product deleted event received');
+            refetchProducts();
+        };
+
+        window.addEventListener('product:added', handleProductAdded as EventListener);
+        window.addEventListener('product:updated', handleProductUpdated as EventListener);
+        window.addEventListener('product:deleted', handleProductDeleted as EventListener);
+
+        return () => {
+            window.removeEventListener('product:added', handleProductAdded as EventListener);
+            window.removeEventListener('product:updated', handleProductUpdated as EventListener);
+            window.removeEventListener('product:deleted', handleProductDeleted as EventListener);
+        };
+    }, [refetchProducts]);
 
     // memoized filtered products (category/status/search)
     const filteredProducts = useMemo(() => {
@@ -170,44 +207,114 @@ export default function ProductTable({
             toast("Product data not loaded", { description: "Please try again." });
             return;
         }
+
+        const updatedProductData = {
+            name: editForm.name,
+            barcode: editForm.barcode,
+            category_id: Number(editForm.category_id),
+            price: Number(editForm.price),
+            quantity: Number(editForm.quantity),
+        };
+
         try {
-            await productApi.update(editProduct.id, {
-                name: editForm.name,
-                barcode: editForm.barcode,
-                category_id: Number(editForm.category_id),
-                price: Number(editForm.price),
-                quantity: Number(editForm.quantity),
+            // Optimistic update: immediately update the cache
+            const optimisticProduct = { ...editProduct, ...updatedProductData };
+
+            mutate(
+                PRODUCTS_KEY,
+                (current: Product[] | undefined) => {
+                    if (!current) return current;
+                    return current.map(p => p.id === editProduct.id ? optimisticProduct : p);
+                },
+                false // Don't revalidate immediately
+            );
+
+            // Perform the actual update
+            const updatedProduct = await productApi.update(editProduct.id, updatedProductData);
+
+            toast("Product updated", {
+                description: `${truncate(editForm.name, 60)} has been updated.`
             });
-            toast("Product updated", { description: `${truncate(editForm.name, 60)} has been updated.` });
+
             setShowEditDialog(false);
-            mutate("/api/products");
+
+            // Dispatch event for other components
+            window.dispatchEvent(new CustomEvent("product:updated", {
+                detail: { product: updatedProduct }
+            }));
+
+            // Final revalidation to ensure consistency
+            mutate(PRODUCTS_KEY);
+
         } catch (err: any) {
-            toast("Failed to update product", { description: err?.message || "An error occurred." });
+            // Revert optimistic update on error
+            mutate(PRODUCTS_KEY);
+            toast("Failed to update product", {
+                description: err?.message || "An error occurred."
+            });
         }
     }, [editProduct, editForm, truncate]);
 
     const handleDeleteProduct = useCallback(async () => {
         if (!deleteProduct) return;
+
+        const productId = Number(deleteProduct.id);
+
         try {
-            // delete by id (convert to number)
-            await productApi.delete(Number(deleteProduct.id));
+            // Optimistic update: immediately remove from cache
+            mutate(
+                PRODUCTS_KEY,
+                (current: Product[] | undefined) => {
+                    if (!current) return current;
+                    return current.filter(p => p.id !== productId);
+                },
+                false // Don't revalidate immediately
+            );
+
+            // Perform the actual delete
+            await productApi.delete(productId);
+
             toast("Product deleted", {
                 description: (
                     <span className="text-red-600">
                         {truncate(deleteProduct.productName, 60)} has been deleted.
                     </span>
-                ), icon: <Trash2 className="w-4 h-4 text-red-600" />,
-            }); setShowDeleteDialog(false);
+                ),
+                icon: <Trash2 className="w-4 h-4 text-red-600" />,
+            });
+
+            setShowDeleteDialog(false);
             setDeleteProduct(null);
-            mutate("/api/products");
-            if (onProductDeleted) onProductDeleted(Number(deleteProduct.id));
+
+            // Dispatch event for other components
+            window.dispatchEvent(new CustomEvent("product:deleted", {
+                detail: { productId }
+            }));
+
+            // Callback to parent component
+            if (onProductDeleted) onProductDeleted(productId);
+
+            // Final revalidation to ensure consistency
+            mutate(PRODUCTS_KEY);
+
         } catch (err: any) {
-            toast("Failed to delete product", { description: err?.message || "An error occurred." });
+            // Revert optimistic update on error
+            mutate(PRODUCTS_KEY);
+            toast("Failed to delete product", {
+                description: err?.message || "An error occurred."
+            });
         }
     }, [deleteProduct, onProductDeleted, truncate]);
 
+    const isUpdating = isLoading;
+
     return (
         <div className="w-full mt-4 relative">
+            {isUpdating && (
+                <div className="absolute top-0 left-0 right-0 h-1 bg-blue-200">
+                    <div className="h-full bg-blue-500 animate-pulse"></div>
+                </div>
+            )}
             <DataTable
                 columns={columns.map((col) =>
                     col.id === "actions"
@@ -219,11 +326,16 @@ export default function ProductTable({
                                         variant="outline"
                                         size="icon"
                                         onClick={() => handleEdit(row.original)}
-                                        disabled={isLoading}
+                                        disabled={isUpdating}
                                     >
                                         <Pencil className="w-4 h-4" />
                                     </Button>
-                                    <Button variant="outline" size="icon" onClick={() => handleDelete(row.original)}>
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        onClick={() => handleDelete(row.original)}
+                                        disabled={isUpdating}
+                                    >
                                         <Trash2 className="w-4 h-4" />
                                     </Button>
                                 </div>
