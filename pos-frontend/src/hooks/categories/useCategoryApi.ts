@@ -1,8 +1,7 @@
 import axios from "@/lib/axios";
 
-// Use a different key for SWR cache, keep API endpoint simple
-export const CATEGORIES_KEY = "categories"; // SWR cache key
-const API_ENDPOINT = "/categories"; // API endpoint
+// Match the products pattern exactly
+export const CATEGORIES_KEY = "/categories";
 
 export interface Category {
   id: number;
@@ -18,7 +17,7 @@ export interface ApiResponse<T> {
 export const categoryApi = {
   async getAll(): Promise<Category[]> {
     // This will call /categories + axios baseURL /api = /api/categories
-    const resp = await axios.get(API_ENDPOINT);
+    const resp = await axios.get(CATEGORIES_KEY);
     const data: ApiResponse<Category[]> = resp.data;
     return data?.data ?? [];
   },
