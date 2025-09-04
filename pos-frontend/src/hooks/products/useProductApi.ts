@@ -1,6 +1,7 @@
 // ...existing code...
 import { mutate } from "swr";
 export const PRODUCTS_KEY = "/products";
+import axios from '@/lib/axios';
 
 export interface Product {
   id: number;
@@ -21,7 +22,7 @@ export interface ApiResponse<T = any> {
   count?: number;
 }
 
-const API_BASE_URL = (process.env.NEXT_PUBLIC_backend_api_url || "").replace(/\/$/, "");
+const API_BASE_URL = "/api";
 
 // small in-memory barcode -> product cache (persisted to localStorage)
 // TTL and debounce save to avoid frequent disk writes
@@ -180,16 +181,12 @@ function removeProductFromList(old: ProductsListShape | undefined | null, id: nu
 export const productApi = {
   async getAll(): Promise<Product[]> {
     try {
-      const url = `${API_BASE_URL}/products`;
-      // debug: log the URL and (briefly) the response status to help diagnose missing data
-      // remove these logs after debugging
-      console.debug('[productApi.getAll] fetching', url);
-      const response = await fetch(url);
+      const response = await axios.get('/products');
       console.debug('[productApi.getAll] status', response.status);
-      if (!response.ok) {
+      if (response.status >= 400) {
         return [];
       }
-      const json = (await response.json().catch(() => ({ data: [] }))) as ApiResponse<Product[]>;
+      const json = response.data as ApiResponse<Product[]>;
       console.debug('[productApi.getAll] got', Array.isArray(json.data) ? json.data.length : 0, 'items');
       return json.data ?? [];
     } catch {
