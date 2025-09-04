@@ -1,8 +1,7 @@
 import Axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 
-// Force the proxy - remove ALL environment variable logic
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-
+// Environment-based API configuration
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://3.107.238.186:5000/api';
 
 const axios = Axios.create({
   baseURL: API_BASE,
@@ -13,9 +12,10 @@ const axios = Axios.create({
 if (typeof window !== 'undefined') {
   // eslint-disable-next-line no-console
   console.debug('[api] axios baseURL =', API_BASE);
+  console.debug('[api] Environment =', process.env.NODE_ENV);
 }
 
-// ...existing code (interceptors, queue handling)...
+// ...existing code...
 let isRefreshing = false;
 let failedQueue: {
   resolve: (value?: unknown) => void;
