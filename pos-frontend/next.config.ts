@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-const BACKEND = process.env.NEXT_PUBLIC_BACKEND_ORIGIN || "http://3.25.180.232:5000";
+const BACKEND = process.env.NEXT_PUBLIC_BACKEND_ORIGIN || "http://localhost:5000";
 
 const nextConfig: NextConfig = {
   devIndicators: false,

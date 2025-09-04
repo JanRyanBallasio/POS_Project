@@ -19,7 +19,7 @@ export const useSaleItems = () => {
     try {
       setLoading(true);
       setError(null);
-      const res = await axios.get(process.env.NEXT_PUBLIC_backend_api_url + "/sales-items");
+      const res = await axios.get("/sales-items");
       setSaleItems(res.data.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");

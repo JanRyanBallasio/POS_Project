@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
-
+import axios from "@/lib/axios";
 interface AddCustomerModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -43,15 +43,14 @@ export default function AddCustomerModal({ open, onOpenChange, onCustomerAdded }
 
         try {
             // 1) Check for exact case-insensitive duplicate (only when Add is pressed)
+
             // Backend may return a list under `data` or a raw array; handle both.
-            const backendBase = (process.env.NEXT_PUBLIC_backend_api_url || "").replace(/\/$/, "");
-            const url = `${backendBase}/customers?name=${encodeURIComponent(trimmed)}`;
-            const checkRes = await fetch(url);
-            const checkJson = await checkRes.json().catch(() => ({}));
-            const candidates: any[] = Array.isArray(checkJson)
-                ? checkJson
-                : Array.isArray(checkJson?.data)
-                    ? checkJson.data
+            const checkRes = await axios.get(`/customers`, { params: { name: trimmed } });
+            const checkData = checkRes.data;
+            const candidates: any[] = Array.isArray(checkData)
+                ? checkData
+                : Array.isArray(checkData?.data)
+                    ? checkData.data
                     : [];
 
             const foundExact = candidates.some((c: any) => {
@@ -67,20 +66,16 @@ export default function AddCustomerModal({ open, onOpenChange, onCustomerAdded }
             }
 
             // 2) No exact duplicate -> create customer
-            const createRes = await fetch(`${backendBase}/customers`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name: trimmed }),
-            });
 
-            const createJson = await createRes.json().catch(() => ({}));
-            if (!createRes.ok || createJson.success === false) {
-                const msg = createJson.message || createJson.error || "Failed to add customer";
+            const createRes = await axios.post(`/customers`, { name: trimmed });
+            const createData = createRes.data;
+            if (createRes.status >= 400 || createData?.success === false) {
+                const msg = createData?.message || createData?.error || "Failed to add customer";
                 throw new Error(msg);
             }
 
-            // success: notify parent and close modal
-            const newCustomer = createJson.data ?? createJson; // handle different backends
+
+            const newCustomer = createData?.data ?? createData; // handle different backends
             setName("");
             onOpenChange(false);
             onCustomerAdded(newCustomer);
