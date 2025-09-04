@@ -7,6 +7,12 @@ const customCors = require('./src/middleware/cors');
 const cookieParser = require('cookie-parser');
 const auth = require('./src/middleware/auth');
 
+
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.path} - Auth header: ${req.headers.authorization ? 'Present' : 'Missing'}`);
+  next();
+});
+
 // Routes
 const userRoutes = require('./src/routes/userRoutes');
 const productRoutes = require('./src/routes/productRoutes');
