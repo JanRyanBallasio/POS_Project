@@ -34,12 +34,21 @@ export default function LoginForm() {
         try {
             const res = await loginUser({ username, password });
             console.debug('[login] response', res);
+            console.debug('[login] FULL response:', JSON.stringify(res, null, 2));
+
             // Save accessToken (key expected by axios/interceptors) and user
             if (res?.accessToken) {
                 localStorage.setItem("accessToken", res.accessToken);
+                console.debug('[login] accessToken saved:', res.accessToken);
+            } else {
+                console.error('[login] No accessToken in response:', res);
             }
+
             if (res?.data) {
                 localStorage.setItem("user", JSON.stringify(res.data));
+                console.debug('[login] user data saved');
+            } else {
+                console.error('[login] No user data in response:', res);
             }
 
             // try client navigation first, fallback to full navigation (forces request -> middleware)
@@ -51,6 +60,7 @@ export default function LoginForm() {
                 window.location.href = "/dashboard/main";
             }
         } catch (err: any) {
+            console.error('[login] Error:', err);
             alert(err.message || "Login failed");
         } finally {
             setLoading(false);
