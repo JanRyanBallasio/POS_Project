@@ -1,4 +1,6 @@
-import { useState, useEffect } from "react";
+// ...existing code...
+import { useState, useEffect, useCallback } from "react";
+import axios from "@/lib/axios";
 
 export interface Customer {
   id: string;
@@ -11,48 +13,34 @@ export function useCustomerTagging() {
   const [allCustomers, setAllCustomers] = useState<Customer[]>([]);
   const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const fetchCustomers = async () => {
+
+  const fetchCustomers = useCallback(async () => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_backend_api_url}/customers`);
-      const json = await res.json();
-      if (json.success && Array.isArray(json.data)) {
+      const resp = await axios.get("/customers"); // -> /api/customers (axios base)
+      const json = resp.data;
+      if (json && json.success && Array.isArray(json.data)) {
         setAllCustomers(json.data);
       } else {
         setAllCustomers([]);
       }
-    } catch (error) {
+    } catch (err) {
       setAllCustomers([]);
     }
-  };
-  // Fetch customers from backend
-  useEffect(() => {
-    const fetchCustomers = async () => {
-      try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_backend_api_url}/customers`);
-        const json = await res.json();
-        if (json.success && Array.isArray(json.data)) {
-          setAllCustomers(json.data);
-        } else {
-          setAllCustomers([]);
-        }
-      } catch (error) {
-        setAllCustomers([]);
-      }
-    };
-    fetchCustomers();
   }, []);
+
+  // Fetch customers once on mount
+  useEffect(() => {
+    fetchCustomers();
+  }, [fetchCustomers]);
 
   // Filter customers by query
   useEffect(() => {
     setFilteredCustomers(
       allCustomers.filter((c) =>
-        c.name.toLowerCase().includes(customerQuery.toLowerCase())
+        c.name?.toLowerCase().includes(customerQuery.toLowerCase())
       )
     );
   }, [customerQuery, allCustomers]);
-  useEffect(() => {
-    fetchCustomers();
-  }, []);
 
   const selectCustomer = (customer: Customer) => {
     setSelectedCustomer(customer);
@@ -67,9 +55,10 @@ export function useCustomerTagging() {
     filteredCustomers,
     selectedCustomer,
     selectCustomer,
-    clearCustomer, // <-- make sure this is returned!
+    clearCustomer,
     fetchCustomers,
     allCustomers,
     setAllCustomers,
   };
 }
+// ...existing code...

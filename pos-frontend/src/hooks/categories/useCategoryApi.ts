@@ -1,6 +1,7 @@
-const rawBase = process.env.NEXT_PUBLIC_backend_api_url ?? "";
-const cleanedBase = String(rawBase).replace(/^["']|["']$/g, "").replace(/\/+$/g, "");
-export const CATEGORIES_KEY = cleanedBase ? `${cleanedBase}/categories` : `/categories`;
+// ...existing code...
+import axios from "@/lib/axios";
+
+export const CATEGORIES_KEY = "/categories"; // SWR key (relative to axios base '/api')
 
 export interface Category {
   id: number;
@@ -15,9 +16,10 @@ export interface ApiResponse<T> {
 
 export const categoryApi = {
   async getAll(): Promise<Category[]> {
-    const response = await fetch(CATEGORIES_KEY);
-    if (!response.ok) throw new Error(`Failed to fetch categories: ${response.status}`);
-    const data: ApiResponse<Category[]> = await response.json();
+    const resp = await axios.get(CATEGORIES_KEY); // goes to /api/categories via axios.baseURL
+    // axios response shape: resp.data should contain { success, data, ... }
+    const data: ApiResponse<Category[]> = resp.data;
     return data?.data ?? [];
   },
 };
+// ...existing code...
