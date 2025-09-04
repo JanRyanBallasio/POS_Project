@@ -1,6 +1,6 @@
 // ...existing code...
 const jwtUtils = require('../utils/jwt');
-const { REFRESH_TOKEN_COOKIE } = require('../config/cookie');
+// const { REFRESH_TOKEN_COOKIE } = require('../config/cookie');
 
 module.exports = (req, res, next) => {
   try {
@@ -18,8 +18,12 @@ module.exports = (req, res, next) => {
     // fallback to cookie that may contain an accessToken (not refresh token)
     if (!token && req.cookies && req.cookies.accessToken) token = req.cookies.accessToken;
 
-    // lastly, if no access token provided but a refresh cookie exists, consider the user authenticated
-    if (!token && req.cookies && req.cookies[REFRESH_TOKEN_COOKIE]) token = req.cookies[REFRESH_TOKEN_COOKIE];
+    // NOTE: DO NOT treat the refresh token cookie as an access token here.
+    // The refresh cookie should be handled by the refresh endpoint (authController.refreshToken)
+    // to issue a new access token. If you treat the refresh token as an access token
+    // here you'll incorrectly mark the user as already authenticated.
+    //
+    // if (!token && req.cookies && req.cookies[REFRESH_TOKEN_COOKIE]) token = req.cookies[REFRESH_TOKEN_COOKIE];
 
     if (!token) return next();
 
