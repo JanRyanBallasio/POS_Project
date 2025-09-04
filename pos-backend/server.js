@@ -21,8 +21,8 @@ const authRoutes = require('./src/routes/auth.routes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-// Local-only for development
-const HOST = '127.0.0.1';
+// FIXED: Bind to all interfaces (0.0.0.0) to allow external access
+const HOST = '0.0.0.0';
 
 // Middleware
 // app.use(cors());
@@ -32,7 +32,7 @@ app.use(cookieParser());
 
 // Add debugging middleware AFTER app is defined
 app.use((req, res, next) => {
-  console.log(`${req.method} ${req.path} - Auth header: ${req.headers.authorization ? 'Present' : 'Missing'}`);
+  console.log(`${req.method} ${req.path} - Origin: ${req.headers.origin} - Auth header: ${req.headers.authorization ? 'Present' : 'Missing'}`);
   next();
 });
 
@@ -64,6 +64,7 @@ app.use((error, req, res, next) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+// FIXED: Listen on HOST (0.0.0.0) to allow external access
+app.listen(PORT, HOST, () => {
+  console.log(`Server running on http://${HOST}:${PORT}`);
 });
