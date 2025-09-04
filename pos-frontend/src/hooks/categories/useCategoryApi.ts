@@ -1,7 +1,7 @@
 import axios from "@/lib/axios";
 
-// Match the products pattern exactly
-export const CATEGORIES_KEY = "/categories";
+// Use an internal API path constant (not a SWR key)
+export const CATEGORY_API = "/categories";
 
 export interface Category {
   id: number;
@@ -16,8 +16,8 @@ export interface ApiResponse<T> {
 
 export const categoryApi = {
   async getAll(): Promise<Category[]> {
-    // This will call /categories + axios baseURL /api = /api/categories
-    const resp = await axios.get(CATEGORIES_KEY);
+    // /api baseURL + /categories = /api/categories
+    const resp = await axios.get(CATEGORY_API);
     const data: ApiResponse<Category[]> = resp.data;
     return data?.data ?? [];
   },
