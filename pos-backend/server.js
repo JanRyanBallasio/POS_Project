@@ -55,7 +55,8 @@ app.use((error, req, res, next) => {
     message: 'Internal server error'
   });
 });
-
+require('dotenv').config();
+console.log('Loaded env - NODE_ENV =', process.env.NODE_ENV);
 app.listen(PORT, HOST, () => {
   console.log(`Server running on http://${HOST}:${PORT}`);
 });
