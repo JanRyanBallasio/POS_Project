@@ -82,7 +82,13 @@ async function register(req, res) {
 
     // // set refresh token cookie
     // res.cookie(REFRESH_TOKEN_COOKIE, refreshToken, cookieOptions());
+    // set cookie
+    res.cookie(REFRESH_TOKEN_COOKIE, refreshToken, cookieOptions(req));
 
+    // ... later in logout ...
+    res.clearCookie(REFRESH_TOKEN_COOKIE, cookieOptions(req));
+    // ... and in register/logout fallback where clearCookie was used ...
+    res.clearCookie(REFRESH_TOKEN_COOKIE, cookieOptions(req));
     return res.status(201).json({
       success: true,
       user: { id: created.id, name: created.name, username: created.username, position_id: created.position_id },
