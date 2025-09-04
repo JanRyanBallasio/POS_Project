@@ -1,9 +1,10 @@
-// ...existing code...
 const cors = require('cors');
 
 const defaultOrigins = [
   'http://localhost:3000',
   'http://127.0.0.1:3000',
+  'http://3.25.180.232:3000',
+  // Add the proxy origin
   'http://3.25.180.232:3000',
 ];
 
@@ -19,6 +20,8 @@ const options = {
       return callback(null, true);
     }
 
+    // Log rejected origins for debugging
+    console.log('CORS rejected origin:', origin);
     return callback(new Error('Not allowed by CORS'));
   },
   credentials: true, // IMPORTANT: allow cookies to be sent
@@ -28,4 +31,3 @@ const options = {
 };
 
 module.exports = cors(options);
-// ...existing code...
