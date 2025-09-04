@@ -21,8 +21,8 @@ const authRoutes = require('./src/routes/auth.routes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-// default to 0.0.0.0 so external IPs can connect; set HOST env to override if needed
-const HOST = '0.0.0.0';
+// Local-only for development
+const HOST = '127.0.0.1';
 
 // Middleware
 // app.use(cors());
@@ -64,7 +64,6 @@ app.use((error, req, res, next) => {
   });
 });
 
-app.listen(PORT, HOST, () => {
-  console.log(`Server running on http://${HOST}:${PORT}`);
-  console.log(`Server accessible at http://3.25.180.232:${PORT}`);
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
 });
