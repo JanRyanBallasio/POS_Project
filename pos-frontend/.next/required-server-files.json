@@ -292,7 +292,7 @@
       "afterFiles": [
         {
           "source": "/api/:path*",
-          "destination": "http://3.25.180.232:5000/api/:path*"
+          "destination": "http://localhost:5000/api/:path*"
         }
       ],
       "fallback": []
