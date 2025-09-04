@@ -10,10 +10,15 @@ function cookieOptions(req) {
   const proto = req && (req.headers && (req.headers['x-forwarded-proto'] || req.protocol));
   const isReqHttps = String(proto || '').toLowerCase() === 'https';
 
-  // secure = explicit env true OR running in production OR request is https
-  const secure = FORCE_COOKIE_SECURE || process.env.NODE_ENV === 'production' || isReqHttps;
+  // default secure: env true OR production OR request is https
+  let secure = FORCE_COOKIE_SECURE || process.env.NODE_ENV === 'production' || isReqHttps;
 
-  const sameSite = FORCE_COOKIE_SAMESITE_NONE || secure ? 'none' : 'lax';
+  // ensure dev uses non-secure cookies so browser will send them over http
+  if (process.env.NODE_ENV === 'development') secure = false;
+
+  // choose sameSite: if cookie is secure we use 'none' for cross-site; dev uses 'lax'
+  let sameSite = secure ? 'none' : 'lax';
+  if (FORCE_COOKIE_SAMESITE_NONE) sameSite = 'none';
 
   return {
     httpOnly: true,
