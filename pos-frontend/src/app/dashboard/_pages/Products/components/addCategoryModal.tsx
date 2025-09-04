@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
-import { CATEGORIES_KEY } from "@/hooks/categories/useCategoryApi";
+// import { CATEGORIES_KEY } from "@/hooks/categories/useCategoryApi";
 import useSWR from "swr";
 import { mutate } from "swr";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,7 @@ import { Label } from "@/components/ui/label";
 import { useProductModal } from "@/contexts/productRegister-context";
 import useAddCategory from "@/hooks/products/useAddCategory";
 import { useProductFormStore } from "@/stores/productFormStore";
-
+const CATEGORIES_KEY = "categories:list";
 export default function AddCategoryModal() {
   const { isOpen, closeModal } = useProductModal();
   const { addCategory, loading, error } = useAddCategory();
@@ -29,7 +29,7 @@ export default function AddCategoryModal() {
   const { data: categories = [] } = useSWR(CATEGORIES_KEY);
   const [clientError, setClientError] = useState<string | null>(null);
   const [showValidation, setShowValidation] = useState(false);
-  
+
   useEffect(() => {
     if (!isOpen("addCategory")) {
       setName("");
@@ -143,7 +143,7 @@ export default function AddCategoryModal() {
                 <Button variant="outline" type="button" onClick={() => closeModal("addCategory")}>
                   Cancel
                 </Button>
-                 <Button type="submit" disabled={loading || !name.trim()}>
+                <Button type="submit" disabled={loading || !name.trim()}>
                   {loading ? "Saving..." : "Save"}
                 </Button>
               </div>
