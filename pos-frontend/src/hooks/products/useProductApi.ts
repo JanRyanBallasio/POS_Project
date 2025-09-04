@@ -1,4 +1,3 @@
-// ...existing code...
 import { mutate } from "swr";
 export const PRODUCTS_KEY = "/products";
 import axios from '@/lib/axios';
@@ -22,7 +21,7 @@ export interface ApiResponse<T = any> {
   count?: number;
 }
 
-const API_BASE_URL = "/api";
+// Remove the hardcoded API_BASE_URL - axios already has the baseURL configured
 
 // small in-memory barcode -> product cache (persisted to localStorage)
 // TTL and debounce save to avoid frequent disk writes
@@ -329,4 +328,3 @@ if (typeof window !== "undefined") {
     });
   } catch { /* ignore */ }
 }
-// ...existing code...
