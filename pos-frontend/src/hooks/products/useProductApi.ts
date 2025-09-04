@@ -195,13 +195,9 @@ export const productApi = {
   },
 
   async create(product: Omit<Product, "id">): Promise<Product> {
-    const response = await fetch(`${API_BASE_URL}/products`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(product),
-    });
-    const json = (await response.json().catch(() => ({ data: null }))) as ApiResponse<Product>;
-    if (!response.ok) {
+    const response = await axios.post('/products', product);
+    const json = response.data as ApiResponse<Product>;
+    if (response.status >= 400) {
       const errorMsg = json?.error || json?.message || `Failed to create product: ${response.status}`;
       throw new Error(errorMsg);
     }
@@ -217,13 +213,9 @@ export const productApi = {
   },
 
   async update(id: number, product: Omit<Product, "id">): Promise<Product> {
-    const response = await fetch(`${API_BASE_URL}/products/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(product),
-    });
-    const json = (await response.json().catch(() => ({ data: null }))) as ApiResponse<Product>;
-    if (!response.ok) {
+    const response = await axios.put(`/products/${id}`, product);
+    const json = response.data as ApiResponse<Product>;
+    if (response.status >= 400) {
       const errorMsg = json?.error || json?.message || `Failed to update product: ${response.status}`;
       throw new Error(errorMsg);
     }
@@ -244,12 +236,12 @@ export const productApi = {
 
   async getById(id: number): Promise<Product | null> {
     try {
-      const response = await fetch(`${API_BASE_URL}/products/${id}`);
-      if (!response.ok) {
+      const response = await axios.get(`/products/${id}`);
+      if (response.status >= 400) {
         if (response.status === 404) return null;
         throw new Error(`Failed to fetch product with id ${id}`);
       }
-      const json = (await response.json().catch(() => ({ data: null }))) as ApiResponse<Product>;
+      const json = response.data as ApiResponse<Product>;
       return json.data ?? null;
     } catch {
       return null;
@@ -257,11 +249,9 @@ export const productApi = {
   },
 
   async delete(id: number): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/products/${id}`, {
-      method: "DELETE",
-    });
-    if (!response.ok) {
-      const json = await response.json().catch(() => ({}));
+    const response = await axios.delete(`/products/${id}`);
+    if (response.status >= 400) {
+      const json = response.data;
       const errorMsg = (json && (json as any).error) || (json && (json as any).message) || `Failed to delete product: ${response.status}`;
       throw new Error(errorMsg);
     }
@@ -285,18 +275,18 @@ export const productApi = {
 
     const encoded = encodeURIComponent(cleaned);
 
-    const exactUrl = `${API_BASE_URL}/products/barcode/${encoded}`;
-    const queryUrl = `${API_BASE_URL}/products?barcode=${encoded}`;
+    const exactUrl = `/products/barcode/${encoded}`;
+    const queryUrl = `/products?barcode=${encoded}`;
 
     // Try server first so deletes/updates are honored immediately.
     try {
-      const res = await fetch(exactUrl);
+      const res = await axios.get(exactUrl);
       if (res.status === 404) {
         // server explicitly says not found
         return null;
       }
-      if (res.ok) {
-        const json = (await res.json().catch(() => ({ data: null }))) as ApiResponse<Product>;
+      if (res.status < 400) {
+        const json = res.data as ApiResponse<Product>;
         const product = json?.data ?? null;
         if (product) {
           try { cacheSet(product); } catch { /* ignore */ }
@@ -316,9 +306,9 @@ export const productApi = {
 
     // last-resort: query endpoint (returns list)
     try {
-      const res2 = await fetch(queryUrl);
-      if (!res2.ok) return null;
-      const qjson = (await res2.json().catch(() => ({ data: [] }))) as ApiResponse<Product[]>;
+      const res2 = await axios.get(queryUrl);
+      if (res2.status >= 400) return null;
+      const qjson = res2.data as ApiResponse<Product[]>;
       const list = qjson?.data ?? [];
       if (list.length === 0) return null;
       const exact = list.find((p) => clean(p?.barcode ?? "") === cleaned);
