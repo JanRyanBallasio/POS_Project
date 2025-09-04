@@ -1,22 +1,6 @@
 import Axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 
-const rawFromEnv =
-  process.env.NEXT_PUBLIC_API_URL ??
-  process.env.NEXT_PUBLIC_backend_api_url ??
-  '';
-
-const useSameOriginProxy = typeof window !== 'undefined';
-
-
-const browserFallback =
-  typeof window !== 'undefined'
-    ? `${window.location.protocol}//${window.location.hostname}${window.location.port ? ':' + window.location.port : ''}`
-    : '';
-
-// normalize env: trim and remove surrounding quotes
-const normalize = (v: unknown) => (v ? String(v).trim().replace(/^["']|["']$/g, '') : '');
-const rawEnv = useSameOriginProxy ? '/api' : normalize(rawFromEnv) || browserFallback || 'http://localhost:5000';
-const env = (typeof rawEnv === 'string' ? rawEnv : String(rawEnv)).replace(/\/+$/g, ''); // remove trailing slash
+// Force the proxy - remove ALL environment variable logic
 const API_BASE = '/api';
 
 const axios = Axios.create({
@@ -37,7 +21,6 @@ let failedQueue: {
   reject: (error: any) => void;
   config: AxiosRequestConfig;
 }[] = [];
-
 
 const processQueue = (error: any, token: string | null = null) => {
   failedQueue.forEach(({ resolve, reject, config }) => {
@@ -110,4 +93,3 @@ axios.interceptors.response.use(
 
 export { API_BASE }; // <-- export canonical API base for other modules to import
 export default axios;
-// ...existing code...
