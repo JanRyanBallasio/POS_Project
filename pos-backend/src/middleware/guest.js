@@ -29,7 +29,8 @@ module.exports = (req, res, next) => {
 
     try {
       jwtUtils.verifyToken(token);
-      return res.status(400).json({ success: false, message: 'Already authenticated' });
+      // previously returned 400; return 200 and let client redirect
+      return res.status(200).json({ success: true, message: 'Already authenticated' });
     } catch (err) {
       return next(); // token invalid/expired -> allow access to login/register
     }
