@@ -33,10 +33,23 @@ export default function LoginForm() {
         setLoading(true);
         try {
             const res = await loginUser({ username, password });
+            console.debug('[login] response', res);
             // Save accessToken (key expected by axios/interceptors) and user
-            if (res?.accessToken) localStorage.setItem("accessToken", res.accessToken);
-            if (res?.data) localStorage.setItem("user", JSON.stringify(res.data));
-            router.push("/dashboard/main");
+            if (res?.accessToken) {
+                localStorage.setItem("accessToken", res.accessToken);
+            }
+            if (res?.data) {
+                localStorage.setItem("user", JSON.stringify(res.data));
+            }
+
+            // try client navigation first, fallback to full navigation (forces request -> middleware)
+            try {
+                await router.push("/dashboard/main");
+                console.debug('[login] router.push complete');
+            } catch (navErr) {
+                console.warn('[login] router.push failed, falling back to full navigation', navErr);
+                window.location.href = "/dashboard/main";
+            }
         } catch (err: any) {
             alert(err.message || "Login failed");
         } finally {
