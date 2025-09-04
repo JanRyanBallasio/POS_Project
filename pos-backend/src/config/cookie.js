@@ -35,8 +35,22 @@ function cookieOptions(req) {
   };
 }
 
+// Add a default cookie options function for when req is not available
+function defaultCookieOptions() {
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  
+  return {
+    httpOnly: true,
+    sameSite: isDevelopment ? 'lax' : 'none',
+    secure: !isDevelopment,
+    maxAge: REFRESH_TOKEN_EXPIRES_DAYS * 24 * 60 * 60 * 1000,
+    path: '/',
+  };
+}
+
 module.exports = {
   REFRESH_TOKEN_COOKIE,
   REFRESH_TOKEN_EXPIRES_DAYS,
   cookieOptions,
+  defaultCookieOptions,
 };
