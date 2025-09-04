@@ -43,7 +43,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', auth, userRoutes);
 app.use('/api/customers', auth, customerRoutes);
 app.use('/api/products', productRoutes); // productRoutes already applies auth at router level
-app.use('/categories', auth, categoryRoutes);
+app.use('/api/categories', auth, categoryRoutes);
 app.use('/api/positions', auth, positionRoutes);
 app.use('/api/sales', auth, salesRoutes);
 app.use('/api/sales-items', auth, salesItemsRoutes);
