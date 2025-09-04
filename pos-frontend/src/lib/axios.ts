@@ -47,6 +47,10 @@ const processQueue = (error: any, token: string | null = null) => {
 
 axios.interceptors.request.use((config) => {
   try {
+    // don't attach Authorization header for auth routes (login, register, refresh)
+    const url = (config.url || '').toString();
+    if (url.includes('/auth/')) return config;
+
     const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
     if (token && config.headers) {
       config.headers['Authorization'] = `Bearer ${token}`;
