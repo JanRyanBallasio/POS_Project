@@ -7,12 +7,6 @@ const customCors = require('./src/middleware/cors');
 const cookieParser = require('cookie-parser');
 const auth = require('./src/middleware/auth');
 
-
-app.use((req, res, next) => {
-  console.log(`${req.method} ${req.path} - Auth header: ${req.headers.authorization ? 'Present' : 'Missing'}`);
-  next();
-});
-
 // Routes
 const userRoutes = require('./src/routes/userRoutes');
 const productRoutes = require('./src/routes/productRoutes');
@@ -35,6 +29,12 @@ const HOST = '0.0.0.0';
 app.use(customCors);
 app.use(express.json());
 app.use(cookieParser());
+
+// Add debugging middleware AFTER app is defined
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.path} - Auth header: ${req.headers.authorization ? 'Present' : 'Missing'}`);
+  next();
+});
 
 // Public Auth routes
 app.use('/api/auth', authRoutes);
@@ -66,5 +66,5 @@ app.use((error, req, res, next) => {
 
 app.listen(PORT, HOST, () => {
   console.log(`Server running on http://${HOST}:${PORT}`);
+  console.log(`Server accessible at http://3.25.180.232:${PORT}`);
 });
-// ...existing code...
