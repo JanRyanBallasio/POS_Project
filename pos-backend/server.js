@@ -19,7 +19,8 @@ const authRoutes = require('./src/routes/auth.routes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const HOST = process.env.HOST || 'localhost';
+// default to 0.0.0.0 so external IPs can connect; set HOST env to override if needed
+const HOST = '0.0.0.0';
 
 // Middleware
 // app.use(cors());
