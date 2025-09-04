@@ -1,9 +1,5 @@
-// ...existing code...
 import useSWR from "swr";
-import { productApi, Product } from "@/hooks/products/useProductApi";
-
-// canonical SWR key used across app
-export const PRODUCTS_KEY = "/products";
+import { productApi, Product, PRODUCTS_KEY } from "@/hooks/products/useProductApi";
 
 const fetcher = async (): Promise<Product[]> => {
   try {
@@ -17,6 +13,10 @@ const fetcher = async (): Promise<Product[]> => {
 export const useProducts = () => {
   const { data, error, isLoading, mutate } = useSWR<Product[]>(PRODUCTS_KEY, fetcher, {
     revalidateOnFocus: true,
+    revalidateOnReconnect: true,
+    dedupingInterval: 30_000, // Reduced for more real-time feel
+    errorRetryCount: 3,
+    refreshInterval: 0, // Disable polling by default, use event-driven updates
   });
 
   return {
@@ -26,4 +26,3 @@ export const useProducts = () => {
     refetch: mutate,
   };
 };
-// ...existing code...
