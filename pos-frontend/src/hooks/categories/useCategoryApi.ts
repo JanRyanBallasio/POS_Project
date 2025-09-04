@@ -1,8 +1,7 @@
 // ...existing code...
 import axios from "@/lib/axios";
 
-export const CATEGORIES_KEY = "/categories"; // SWR key (relative to axios base '/api')
-
+export const CATEGORIES_KEY = "/api/categories"
 export interface Category {
   id: number;
   name: string;
