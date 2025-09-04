@@ -2,7 +2,7 @@
 'use client'
 
 import { useState } from 'react'
-
+import axios from "@/lib/axios";
 import type { ColumnDef, ColumnFiltersState, SortingState, VisibilityState } from '@tanstack/react-table'
 import {
     flexRender,
@@ -96,11 +96,10 @@ export const columns: ColumnDef<StockTransaction>[] = [
                         setLoadingItems(true)
                         setLoadError(null)
                         try {
-                            const base = process.env.NEXT_PUBLIC_backend_api_url ?? ''
-                            const endpoint = `${base}/stock-transactions/${id}`
-                            const res = await fetch(endpoint)
-                            const json = await res.json()
-                            if (!res.ok) throw new Error(json?.message || json?.error || 'Failed to load')
+                            const endpoint = `/stock-transactions/${id}`;
+                            const res = await axios.get(endpoint);
+                            const json = res.data;
+                            if (res.status >= 400) throw new Error(json?.message || json?.error || 'Failed to load')
                             // backend now returns items with joined product object and product_name normalization
                             const fetched = json?.items ?? json?.data?.items ?? []
                             if (mounted) setItems(Array.isArray(fetched) ? fetched : [])

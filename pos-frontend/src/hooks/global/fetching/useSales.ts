@@ -17,7 +17,7 @@ export const useSales = () => {
     try {
       setLoading(true);
       setError(null);
-      const res = await axios.get(process.env.NEXT_PUBLIC_backend_api_url + "/sales");
+      const res = await axios.get("/sales");
     setSales(res.data.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
