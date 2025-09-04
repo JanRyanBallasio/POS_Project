@@ -1,7 +1,9 @@
 // ...existing code...
 import axios from "@/lib/axios";
 
-export const CATEGORIES_KEY = "/api/categories"
+// change to match products pattern (use relative path; axios.baseURL already = "/api")
+export const CATEGORIES_KEY = "/categories";
+
 export interface Category {
   id: number;
   name: string;
@@ -15,8 +17,8 @@ export interface ApiResponse<T> {
 
 export const categoryApi = {
   async getAll(): Promise<Category[]> {
-    const resp = await axios.get(CATEGORIES_KEY); // goes to /api/categories via axios.baseURL
-    // axios response shape: resp.data should contain { success, data, ... }
+    // use the same relative path pattern as productApi so axios.baseURL applies
+    const resp = await axios.get(CATEGORIES_KEY);
     const data: ApiResponse<Category[]> = resp.data;
     return data?.data ?? [];
   },
