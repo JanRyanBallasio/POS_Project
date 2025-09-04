@@ -1,4 +1,3 @@
-// ...existing code...
 import type { NextConfig } from "next";
 
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_ORIGIN || "http://3.25.180.232:5000";
