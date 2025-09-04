@@ -2,7 +2,7 @@
 const bcrypt = require('bcryptjs');
 const jwtUtils = require('../utils/jwt');
 const { supabase } = require('../config/db');
-const { REFRESH_TOKEN_COOKIE, REFRESH_TOKEN_EXPIRES_DAYS, cookieOptions } = require('../config/cookie');
+const { REFRESH_TOKEN_COOKIE, REFRESH_TOKEN_EXPIRES_DAYS, cookieOptions, defaultCookieOptions } = require('../config/cookie');
 
 /**
  * Helpers
@@ -35,6 +35,8 @@ async function findRefreshToken(token) {
 /**
  * Controllers
  */
+// ... existing code ...
+
 async function register(req, res) {
   try {
     const { name, username, password, position_id } = req.body;
@@ -71,24 +73,9 @@ async function register(req, res) {
 
     const created = createdArr[0]
 
-    // // prepare tokens
-    // const userPayload = { id: created.id, username: created.username, position_id: created.position_id || null };
-    // const accessToken = jwtUtils.generateToken(userPayload, '8h');
-    // const refreshToken = jwtUtils.generateToken({ id: created.id }, `${REFRESH_TOKEN_EXPIRES_DAYS}d`);
-    // const expiresAt = new Date(Date.now() + cookieOptions().maxAge).toISOString();
-
-    // // store refresh token
-    // await storeRefreshToken(refreshToken, created.id, expiresAt);
-
-    // // set refresh token cookie
-    // res.cookie(REFRESH_TOKEN_COOKIE, refreshToken, cookieOptions());
-    // set cookie
-    res.cookie(REFRESH_TOKEN_COOKIE, refreshToken, cookieOptions(req));
-
-    // ... later in logout ...
+    // Remove the commented code and fix the cookie clearing
     res.clearCookie(REFRESH_TOKEN_COOKIE, cookieOptions(req));
-    // ... and in register/logout fallback where clearCookie was used ...
-    res.clearCookie(REFRESH_TOKEN_COOKIE, cookieOptions(req));
+
     return res.status(201).json({
       success: true,
       user: { id: created.id, name: created.name, username: created.username, position_id: created.position_id },
@@ -147,13 +134,15 @@ async function login(req, res) {
     const payload = { id: user.id, username: user.username, position_id: user.position_id || null };
     const accessToken = jwtUtils.generateToken(payload, '8h');
     const refreshToken = jwtUtils.generateToken({ id: user.id }, `${REFRESH_TOKEN_EXPIRES_DAYS}d`);
-    const expiresAt = new Date(Date.now() + cookieOptions().maxAge).toISOString();
+
+    // Fix: Use defaultCookieOptions() for maxAge calculation
+    const expiresAt = new Date(Date.now() + defaultCookieOptions().maxAge).toISOString();
 
     // store refresh token
     await storeRefreshToken(refreshToken, user.id, expiresAt);
 
-    // set cookie
-    res.cookie(REFRESH_TOKEN_COOKIE, refreshToken, cookieOptions());
+    // Fix: Always use cookieOptions(req) since req is always available in this function
+    res.cookie(REFRESH_TOKEN_COOKIE, refreshToken, cookieOptions(req));
 
     // don't leak password
     delete user.password;
@@ -164,6 +153,7 @@ async function login(req, res) {
     return res.status(500).json({ success: false, message: 'Login failed' });
   }
 }
+
 
 async function refreshToken(req, res) {
   try {
@@ -221,8 +211,8 @@ async function logout(req, res) {
     if (req.cookies && req.cookies[REFRESH_TOKEN_COOKIE]) token = req.cookies[REFRESH_TOKEN_COOKIE];
     if (!token && req.body && req.body.refreshToken) token = req.body.refreshToken;
     if (!token) {
-      // still clear cookie client-side
-      res.clearCookie(REFRESH_TOKEN_COOKIE, cookieOptions());
+      // still clear cookie client-side - pass req parameter
+      res.clearCookie(REFRESH_TOKEN_COOKIE, cookieOptions(req));
       return res.json({ success: true, message: 'Logged out' });
     }
 
@@ -232,13 +222,15 @@ async function logout(req, res) {
       console.warn('Failed to remove refresh token:', err.message || err);
     }
 
-    res.clearCookie(REFRESH_TOKEN_COOKIE, cookieOptions());
+    // pass req parameter
+    res.clearCookie(REFRESH_TOKEN_COOKIE, cookieOptions(req));
     return res.json({ success: true, message: 'Logged out' });
   } catch (err) {
     console.error('Logout error', err);
     return res.status(500).json({ success: false, message: 'Logout failed' });
   }
 }
+
 
 module.exports = {
   register,
