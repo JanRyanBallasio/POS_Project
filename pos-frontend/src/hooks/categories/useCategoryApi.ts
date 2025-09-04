@@ -1,8 +1,8 @@
-// ...existing code...
 import axios from "@/lib/axios";
 
-// Fix: Change to match the rewrite pattern
-export const CATEGORIES_KEY = "/api/categories";
+// Use a different key for SWR cache, keep API endpoint simple
+export const CATEGORIES_KEY = "categories"; // SWR cache key
+const API_ENDPOINT = "/categories"; // API endpoint
 
 export interface Category {
   id: number;
@@ -17,10 +17,9 @@ export interface ApiResponse<T> {
 
 export const categoryApi = {
   async getAll(): Promise<Category[]> {
-    // Now this will call /api/categories which gets rewritten to backend
-    const resp = await axios.get(CATEGORIES_KEY);
+    // This will call /categories + axios baseURL /api = /api/categories
+    const resp = await axios.get(API_ENDPOINT);
     const data: ApiResponse<Category[]> = resp.data;
     return data?.data ?? [];
   },
 };
-// ...existing code...
