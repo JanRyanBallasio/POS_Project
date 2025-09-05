@@ -50,6 +50,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const [scannerInputRef, setScannerInputRef] =
     useState<RefObject<HTMLInputElement> | null>(null);
+  const [pendingScans, setPendingScans] = useState<Set<string>>(new Set());
 
   const { setBarcode: setContextBarcode, openModal, setOpen: setProductModalOpen } =
     useProductModal();
@@ -107,20 +108,27 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     async (barcode: string): Promise<void> => {
       if (!barcode) return;
 
+      const cleanedBarcode = String(barcode).replace(/[\u0000-\u001F\u007F-\u009F]/g, "").trim();
+      if (!cleanedBarcode) {
+        setScanError("Invalid barcode");
+        return;
+      }
+
+      // Prevent duplicate concurrent requests
+      if (pendingScans.has(cleanedBarcode)) {
+        return;
+      }
+
       try {
         setIsScanning(true);
         setScanError(null);
-
-        const cleanedBarcode = String(barcode).replace(/[\u0000-\u001F\u007F-\u009F]/g, "").trim();
-        if (!cleanedBarcode) {
-          setScanError("Invalid barcode");
-          return;
-        }
+        setPendingScans(prev => new Set([...prev, cleanedBarcode]));
 
         const product = await productApi.getByBarcode(cleanedBarcode);
 
         if (product) {
           addOrIncrement(product);
+          setScanError(null); // Clear any previous errors
         } else {
           try {
             if (typeof setContextBarcode === "function") {
@@ -135,15 +143,20 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           setScanError(`Product not found: ${cleanedBarcode}`);
         }
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Error scanning barcode";
+        const errorMessage = error instanceof Error ? error.message : "Error scanning barcode";
         setScanError(errorMessage);
+        console.warn('[scanAndAddToCart] Error:', error);
       } finally {
+        setPendingScans(prev => {
+          const next = new Set(prev);
+          next.delete(cleanedBarcode);
+          return next;
+        });
         setIsScanning(false);
         refocusScanner();
       }
     },
-    [openModal, setProductModalOpen, setContextBarcode, refocusScanner, addOrIncrement]
+    [pendingScans, openModal, setProductModalOpen, setContextBarcode, refocusScanner, addOrIncrement]
   );
 
   // Listen for product:added events so newly created products can be added immediately

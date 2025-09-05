@@ -12,27 +12,39 @@ export function useBarcodeScan(onScan: (barcode: string) => void | Promise<void>
   // prevent double processing: simple lock + cooldown
   const processingRef = useRef(false);
   const COOLDOWN_MS = 200;
-
+  const SCAN_DEBOUNCE_MS = 100; // Prevent accidental double scans
+  let lastScanTime = 0;
   useEffect(() => {
     try {
       inputRef.current?.focus();
-    } catch {}
+    } catch { }
   }, []);
 
   const runScan = async (raw: string) => {
-    const clean = String(raw).replace(/[\n\r]/g, "").trim();
-    if (!clean) return;
+    const now = Date.now();
+    if (now - lastScanTime < SCAN_DEBOUNCE_MS) return;
+    lastScanTime = now;
+
+    const clean = String(raw).replace(/[\n\r\t]/g, "").trim();
+    if (!clean || clean.length < 2) return; // Minimum barcode length
     if (processingRef.current) return;
+
     processingRef.current = true;
     try {
       await Promise.resolve(onScan(clean));
-    } catch {
-      // swallow - handler should surface errors if needed
+    } catch (error) {
+      // Log errors for debugging but don't throw
+      console.warn('[useBarcodeScan] Scan error:', error);
     } finally {
-      try { if (inputRef.current) inputRef.current.value = ""; } catch {}
-      window.setTimeout(() => {
+      try {
+        if (inputRef.current) {
+          inputRef.current.value = "";
+          inputRef.current.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      } catch { }
+      setTimeout(() => {
         processingRef.current = false;
-        try { inputRef.current?.focus(); } catch {}
+        try { inputRef.current?.focus(); } catch { }
       }, COOLDOWN_MS);
     }
   };
@@ -60,7 +72,7 @@ export function useBarcodeScan(onScan: (barcode: string) => void | Promise<void>
   };
 
   const refocusScanner = () => {
-    try { inputRef.current?.focus(); } catch {}
+    try { inputRef.current?.focus(); } catch { }
   };
 
   const reset = useCallback(() => {
@@ -70,7 +82,7 @@ export function useBarcodeScan(onScan: (barcode: string) => void | Promise<void>
         inputRef.current.value = "";
         inputRef.current.focus();
       }
-    } catch {}
+    } catch { }
   }, []);
 
   return {
