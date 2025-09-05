@@ -1,8 +1,11 @@
-// ...existing code...
 const bcrypt = require('bcryptjs');
 const jwtUtils = require('../utils/jwt');
 const { supabase } = require('../config/db');
+const User = require('../models/user.model');
 const { REFRESH_TOKEN_COOKIE, REFRESH_TOKEN_EXPIRES_DAYS, cookieOptions, defaultCookieOptions } = require('../config/cookie');
+
+// Optimize bcrypt rounds based on environment
+const SALT_ROUNDS = process.env.NODE_ENV === 'production' ? 12 : 8;
 
 /**
  * Helpers
@@ -32,197 +35,145 @@ async function findRefreshToken(token) {
   return (data && data[0]) || null;
 }
 
-/**
- * Controllers
- */
-// ... existing code ...
-
 async function register(req, res) {
   try {
     const { name, username, password, position_id } = req.body;
     console.log('Register attempt:', { name, username });
 
     if (!name || !username || !password) {
-      return res.status(400).json({ success: false, message: 'Missing required fields' });
+      return res.status(400).json({ success: false, message: 'Name, username, and password are required' });
     }
 
-    // check existing user
-    const { data: existing, error: existsErr } = await supabase
-      .from('Users')
-      .select('id')
-      .eq('username', username)
-      .limit(1);
-
-    if (existsErr) throw existsErr;
-    if (existing && existing.length > 0) {
-      console.log('Register failed - username exists:', username, existing);
-    }
-    if (existing && existing.length > 0) {
-      return res.status(409).json({ success: false, message: 'Username already taken' });
+    // Check existing user using model
+    const existing = await User.findByUsername(username);
+    if (existing) {
+      return res.status(409).json({ success: false, message: 'Username already exists' });
     }
 
-    // hash password and create user
-    const hashed = await bcrypt.hash(password, 10);
+    // Hash password and create user
+    const hashed = await bcrypt.hash(password, SALT_ROUNDS);
+    const userData = { name, username, password: hashed, position_id };
+    const created = await User.create(userData);
 
-    const { data: createdArr, error: createErr } = await supabase
-      .from('Users')
-      .insert([{ name, username, password: hashed, position_id }])
-      .select('*');
-
-    if (createErr) throw createErr;
-
-    const created = createdArr[0]
-
-    // Remove the commented code and fix the cookie clearing
+    // Clear any existing refresh tokens
     res.clearCookie(REFRESH_TOKEN_COOKIE, cookieOptions(req));
 
     return res.status(201).json({
       success: true,
-      user: { id: created.id, name: created.name, username: created.username, position_id: created.position_id },
+      user: {
+        id: created.id,
+        name: created.name,
+        username: created.username,
+        position_id: created.position_id
+      },
       message: 'User created. Please log in.'
     });
   } catch (err) {
-    console.error('Register error', err && (err.stack || err.message || err));
-    // Return the error message in dev to aid debugging (remove or sanitize in production)
-    const msg = (err && (err.message || String(err))) || 'Registration failed';
+    console.error('Register error', err);
+    const msg = err.message || 'Registration failed';
     return res.status(500).json({ success: false, message: msg });
   }
 }
 
-async function login(req, res) {
+const login = async (req, res) => {
   try {
     const { username, password } = req.body;
+    console.log('Login attempt:', { username });
+
     if (!username || !password) {
-      return res.status(400).json({ success: false, message: 'username and password are required' });
+      return res.status(400).json({ success: false, message: 'Username and password are required' });
     }
 
-    const { data, error } = await supabase
-      .from('Users')
-      .select('*')
-      .eq('username', username)
-      .limit(1);
-
-    if (error) throw error;
-    if (!data || data.length === 0) {
+    // Use correct Supabase model method
+    const user = await User.findByUsername(username);
+    if (!user) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
-    const user = data[0];
-    const stored = user.password || '';
-
-    // Try bcrypt compare first (normal case)
-    const isMatchBcrypt = await bcrypt.compare(password, stored).catch(() => false);
-    let matched = isMatchBcrypt;
-
-    // If bcrypt fails, allow direct plaintext match (migration safety),
-    // then upgrade the stored password to a bcrypt hash.
-    if (!matched && password === stored) {
-      matched = true;
-      try {
-        const hashed = await bcrypt.hash(password, 10);
-        await supabase.from('Users').update({ password: hashed }).eq('id', user.id);
-        console.log(`Upgraded password to hashed for user ${user.id}`);
-      } catch (upgradeErr) {
-        console.warn('Failed to upgrade plaintext password for user', user.id, upgradeErr.message || upgradeErr);
-      }
-    }
-
-    if (!matched) {
+    // Verify password
+    const isValidPassword = await bcrypt.compare(password, user.password);
+    if (!isValidPassword) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
-    const payload = { id: user.id, username: user.username, position_id: user.position_id || null };
-    const accessToken = jwtUtils.generateToken(payload, '8h');
-    const refreshToken = jwtUtils.generateToken({ id: user.id }, `${REFRESH_TOKEN_EXPIRES_DAYS}d`);
+    // Generate tokens
+    const accessPayload = {
+      id: user.id,
+      username: user.username,
+      position_id: user.position_id || null
+    };
+    const accessToken = jwtUtils.generateToken(accessPayload, '8h');
+    const refreshToken = jwtUtils.generateToken({ id: user.id }, '7d');
 
-    // Fix: Use defaultCookieOptions() for maxAge calculation
-    const expiresAt = new Date(Date.now() + defaultCookieOptions().maxAge).toISOString();
+    // Store refresh token
+    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRES_DAYS * 24 * 60 * 60 * 1000);
+    await storeRefreshToken(refreshToken, user.id, expiresAt.toISOString());
 
-    // store refresh token
-    await storeRefreshToken(refreshToken, user.id, expiresAt);
-
-    // Fix: Always use cookieOptions(req) since req is always available in this function
+    // Set secure cookie
     res.cookie(REFRESH_TOKEN_COOKIE, refreshToken, cookieOptions(req));
 
-    // don't leak password
-    delete user.password;
-
-    return res.json({ success: true, accessToken, data: user });
+    return res.json({
+      success: true,
+      accessToken,
+      data: {
+        id: user.id,
+        name: user.name,
+        username: user.username,
+        position_id: user.position_id
+      }
+    });
   } catch (err) {
     console.error('Login error', err);
     return res.status(500).json({ success: false, message: 'Login failed' });
   }
-}
-
+};
 
 async function refreshToken(req, res) {
   try {
-    let token = null;
-    if (req.cookies && req.cookies[REFRESH_TOKEN_COOKIE]) token = req.cookies[REFRESH_TOKEN_COOKIE];
-    if (!token && req.body && req.body.refreshToken) token = req.body.refreshToken;
+    const token = req.cookies[REFRESH_TOKEN_COOKIE];
+    if (!token) {
+      return res.status(401).json({ success: false, message: 'No refresh token' });
+    }
 
-    if (!token) return res.status(401).json({ success: false, message: 'No refresh token provided' });
+    // Verify token
+    const decoded = jwtUtils.verifyToken(token);
+    const storedToken = await findRefreshToken(token);
 
-    // verify signature
-    let decoded;
-    try {
-      decoded = jwtUtils.verifyToken(token);
-    } catch (err) {
+    if (!storedToken || new Date(storedToken.expires_at) < new Date()) {
+      await removeRefreshToken(token);
+      res.clearCookie(REFRESH_TOKEN_COOKIE, cookieOptions(req));
       return res.status(401).json({ success: false, message: 'Invalid refresh token' });
     }
 
-    // check stored token exists and not expired
-    const stored = await findRefreshToken(token);
-    if (!stored) return res.status(401).json({ success: false, message: 'Refresh token not found' });
-
-    const now = new Date();
-    if (new Date(stored.expires_at) < now) {
-      // remove expired token
-      try { await removeRefreshToken(token); } catch (_) { }
-      return res.status(401).json({ success: false, message: 'Refresh token expired' });
+    // Get user
+    const user = await User.findById(decoded.id);
+    if (!user) {
+      await removeRefreshToken(token);
+      res.clearCookie(REFRESH_TOKEN_COOKIE, cookieOptions(req));
+      return res.status(401).json({ success: false, message: 'User not found' });
     }
 
-    // generate new access token
-    const userId = decoded.id;
-    // fetch latest user info
-    const { data, error } = await supabase
-      .from('Users')
-      .select('*')
-      .eq('id', userId)
-      .limit(1);
-
-    if (error) throw error;
-    if (!data || data.length === 0) return res.status(404).json({ success: false, message: 'User not found' });
-
-    const user = data[0];
-    const payload = { id: user.id, username: user.username, position_id: user.position_id || null };
+    // Generate new access token
+    const payload = {
+      id: user.id,
+      username: user.username,
+      position_id: user.position_id || null
+    };
     const accessToken = jwtUtils.generateToken(payload, '8h');
 
     return res.json({ success: true, accessToken });
   } catch (err) {
     console.error('Refresh token error', err);
-    return res.status(500).json({ success: false, message: 'Could not refresh token' });
+    return res.status(401).json({ success: false, message: 'Token refresh failed' });
   }
 }
 
 async function logout(req, res) {
   try {
-    let token = null;
-    if (req.cookies && req.cookies[REFRESH_TOKEN_COOKIE]) token = req.cookies[REFRESH_TOKEN_COOKIE];
-    if (!token && req.body && req.body.refreshToken) token = req.body.refreshToken;
-    if (!token) {
-      // still clear cookie client-side - pass req parameter
-      res.clearCookie(REFRESH_TOKEN_COOKIE, cookieOptions(req));
-      return res.json({ success: true, message: 'Logged out' });
-    }
-
-    try {
+    const token = req.cookies[REFRESH_TOKEN_COOKIE];
+    if (token) {
       await removeRefreshToken(token);
-    } catch (err) {
-      console.warn('Failed to remove refresh token:', err.message || err);
     }
-
-    // pass req parameter
     res.clearCookie(REFRESH_TOKEN_COOKIE, cookieOptions(req));
     return res.json({ success: true, message: 'Logged out' });
   } catch (err) {
@@ -231,11 +182,9 @@ async function logout(req, res) {
   }
 }
 
-
 module.exports = {
   register,
   login,
   refreshToken,
   logout,
 };
-// ...existing code...
