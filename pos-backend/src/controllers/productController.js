@@ -210,7 +210,7 @@ const productController = {
       // Exact equality only for fast lookups
       const { data: exactData, error: exactError } = await supabase
         .from('Products')
-        .select('*')
+        .select('id, name, barcode, price, quantity, category_id, created_at')
         .eq('barcode', barcode)
         .maybeSingle();
 
