@@ -1,21 +1,52 @@
-// ...existing code...
 import axios from '@/lib/axios';
 
-async function handleResponseData(resp: any) {
-  const data = resp?.data ?? {};
-  if (resp?.status >= 400) throw new Error(data?.message || data?.error || 'Request failed');
-  return data;
+export interface LoginCredentials {
+  username: string;
+  password: string;
 }
 
-export async function registerUser(payload: { fullname: string; username: string; password: string; }) {
-  // backend expects `name` not `fullname`
-  const body = { name: payload.fullname, username: payload.username, password: payload.password };
-  const resp = await axios.post('/auth/register', body);
-  return handleResponseData(resp);
+export interface RegisterData {
+  fullname: string;
+  username: string;
+  password: string;
 }
 
-export async function loginUser(payload: { username: string; password: string; }) {
-  const resp = await axios.post('/auth/login', payload);
-  return handleResponseData(resp);
+export interface LoginResponse {
+  success: boolean;
+  accessToken: string;
+  data: {
+    id: number;
+    name: string;
+    username: string;
+    position_id?: number;
+  };
 }
-// ...existing code...
+
+export const loginUser = async (credentials: LoginCredentials): Promise<LoginResponse> => {
+  try {
+    const response = await axios.post('/auth/login', credentials);
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.message || 'Login failed');
+  }
+};
+
+export const registerUser = async (data: RegisterData): Promise<void> => {
+  try {
+    await axios.post('/auth/register', {
+      name: data.fullname, // Map fullname to name for backend
+      username: data.username,
+      password: data.password
+    });
+  } catch (error: any) {
+    throw error; // Let component handle the error formatting
+  }
+};
+
+export const logoutUser = async (): Promise<void> => {
+  try {
+    await axios.post('/auth/logout');
+  } catch (error) {
+    console.warn('Logout request failed, clearing local data anyway');
+  }
+};

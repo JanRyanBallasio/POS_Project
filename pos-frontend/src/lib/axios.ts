@@ -1,90 +1,100 @@
-import Axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
+import Axios, { AxiosRequestConfig, AxiosResponse, AxiosError, isAxiosError } from 'axios';
+import { setAccessToken, getAccessToken, clearAuth } from '@/stores/userStore';
 
-// Environment-based API configuration
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://3.107.238.186:5000/api';
 
 const axios = Axios.create({
   baseURL: API_BASE,
   withCredentials: true,
+  timeout: 15000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
-// log the baseURL in browser console to verify which backend is used
-if (typeof window !== 'undefined') {
-  // eslint-disable-next-line no-console
-  console.debug('[api] axios baseURL =', API_BASE);
-  console.debug('[api] Environment =', process.env.NODE_ENV);
-}
-
-// ...existing code...
+// Refresh token management
 let isRefreshing = false;
-let failedQueue: {
-  resolve: (value?: unknown) => void;
-  reject: (error: any) => void;
-  config: AxiosRequestConfig;
-}[] = [];
+let refreshPromise: Promise<string | null> | null = null;
 
-const processQueue = (error: any, token: string | null = null) => {
-  failedQueue.forEach(({ resolve, reject, config }) => {
-    if (error) return reject(error);
-    if (token && config && config.headers) config.headers['Authorization'] = `Bearer ${token}`;
-    resolve(axios(config));
-  });
-  failedQueue = [];
-};
-
+// Request interceptor - optimized
 axios.interceptors.request.use((config) => {
   try {
-    // don't attach Authorization header for auth routes (login, register, refresh)
     const url = (config.url || '').toString();
-    if (url.includes('/auth/')) return config;
 
-    const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+    // Skip auth for auth endpoints
+    if (url.includes('/auth/login') || url.includes('/auth/register')) {
+      return config;
+    }
+
+    const token = getAccessToken();
     if (token && config.headers) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
-  } catch (e) { }
+  } catch (e) {
+    console.warn('Token retrieval error:', e);
+  }
   return config;
 });
 
+// Improved refresh token logic
+const refreshAccessToken = async (): Promise<string | null> => {
+  try {
+    const response = await axios.post('/auth/refresh');
+    const newToken = response.data?.accessToken;
+
+    if (newToken) {
+      setAccessToken(newToken);
+      return newToken;
+    }
+    throw new Error('No access token received');
+  } catch (error) {
+    clearAuth();
+    // Redirect to login only on client side
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login';
+    }
+    throw error;
+  }
+};
+
+// Response interceptor with better error handling
 axios.interceptors.response.use(
   (response: AxiosResponse) => response,
   async (error: AxiosError & { config?: AxiosRequestConfig }) => {
     const originalConfig = error.config;
     if (!originalConfig) return Promise.reject(error);
 
-    // If 401 and not a refresh attempt, try refresh
-    // @ts-ignore
-    if (error.response && error.response.status === 401 && !originalConfig._retry) {
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject, config: originalConfig });
-        });
+    // Handle 401 errors
+    if (isAxiosError(error) && error.response?.status === 401 && !originalConfig.url?.includes('/auth/')) {      // Prevent infinite refresh loops
+      // @ts-ignore
+      if (originalConfig._retry) {
+        clearAuth();
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
+        return Promise.reject(error);
       }
 
       // @ts-ignore
       originalConfig._retry = true;
-      isRefreshing = true;
+
+      // Use shared refresh promise to prevent multiple refresh requests
+      if (!isRefreshing) {
+        isRefreshing = true;
+        refreshPromise = refreshAccessToken().finally(() => {
+          isRefreshing = false;
+          refreshPromise = null;
+        });
+      }
 
       try {
-        const refreshResp = await axios.post('/auth/refresh'); // cookie sent automatically
-        const newToken = (refreshResp.data && refreshResp.data.accessToken) || null;
-        if (newToken) {
-          try {
-            localStorage.setItem('accessToken', newToken);
-          } catch (e) { }
+        const newToken = await refreshPromise;
+        if (newToken && originalConfig.headers) {
+          originalConfig.headers['Authorization'] = `Bearer ${newToken}`;
+          return axios(originalConfig);
         }
-        processQueue(null, newToken);
-        return axios(originalConfig);
-      } catch (refreshErr) {
-        processQueue(refreshErr, null);
-        // clear stored tokens & user
-        try {
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('user');
-        } catch (e) { }
-        return Promise.reject(refreshErr);
-      } finally {
-        isRefreshing = false;
+      } catch (refreshError) {
+        return Promise.reject(refreshError);
       }
     }
 
@@ -92,5 +102,5 @@ axios.interceptors.response.use(
   }
 );
 
-export { API_BASE }; // <-- export canonical API base for other modules to import
+export { API_BASE };
 export default axios;

@@ -1,7 +1,8 @@
 import { mutate } from "swr";
-export const PRODUCTS_KEY = "/products";
 import axios from '@/lib/axios';
+import { isAxiosError } from 'axios';
 
+export const PRODUCTS_KEY = "/products";
 export interface Product {
   id: number;
   name: string;
@@ -21,13 +22,11 @@ export interface ApiResponse<T = any> {
   count?: number;
 }
 
-// Remove the hardcoded API_BASE_URL - axios already has the baseURL configured
-
-// small in-memory barcode -> product cache (persisted to localStorage)
-// TTL and debounce save to avoid frequent disk writes
+// Cache configuration
 type CacheEntry = { product: Product; ts: number };
 const BARCODE_CACHE = new Map<string, CacheEntry>();
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
+const MAX_CACHE_SIZE = 1000;
 const STORAGE_KEY = "pos:barcode-cache";
 let saveTimer: number | null = null;
 const SAVE_DEBOUNCE_MS = 500;
@@ -60,8 +59,6 @@ function scheduleSaveCacheToStorage(): void {
     if (saveTimer) {
       clearTimeout(saveTimer);
     }
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore setTimeout returns number in browsers
     saveTimer = window.setTimeout(() => {
       try {
         const obj: Record<string, CacheEntry> = {};
@@ -78,19 +75,15 @@ function scheduleSaveCacheToStorage(): void {
   } catch { /* ignore */ }
 }
 
-function saveCacheToStorageImmediate(): void {
-  try {
-    if (typeof window === "undefined") return;
-    const obj: Record<string, CacheEntry> = {};
-    BARCODE_CACHE.forEach((v, k) => {
-      obj[k] = v;
-    });
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
-  } catch { /* ignore */ }
-}
-
 function cacheSet(product: Product): void {
   if (!product || !product.barcode) return;
+
+  // Implement LRU eviction
+  if (BARCODE_CACHE.size >= MAX_CACHE_SIZE) {
+    const oldestKey = BARCODE_CACHE.keys().next().value;
+    if (oldestKey) BARCODE_CACHE.delete(oldestKey);
+  }
+
   const key = String(product.barcode);
   BARCODE_CACHE.set(key, { product, ts: Date.now() });
   scheduleSaveCacheToStorage();
@@ -109,7 +102,6 @@ function cacheGet(barcode: string): Product | null {
   return entry.product;
 }
 
-// New helpers: remove cache entries by barcode or by product id
 function cacheDeleteByBarcode(barcode: string | number): void {
   try {
     const key = String(barcode);
@@ -132,7 +124,7 @@ function cacheDeleteById(id: number): void {
   } catch { /* ignore */ }
 }
 
-// initialize cache from storage (browser only)
+// Initialize cache from storage (browser only)
 if (typeof window !== "undefined") {
   try {
     loadCacheFromStorage();
@@ -144,7 +136,6 @@ type ProductsListShape = Product[] | { data: Product[]; count?: number;[k: strin
 function prependProductToList(old: ProductsListShape | undefined | null, created: Product): ProductsListShape {
   if (!old) return [created];
   if (Array.isArray(old)) {
-    // cast as Product[]
     return [created, ...(old as Product[])];
   }
   if (isPlainObject(old) && Array.isArray(old.data)) {
@@ -181,12 +172,10 @@ export const productApi = {
   async getAll(): Promise<Product[]> {
     try {
       const response = await axios.get('/products');
-      console.debug('[productApi.getAll] status', response.status);
       if (response.status >= 400) {
         return [];
       }
       const json = response.data as ApiResponse<Product[]>;
-      console.debug('[productApi.getAll] got', Array.isArray(json.data) ? json.data.length : 0, 'items');
       return json.data ?? [];
     } catch {
       return [];
@@ -203,7 +192,6 @@ export const productApi = {
     const created = json.data as Product;
     try { cacheSet(created); } catch { /* ignore */ }
 
-    // optimistic update: add to products list SWR cache (don't revalidate)
     try {
       mutate("/products", (old: ProductsListShape | undefined | null) => prependProductToList(old, created), false).catch(() => { });
     } catch { /* ignore */ }
@@ -220,11 +208,9 @@ export const productApi = {
     }
     const updated = json.data as Product;
 
-    // remove any stale cache entries for this id (in case barcode changed or was removed)
     try { cacheDeleteById(updated.id); } catch { /* ignore */ }
     try { cacheSet(updated); } catch { /* ignore */ }
 
-    // update SWR cache entries for lists and individual product
     try {
       mutate(PRODUCTS_KEY, (old: ProductsListShape | undefined | null) => replaceProductInList(old, updated), false).catch(() => { });
       mutate(["product", id], updated, false).catch(() => { });
@@ -255,76 +241,58 @@ export const productApi = {
       throw new Error(errorMsg);
     }
 
-    // remove from SWR cache lists
     try {
       mutate(PRODUCTS_KEY, (old: ProductsListShape | undefined | null) => removeProductFromList(old, id), false).catch(() => { });
       mutate(["product", id], null, false).catch(() => { });
     } catch { /* ignore */ }
 
-    // ALSO remove any barcode cache entries that reference this id
     try { cacheDeleteById(id); } catch { /* ignore */ }
   },
 
   async getByBarcode(barcode: string): Promise<Product | null> {
     if (!barcode) return null;
 
-    const clean = (v: string) => String(v).replace(/[\u0000-\u001F\u007F-\u009F]/g, "").trim();
-    const cleaned = clean(barcode);
+    const cleaned = String(barcode).replace(/[\u0000-\u001F\u007F-\u009F]/g, "").trim();
     if (!cleaned) return null;
 
-    const encoded = encodeURIComponent(cleaned);
-
-    const exactUrl = `/products/barcode/${encoded}`;
-    const queryUrl = `/products?barcode=${encoded}`;
-
-    // Try server first so deletes/updates are honored immediately.
-    try {
-      const res = await axios.get(exactUrl);
-      if (res.status === 404) {
-        // server explicitly says not found
-        return null;
-      }
-      if (res.status < 400) {
-        const json = res.data as ApiResponse<Product>;
-        const product = json?.data ?? null;
-        if (product) {
-          try { cacheSet(product); } catch { /* ignore */ }
-          return product;
-        }
-      }
-      // if non-404 non-ok, fall through to cache/fallback
-    } catch {
-      // network error -> fallback to cache below
-    }
-
-    // fallback to cache if available (useful when offline)
+    // Check cache first for immediate response
     try {
       const cached = cacheGet(cleaned);
       if (cached) return cached;
     } catch { /* ignore cache errors */ }
 
-    // last-resort: query endpoint (returns list)
+    // Single API call with proper error handling
     try {
-      const res2 = await axios.get(queryUrl);
-      if (res2.status >= 400) return null;
-      const qjson = res2.data as ApiResponse<Product[]>;
-      const list = qjson?.data ?? [];
-      if (list.length === 0) return null;
-      const exact = list.find((p) => clean(p?.barcode ?? "") === cleaned);
-      const chosen = exact ?? list[0];
-      try { cacheSet(chosen); } catch { /* ignore */ }
-      return chosen;
-    } catch {
+      const response = await axios.get(`/products/barcode/${encodeURIComponent(cleaned)}`);
+
+      if (response.status === 200 && response.data?.data) {
+        const product = response.data.data;
+        try { cacheSet(product); } catch { /* ignore cache errors */ }
+        return product;
+      }
+
       return null;
+    } catch (error) {
+      // Only log non-404 errors using proper type checking
+      if (isAxiosError(error) && error.response?.status !== 404) {
+        console.warn('[productApi.getByBarcode] Network error:', error.message);
+      }
+      return null; // ✅ Fixed: Added missing return statement
     }
   },
 };
 
-// ensure cache is saved immediately when unloading page
+// Save cache on page unload
 if (typeof window !== "undefined") {
   try {
     window.addEventListener("beforeunload", () => {
-      try { saveCacheToStorageImmediate(); } catch { /* ignore */ }
+      try {
+        const obj: Record<string, CacheEntry> = {};
+        BARCODE_CACHE.forEach((v, k) => {
+          obj[k] = v;
+        });
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
+      } catch { /* ignore */ }
     });
   } catch { /* ignore */ }
 }

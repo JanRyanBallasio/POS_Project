@@ -1,9 +1,8 @@
-// ...existing code...
 'use client';
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { useId, useState } from 'react';
+import { useId, useState, useCallback } from 'react';
 import { EyeIcon, EyeOffIcon } from 'lucide-react';
 import Image from "next/image";
 import { UserIcon, KeyRound } from 'lucide-react';
@@ -13,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useRouter } from 'next/navigation';
 import { loginUser } from '@/hooks/users/user';
+import { setAccessToken, setUser, invalidateCache } from '@/stores/userStore';
 
 export default function LoginForm() {
     useRedirectIfAuth();
@@ -23,60 +23,62 @@ export default function LoginForm() {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const togglePasswordVisibility = useCallback(() => {
+        setIsVisible(prev => !prev);
+    }, []);
 
     const onSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!username || !password) {
-            alert("Enter username and password");
+        setError(null);
+        
+        if (!username.trim() || !password.trim()) {
+            setError("Please enter both username and password");
             return;
         }
+        
         setLoading(true);
+        
         try {
-            const res = await loginUser({ username, password });
-            console.debug('[login] response', res);
-            console.debug('[login] FULL response:', JSON.stringify(res, null, 2));
-
-            // Save accessToken (key expected by axios/interceptors) and user
-            if (res?.accessToken) {
-                localStorage.setItem("accessToken", res.accessToken);
-                console.debug('[login] accessToken saved:', res.accessToken);
-            } else {
-                console.error('[login] No accessToken in response:', res);
+            const res = await loginUser({ username: username.trim(), password });
+            
+            // Validate response structure
+            if (!res?.accessToken || !res?.data) {
+                throw new Error("Invalid server response");
             }
 
-            if (res?.data) {
-                localStorage.setItem("user", JSON.stringify(res.data));
-                console.debug('[login] user data saved');
-            } else {
-                console.error('[login] No user data in response:', res);
-            }
+            // Clear cache and set new data atomically
+            invalidateCache();
+            setAccessToken(res.accessToken);
+            setUser(res.data);
 
-            // try client navigation first, fallback to full navigation (forces request -> middleware)
-            try {
-                await router.push("/dashboard/main");
-                console.debug('[login] router.push complete');
-            } catch (navErr) {
-                console.warn('[login] router.push failed, falling back to full navigation', navErr);
-                window.location.href = "/dashboard/main";
-            }
+            // Single navigation attempt
+            router.replace("/dashboard/main");
+            
         } catch (err: any) {
             console.error('[login] Error:', err);
-            alert(err.message || "Login failed");
+            setError(err.message || "Login failed. Please try again.");
         } finally {
             setLoading(false);
         }
     };
 
     return (
-
         <div className="min-h-screen flex items-center justify-center bg-white">
             <div className="w-full max-w-sm flex flex-col items-center gap-6 pb-[60px] px-2">
                 <div className="flex flex-col items-center gap-2">
-                    <Image src="/img/logo1.png" alt="App logo" width={150} height={150} />
+                    <Image src="/img/logo1.png" alt="App logo" width={150} height={150} priority />
                     <p className="font-bold text-2xl">Login</p>
                 </div>
 
-                <form className='w-full space-y-4' onSubmit={onSubmit}>
+                <form className='w-full space-y-4' onSubmit={onSubmit} noValidate>
+                    {error && (
+                        <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
+                            {error}
+                        </div>
+                    )}
+
                     <div className='w-full'>
                         <Label htmlFor={`${id}-username`} className='text-sm'>Username</Label>
                         <div className='relative mt-1'>
@@ -84,7 +86,17 @@ export default function LoginForm() {
                                 <UserIcon className='w-4 h-4' />
                                 <span className='sr-only'>User</span>
                             </div>
-                            <Input id={`${id}-username`} type='text' placeholder='Username' className='peer ps-9' value={username} onChange={(e) => setUsername(e.target.value)} />
+                            <Input 
+                                id={`${id}-username`} 
+                                type='text' 
+                                placeholder='Username' 
+                                className='peer ps-9' 
+                                value={username} 
+                                onChange={(e) => setUsername(e.target.value)}
+                                disabled={loading}
+                                autoComplete="username"
+                                required
+                            />
                         </div>
                     </div>
 
@@ -95,21 +107,38 @@ export default function LoginForm() {
                                 <KeyRound className='w-4 h-4' />
                                 <span className='sr-only'>Password</span>
                             </div>
-                            <Input id={`${id}-password`} type={isVisible ? 'text' : 'password'} placeholder='Password' className='peer ps-9' value={password} onChange={(e) => setPassword(e.target.value)} />
+                            <Input 
+                                id={`${id}-password`} 
+                                type={isVisible ? 'text' : 'password'} 
+                                placeholder='Password' 
+                                className='peer ps-9' 
+                                value={password} 
+                                onChange={(e) => setPassword(e.target.value)}
+                                disabled={loading}
+                                autoComplete="current-password"
+                                required
+                            />
                             <Button
                                 variant='ghost'
                                 size='icon'
-                                onClick={() => setIsVisible(prev => !prev)}
+                                onClick={togglePasswordVisibility}
                                 className='text-muted-foreground absolute inset-y-0 right-0 rounded-s-none hover:bg-transparent'
                                 type='button'
+                                disabled={loading}
                             >
-                                {isVisible ? <EyeIcon /> : <EyeOffIcon />}
+                                {isVisible ? <EyeIcon className='w-4 h-4' /> : <EyeOffIcon className='w-4 h-4' />}
                                 <span className='sr-only'>{isVisible ? 'Hide password' : 'Show password'}</span>
                             </Button>
                         </div>
                     </div>
 
-                    <Button className='w-full bg-black text-white rounded-md' type="submit" disabled={loading}>{loading ? "Please wait..." : "Login"}</Button>
+                    <Button 
+                        className='w-full bg-black text-white rounded-md' 
+                        type="submit" 
+                        disabled={loading}
+                    >
+                        {loading ? "Signing in..." : "Login"}
+                    </Button>
                 </form>
 
                 <div className="text-center text-sm mt-2">
@@ -122,4 +151,3 @@ export default function LoginForm() {
         </div>
     );
 }
-// ...existing code...
