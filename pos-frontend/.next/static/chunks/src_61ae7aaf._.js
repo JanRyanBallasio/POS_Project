@@ -3086,15 +3086,17 @@ var _s = __turbopack_context__.k.signature();
 ;
 ;
 ;
+// Use consistent key
+const PRODUCTS_KEY = "products:list";
 const fetcher = ()=>__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["productApi"].getAll();
 function ProductStats() {
     _s();
-    const { data: products = [], isLoading } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$index$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$locals$3e$__["default"])("/api/products", fetcher, {
+    const { data: products = [], isLoading } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$index$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$locals$3e$__["default"])(PRODUCTS_KEY, fetcher, {
         revalidateOnFocus: false,
-        dedupingInterval: 60_000
+        dedupingInterval: 30_000
     });
-    const { totalProducts, lowStockItems, outOfStockItems, totalValueFormatted } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
-        "ProductStats.useMemo": ()=>{
+    const stats = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
+        "ProductStats.useMemo[stats]": ()=>{
             let totalProducts = 0;
             let lowStockItems = 0;
             let outOfStockItems = 0;
@@ -3106,36 +3108,35 @@ function ProductStats() {
                 else if (p.quantity < 5) lowStockItems++;
                 totalValue += p.price * p.quantity;
             }
-            const totalValueFormatted = "₱ ".concat(totalValue.toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            }));
             return {
                 totalProducts,
                 lowStockItems,
                 outOfStockItems,
-                totalValueFormatted
+                totalValueFormatted: "₱ ".concat(totalValue.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }))
             };
         }
-    }["ProductStats.useMemo"], [
+    }["ProductStats.useMemo[stats]"], [
         products
     ]);
     const statsData = [
         {
             title: "Total Products",
-            content: isLoading ? "..." : totalProducts
+            content: isLoading ? "..." : stats.totalProducts
         },
         {
             title: "Low Stock Items",
-            content: isLoading ? "..." : lowStockItems
+            content: isLoading ? "..." : stats.lowStockItems
         },
         {
             title: "Out of Stock",
-            content: isLoading ? "..." : outOfStockItems
+            content: isLoading ? "..." : stats.outOfStockItems
         },
         {
             title: "Total Value",
-            content: isLoading ? "..." : totalValueFormatted
+            content: isLoading ? "..." : stats.totalValueFormatted
         }
     ];
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3149,35 +3150,35 @@ function ProductStats() {
                             children: stat.title
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/_pages/Products/components/ProductStats.tsx",
-                            lineNumber: 49,
+                            lineNumber: 54,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                            className: "text-2xl font-bold ",
+                            className: "text-2xl font-bold",
                             children: stat.content
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/_pages/Products/components/ProductStats.tsx",
-                            lineNumber: 50,
+                            lineNumber: 55,
                             columnNumber: 13
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/dashboard/_pages/Products/components/ProductStats.tsx",
-                    lineNumber: 48,
+                    lineNumber: 53,
                     columnNumber: 11
                 }, this)
             }, idx, false, {
                 fileName: "[project]/src/app/dashboard/_pages/Products/components/ProductStats.tsx",
-                lineNumber: 47,
+                lineNumber: 52,
                 columnNumber: 9
             }, this))
     }, void 0, false, {
         fileName: "[project]/src/app/dashboard/_pages/Products/components/ProductStats.tsx",
-        lineNumber: 45,
+        lineNumber: 50,
         columnNumber: 5
     }, this);
 }
-_s(ProductStats, "RqltIDN7FDY4IKRLsb9emhH/O0I=", false, function() {
+_s(ProductStats, "fqBZE3aGt/1LQk24gnymQTM8Oxo=", false, function() {
     return [
         __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$index$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$locals$3e$__["default"]
     ];
@@ -4612,16 +4613,16 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__ = __turbopack_context__.i("[project]/node_modules/swr/dist/_internal/config-context-client-BoS53ST9.mjs [app-client] (ecmascript) <export j as mutate>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_pages$2f$Products$2f$table$2f$dataTable$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/app/dashboard/_pages/Products/table/dataTable.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_pages$2f$Products$2f$table$2f$columns$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/app/dashboard/_pages/Products/table/columns.tsx [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/hooks/products/useProductApi.ts [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_pages$2f$Products$2f$components$2f$productCatalog$2f$Pagination$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/app/dashboard/_pages/Products/components/productCatalog/Pagination.tsx [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/dialog.tsx [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/hooks/products/useProductApi.ts [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$global$2f$fetching$2f$useCategories$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/hooks/global/fetching/useCategories.ts [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/button.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$pencil$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Pencil$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/pencil.js [app-client] (ecmascript) <export default as Pencil>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$trash$2d$2$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Trash2$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/trash-2.js [app-client] (ecmascript) <export default as Trash2>");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$utils$2f$toast$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/utils/toast.ts [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/dialog.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/input.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/label.tsx [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/sonner/dist/index.mjs [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$global$2f$fetching$2f$useCategories$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/hooks/global/fetching/useCategories.ts [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dropdown$2d$menu$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/dropdown-menu.tsx [app-client] (ecmascript)");
 ;
 var _s = __turbopack_context__.k.signature();
@@ -4640,48 +4641,54 @@ var _s = __turbopack_context__.k.signature();
 ;
 ;
 ;
-// SWR fetcher
+// Use consistent key
+const PRODUCTS_KEY = "products:list";
 const fetcher = ()=>__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["productApi"].getAll();
 const PAGE_SIZE = 6;
-function mapProductToRow(product, categories) {
+// Memoize row mapping function
+const mapProductToRow = (product, categoryMap)=>{
     const status = product.quantity === 0 ? "out of stock" : product.quantity < 5 ? "low stock" : "in stock";
-    const category = categories.find((c)=>String(c.id) === String(product.category_id));
+    const categoryName = categoryMap.get(String(product.category_id)) || "Category ".concat(product.category_id);
     var _product_barcode;
     return {
         id: String(product.id),
         productName: product.name,
         barcode: (_product_barcode = product.barcode) !== null && _product_barcode !== void 0 ? _product_barcode : "",
-        category: category ? category.name : "Category ".concat(product.category_id),
+        category: categoryName,
         currentStock: product.quantity,
         productPrice: product.price,
         status
     };
-}
+};
 function ProductTable(param) {
     let { selectedCategory, selectedStatus, onProductDeleted, search = "" } = param;
-    var _categories_find;
     _s();
-    const { data: products = [], isLoading, error, mutate: refetchProducts } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$index$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$locals$3e$__["default"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["PRODUCTS_KEY"], fetcher, {
-        revalidateOnFocus: true,
+    const { data: products = [], isLoading, mutate: refetchProducts } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$index$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$locals$3e$__["default"])(PRODUCTS_KEY, fetcher, {
+        revalidateOnFocus: false,
         revalidateOnReconnect: true,
-        dedupingInterval: 30_000,
-        errorRetryCount: 3,
-        onSuccess: {
-            "ProductTable.useSWR": (data)=>{
-                // Optional: Log successful data fetch for debugging
-                console.debug("[ProductTable] Loaded ".concat((data === null || data === void 0 ? void 0 : data.length) || 0, " products"));
-            }
-        }["ProductTable.useSWR"]
+        dedupingInterval: 10_000,
+        errorRetryCount: 2
     });
+    const { categories = [] } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$global$2f$fetching$2f$useCategories$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCategories"])();
+    // Create category map for faster lookups
+    const categoryMap = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
+        "ProductTable.useMemo[categoryMap]": ()=>{
+            const map = new Map();
+            categories.forEach({
+                "ProductTable.useMemo[categoryMap]": (cat)=>map.set(String(cat.id), cat.name)
+            }["ProductTable.useMemo[categoryMap]"]);
+            return map;
+        }
+    }["ProductTable.useMemo[categoryMap]"], [
+        categories
+    ]);
     const [page, setPage] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(0);
     const [pageSize, setPageSize] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(PAGE_SIZE);
     const [editProductId, setEditProductId] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
     const [showEditDialog, setShowEditDialog] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
     const [showUpdateConfirm, setShowUpdateConfirm] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
-    // store mapped row (Products) for delete UI, not the original Product
     const [deleteProduct, setDeleteProduct] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
     const [showDeleteDialog, setShowDeleteDialog] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
-    const { categories = [], loading: categoriesLoading, error: categoriesError } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$global$2f$fetching$2f$useCategories$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCategories"])();
     const [categorySearch, setCategorySearch] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])("");
     const [editForm, setEditForm] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])({
         name: "",
@@ -4690,51 +4697,20 @@ function ProductTable(param) {
         price: 0,
         quantity: 0
     });
-    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
-        "ProductTable.useEffect": ()=>{
-            const handleProductAdded = {
-                "ProductTable.useEffect.handleProductAdded": (event)=>{
-                    console.debug('[ProductTable] Product added event received');
-                    // Trigger immediate revalidation
-                    refetchProducts();
-                }
-            }["ProductTable.useEffect.handleProductAdded"];
-            const handleProductUpdated = {
-                "ProductTable.useEffect.handleProductUpdated": (event)=>{
-                    console.debug('[ProductTable] Product updated event received');
-                    refetchProducts();
-                }
-            }["ProductTable.useEffect.handleProductUpdated"];
-            const handleProductDeleted = {
-                "ProductTable.useEffect.handleProductDeleted": (event)=>{
-                    console.debug('[ProductTable] Product deleted event received');
-                    refetchProducts();
-                }
-            }["ProductTable.useEffect.handleProductDeleted"];
-            window.addEventListener('product:added', handleProductAdded);
-            window.addEventListener('product:updated', handleProductUpdated);
-            window.addEventListener('product:deleted', handleProductDeleted);
-            return ({
-                "ProductTable.useEffect": ()=>{
-                    window.removeEventListener('product:added', handleProductAdded);
-                    window.removeEventListener('product:updated', handleProductUpdated);
-                    window.removeEventListener('product:deleted', handleProductDeleted);
-                }
-            })["ProductTable.useEffect"];
-        }
-    }["ProductTable.useEffect"], [
-        refetchProducts
-    ]);
-    // memoized filtered products (category/status/search)
+    // Optimized filtering with useMemo
     const filteredProducts = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
         "ProductTable.useMemo[filteredProducts]": ()=>{
-            let list = products !== null && products !== void 0 ? products : [];
-            if (selectedCategory && selectedCategory !== "all") {
+            let list = products;
+            // Early return if no filters
+            if (selectedCategory === "all" && selectedStatus === "all" && !search.trim()) {
+                return list;
+            }
+            if (selectedCategory !== "all") {
                 list = list.filter({
                     "ProductTable.useMemo[filteredProducts]": (p)=>String(p.category_id) === selectedCategory
                 }["ProductTable.useMemo[filteredProducts]"]);
             }
-            if (selectedStatus && selectedStatus !== "all") {
+            if (selectedStatus !== "all") {
                 list = list.filter({
                     "ProductTable.useMemo[filteredProducts]": (p)=>{
                         const status = p.quantity === 0 ? "out of stock" : p.quantity < 5 ? "low stock" : "in stock";
@@ -4742,15 +4718,14 @@ function ProductTable(param) {
                     }
                 }["ProductTable.useMemo[filteredProducts]"]);
             }
-            const q = (search || "").trim().toLowerCase();
-            if (q) {
+            const searchTerm = search.trim().toLowerCase();
+            if (searchTerm) {
                 list = list.filter({
                     "ProductTable.useMemo[filteredProducts]": (p)=>{
-                        var _p_name;
-                        const name = String((_p_name = p.name) !== null && _p_name !== void 0 ? _p_name : "").toLowerCase();
-                        var _p_barcode;
-                        const barcode = String((_p_barcode = p.barcode) !== null && _p_barcode !== void 0 ? _p_barcode : "").toLowerCase();
-                        return name.includes(q) || barcode.includes(q);
+                        var _p_name, _p_barcode;
+                        const name = ((_p_name = p.name) === null || _p_name === void 0 ? void 0 : _p_name.toLowerCase()) || "";
+                        const barcode = ((_p_barcode = p.barcode) === null || _p_barcode === void 0 ? void 0 : _p_barcode.toLowerCase()) || "";
+                        return name.includes(searchTerm) || barcode.includes(searchTerm);
                     }
                 }["ProductTable.useMemo[filteredProducts]"]);
             }
@@ -4762,7 +4737,16 @@ function ProductTable(param) {
         selectedStatus,
         search
     ]);
-    // reset page when filters/search change
+    // Memoize mapped products
+    const mappedProducts = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
+        "ProductTable.useMemo[mappedProducts]": ()=>filteredProducts.map({
+                "ProductTable.useMemo[mappedProducts]": (p)=>mapProductToRow(p, categoryMap)
+            }["ProductTable.useMemo[mappedProducts]"])
+    }["ProductTable.useMemo[mappedProducts]"], [
+        filteredProducts,
+        categoryMap
+    ]);
+    // Reset page when filters change
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
         "ProductTable.useEffect": ()=>setPage(0)
     }["ProductTable.useEffect"], [
@@ -4770,39 +4754,25 @@ function ProductTable(param) {
         selectedStatus,
         search
     ]);
-    const mappedProducts = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
-        "ProductTable.useMemo[mappedProducts]": ()=>(filteredProducts !== null && filteredProducts !== void 0 ? filteredProducts : []).map({
-                "ProductTable.useMemo[mappedProducts]": (p)=>mapProductToRow(p, categories)
-            }["ProductTable.useMemo[mappedProducts]"])
-    }["ProductTable.useMemo[mappedProducts]"], [
-        filteredProducts,
-        categories
-    ]);
-    const pageCount = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
-        "ProductTable.useMemo[pageCount]": ()=>Math.max(1, Math.ceil(((mappedProducts === null || mappedProducts === void 0 ? void 0 : mappedProducts.length) || 0) / pageSize))
-    }["ProductTable.useMemo[pageCount]"], [
-        mappedProducts,
-        pageSize
-    ]);
+    const pageCount = Math.max(1, Math.ceil(mappedProducts.length / pageSize));
     const editProduct = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
         "ProductTable.useMemo[editProduct]": ()=>products.find({
-                "ProductTable.useMemo[editProduct]": (p)=>String(p.id) === String(editProductId)
+                "ProductTable.useMemo[editProduct]": (p)=>p.id === editProductId
             }["ProductTable.useMemo[editProduct]"])
     }["ProductTable.useMemo[editProduct]"], [
         products,
         editProductId
     ]);
-    // sync edit form when dialog opens and product available
+    // Sync edit form
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
         "ProductTable.useEffect": ()=>{
             if (showEditDialog && editProduct) {
-                var _editProduct_name, _editProduct_barcode, _editProduct_category_id, _editProduct_price, _editProduct_quantity;
                 setEditForm({
-                    name: (_editProduct_name = editProduct.name) !== null && _editProduct_name !== void 0 ? _editProduct_name : "",
-                    barcode: (_editProduct_barcode = editProduct.barcode) !== null && _editProduct_barcode !== void 0 ? _editProduct_barcode : "",
-                    category_id: String((_editProduct_category_id = editProduct.category_id) !== null && _editProduct_category_id !== void 0 ? _editProduct_category_id : ""),
-                    price: (_editProduct_price = editProduct.price) !== null && _editProduct_price !== void 0 ? _editProduct_price : 0,
-                    quantity: (_editProduct_quantity = editProduct.quantity) !== null && _editProduct_quantity !== void 0 ? _editProduct_quantity : 0
+                    name: editProduct.name || "",
+                    barcode: editProduct.barcode || "",
+                    category_id: String(editProduct.category_id || ""),
+                    price: editProduct.price || 0,
+                    quantity: editProduct.quantity || 0
                 });
             }
         }
@@ -4810,39 +4780,23 @@ function ProductTable(param) {
         showEditDialog,
         editProduct
     ]);
-    // accept the mapped row (Products) rather than original Product
     const handleEdit = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
         "ProductTable.useCallback[handleEdit]": (row)=>{
-            const id = row === null || row === void 0 ? void 0 : row.id;
-            setEditProductId(id != null ? Number(id) : null);
+            setEditProductId(Number(row.id));
             setShowEditDialog(true);
             setShowUpdateConfirm(false);
         }
     }["ProductTable.useCallback[handleEdit]"], []);
-    // accept the mapped row (Products)
     const handleDelete = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
         "ProductTable.useCallback[handleDelete]": (row)=>{
             setDeleteProduct(row);
             setShowDeleteDialog(true);
         }
     }["ProductTable.useCallback[handleDelete]"], []);
-    const truncate = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
-        "ProductTable.useCallback[truncate]": function(s) {
-            let max = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : 60;
-            if (!s) return "";
-            return s.length > max ? s.slice(0, max) + "..." : s;
-        }
-    }["ProductTable.useCallback[truncate]"], []);
     const handleUpdateProduct = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
         "ProductTable.useCallback[handleUpdateProduct]": async ()=>{
-            setShowUpdateConfirm(false);
-            if (!editProduct) {
-                (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["toast"])("Product data not loaded", {
-                    description: "Please try again."
-                });
-                return;
-            }
-            const updatedProductData = {
+            if (!editProduct) return;
+            const updatedData = {
                 name: editForm.name,
                 barcode: editForm.barcode,
                 category_id: Number(editForm.category_id),
@@ -4850,183 +4804,155 @@ function ProductTable(param) {
                 quantity: Number(editForm.quantity)
             };
             try {
-                // Optimistic update: immediately update the cache
+                // Optimistic update
                 const optimisticProduct = {
                     ...editProduct,
-                    ...updatedProductData
+                    ...updatedData
                 };
-                (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__["mutate"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["PRODUCTS_KEY"], {
-                    "ProductTable.useCallback[handleUpdateProduct]": (current)=>{
-                        if (!current) return current;
+                (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__["mutate"])(PRODUCTS_KEY, {
+                    "ProductTable.useCallback[handleUpdateProduct]": function() {
+                        let current = arguments.length > 0 && arguments[0] !== void 0 ? arguments[0] : [];
                         return current.map({
                             "ProductTable.useCallback[handleUpdateProduct]": (p)=>p.id === editProduct.id ? optimisticProduct : p
                         }["ProductTable.useCallback[handleUpdateProduct]"]);
                     }
-                }["ProductTable.useCallback[handleUpdateProduct]"], false // Don't revalidate immediately
-                );
-                // Perform the actual update
-                const updatedProduct = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["productApi"].update(editProduct.id, updatedProductData);
-                (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["toast"])("Product updated", {
-                    description: "".concat(truncate(editForm.name, 60), " has been updated.")
-                });
+                }["ProductTable.useCallback[handleUpdateProduct]"], false);
+                await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["productApi"].update(editProduct.id, updatedData);
+                (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$utils$2f$toast$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["showSuccessToast"])("Product updated", "".concat(editForm.name, " has been updated."));
                 setShowEditDialog(false);
-                // Dispatch event for other components
-                window.dispatchEvent(new CustomEvent("product:updated", {
-                    detail: {
-                        product: updatedProduct
-                    }
-                }));
-                // Final revalidation to ensure consistency
-                (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__["mutate"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["PRODUCTS_KEY"]);
+                setShowUpdateConfirm(false);
+                // Final revalidation
+                (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__["mutate"])(PRODUCTS_KEY);
             } catch (err) {
-                // Revert optimistic update on error
-                (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__["mutate"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["PRODUCTS_KEY"]);
-                (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["toast"])("Failed to update product", {
-                    description: (err === null || err === void 0 ? void 0 : err.message) || "An error occurred."
-                });
+                // Revert on error
+                (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__["mutate"])(PRODUCTS_KEY);
+                (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$utils$2f$toast$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["showErrorToast"])("Failed to update product", (err === null || err === void 0 ? void 0 : err.message) || "An error occurred.");
             }
         }
     }["ProductTable.useCallback[handleUpdateProduct]"], [
         editProduct,
-        editForm,
-        truncate
+        editForm
     ]);
     const handleDeleteProduct = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
         "ProductTable.useCallback[handleDeleteProduct]": async ()=>{
             if (!deleteProduct) return;
             const productId = Number(deleteProduct.id);
             try {
-                // Optimistic update: immediately remove from cache
-                (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__["mutate"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["PRODUCTS_KEY"], {
-                    "ProductTable.useCallback[handleDeleteProduct]": (current)=>{
-                        if (!current) return current;
+                // Optimistic update
+                (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__["mutate"])(PRODUCTS_KEY, {
+                    "ProductTable.useCallback[handleDeleteProduct]": function() {
+                        let current = arguments.length > 0 && arguments[0] !== void 0 ? arguments[0] : [];
                         return current.filter({
                             "ProductTable.useCallback[handleDeleteProduct]": (p)=>p.id !== productId
                         }["ProductTable.useCallback[handleDeleteProduct]"]);
                     }
-                }["ProductTable.useCallback[handleDeleteProduct]"], false // Don't revalidate immediately
-                );
-                // Perform the actual delete
+                }["ProductTable.useCallback[handleDeleteProduct]"], false);
                 await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["productApi"].delete(productId);
-                (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["toast"])("Product deleted", {
-                    description: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                        className: "text-red-600",
-                        children: [
-                            truncate(deleteProduct.productName, 60),
-                            " has been deleted."
-                        ]
-                    }, void 0, true, {
-                        fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                        lineNumber: 279,
-                        columnNumber: 21
-                    }, this),
-                    icon: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$trash$2d$2$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Trash2$3e$__["Trash2"], {
-                        className: "w-4 h-4 text-red-600"
-                    }, void 0, false, {
-                        fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                        lineNumber: 283,
-                        columnNumber: 23
-                    }, this)
-                });
+                (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$utils$2f$toast$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["showSuccessToast"])("Product deleted", "".concat(deleteProduct.productName, " has been deleted."));
                 setShowDeleteDialog(false);
                 setDeleteProduct(null);
-                // Dispatch event for other components
-                window.dispatchEvent(new CustomEvent("product:deleted", {
-                    detail: {
-                        productId
-                    }
-                }));
-                // Callback to parent component
-                if (onProductDeleted) onProductDeleted(productId);
-                // Final revalidation to ensure consistency
-                (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__["mutate"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["PRODUCTS_KEY"]);
+                onProductDeleted === null || onProductDeleted === void 0 ? void 0 : onProductDeleted(productId);
+                // Final revalidation
+                (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__["mutate"])(PRODUCTS_KEY);
             } catch (err) {
-                // Revert optimistic update on error
-                (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__["mutate"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["PRODUCTS_KEY"]);
-                (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["toast"])("Failed to delete product", {
-                    description: (err === null || err === void 0 ? void 0 : err.message) || "An error occurred."
-                });
+                // Revert on error
+                (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__["mutate"])(PRODUCTS_KEY);
+                (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$utils$2f$toast$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["showErrorToast"])("Failed to delete product", (err === null || err === void 0 ? void 0 : err.message) || "An error occurred.");
             }
         }
     }["ProductTable.useCallback[handleDeleteProduct]"], [
         deleteProduct,
-        onProductDeleted,
-        truncate
+        onProductDeleted
     ]);
-    const isUpdating = isLoading;
+    // Enhanced columns with actions
+    const enhancedColumns = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
+        "ProductTable.useMemo[enhancedColumns]": ()=>__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_pages$2f$Products$2f$table$2f$columns$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["columns"].map({
+                "ProductTable.useMemo[enhancedColumns]": (col)=>col.id === "actions" ? {
+                        ...col,
+                        cell: ({
+                            "ProductTable.useMemo[enhancedColumns]": (param)=>{
+                                let { row } = param;
+                                return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                    className: "flex gap-2 justify-center",
+                                    children: [
+                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
+                                            variant: "outline",
+                                            size: "icon",
+                                            onClick: {
+                                                "ProductTable.useMemo[enhancedColumns]": ()=>handleEdit(row.original)
+                                            }["ProductTable.useMemo[enhancedColumns]"],
+                                            disabled: isLoading,
+                                            children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$pencil$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Pencil$3e$__["Pencil"], {
+                                                className: "w-4 h-4"
+                                            }, void 0, false, {
+                                                fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
+                                                lineNumber: 255,
+                                                columnNumber: 33
+                                            }, this)
+                                        }, void 0, false, {
+                                            fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
+                                            lineNumber: 249,
+                                            columnNumber: 29
+                                        }, this),
+                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
+                                            variant: "outline",
+                                            size: "icon",
+                                            onClick: {
+                                                "ProductTable.useMemo[enhancedColumns]": ()=>handleDelete(row.original)
+                                            }["ProductTable.useMemo[enhancedColumns]"],
+                                            disabled: isLoading,
+                                            children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$trash$2d$2$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Trash2$3e$__["Trash2"], {
+                                                className: "w-4 h-4"
+                                            }, void 0, false, {
+                                                fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
+                                                lineNumber: 263,
+                                                columnNumber: 33
+                                            }, this)
+                                        }, void 0, false, {
+                                            fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
+                                            lineNumber: 257,
+                                            columnNumber: 29
+                                        }, this)
+                                    ]
+                                }, void 0, true, {
+                                    fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
+                                    lineNumber: 248,
+                                    columnNumber: 25
+                                }, this);
+                            }
+                        })["ProductTable.useMemo[enhancedColumns]"]
+                    } : col
+            }["ProductTable.useMemo[enhancedColumns]"])
+    }["ProductTable.useMemo[enhancedColumns]"], [
+        handleEdit,
+        handleDelete,
+        isLoading
+    ]);
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
         className: "w-full mt-4 relative",
         children: [
-            isUpdating && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                className: "absolute top-0 left-0 right-0 h-1 bg-blue-200",
+            isLoading && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                className: "absolute top-0 left-0 right-0 h-1 bg-blue-200 z-10",
                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                     className: "h-full bg-blue-500 animate-pulse"
                 }, void 0, false, {
                     fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                    lineNumber: 315,
+                    lineNumber: 275,
                     columnNumber: 21
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                lineNumber: 314,
+                lineNumber: 274,
                 columnNumber: 17
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_pages$2f$Products$2f$table$2f$dataTable$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DataTable"], {
-                columns: __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_pages$2f$Products$2f$table$2f$columns$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["columns"].map((col)=>col.id === "actions" ? {
-                        ...col,
-                        cell: (param)=>{
-                            let { row } = param;
-                            return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                className: "flex gap-2 justify-center",
-                                children: [
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
-                                        variant: "outline",
-                                        size: "icon",
-                                        onClick: ()=>handleEdit(row.original),
-                                        disabled: isUpdating,
-                                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$pencil$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Pencil$3e$__["Pencil"], {
-                                            className: "w-4 h-4"
-                                        }, void 0, false, {
-                                            fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                            lineNumber: 331,
-                                            columnNumber: 41
-                                        }, void 0)
-                                    }, void 0, false, {
-                                        fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                        lineNumber: 325,
-                                        columnNumber: 37
-                                    }, void 0),
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
-                                        variant: "outline",
-                                        size: "icon",
-                                        onClick: ()=>handleDelete(row.original),
-                                        disabled: isUpdating,
-                                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$trash$2d$2$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Trash2$3e$__["Trash2"], {
-                                            className: "w-4 h-4"
-                                        }, void 0, false, {
-                                            fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                            lineNumber: 339,
-                                            columnNumber: 41
-                                        }, void 0)
-                                    }, void 0, false, {
-                                        fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                        lineNumber: 333,
-                                        columnNumber: 37
-                                    }, void 0)
-                                ]
-                            }, void 0, true, {
-                                fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                lineNumber: 324,
-                                columnNumber: 33
-                            }, void 0);
-                        }
-                    } : col),
+                columns: enhancedColumns,
                 data: mappedProducts,
                 page: page,
                 pageSize: pageSize
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                lineNumber: 318,
+                lineNumber: 279,
                 columnNumber: 13
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5042,44 +4968,19 @@ function ProductTable(param) {
                     }
                 }, void 0, false, {
                     fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                    lineNumber: 352,
+                    lineNumber: 287,
                     columnNumber: 17
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                lineNumber: 351,
+                lineNumber: 286,
                 columnNumber: 13
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Dialog"], {
                 open: showEditDialog,
                 onOpenChange: setShowEditDialog,
                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogContent"], {
-                    children: !editProduct ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
-                        children: [
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogTitle"], {
-                                children: "Loading"
-                            }, void 0, false, {
-                                fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                lineNumber: 368,
-                                columnNumber: 29
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogDescription"], {
-                                children: "Loading product data..."
-                            }, void 0, false, {
-                                fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                lineNumber: 369,
-                                columnNumber: 29
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                className: "p-4 text-center",
-                                children: "Loading..."
-                            }, void 0, false, {
-                                fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                lineNumber: 370,
-                                columnNumber: 29
-                            }, this)
-                        ]
-                    }, void 0, true) : showUpdateConfirm ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                    children: showUpdateConfirm ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                         className: "flex flex-col items-center justify-center py-8",
                         children: [
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h2", {
@@ -5087,7 +4988,7 @@ function ProductTable(param) {
                                 children: "Are you absolutely sure?"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                lineNumber: 374,
+                                lineNumber: 304,
                                 columnNumber: 29
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -5095,7 +4996,7 @@ function ProductTable(param) {
                                 children: "This will update the product details."
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                lineNumber: 375,
+                                lineNumber: 305,
                                 columnNumber: 29
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5107,7 +5008,7 @@ function ProductTable(param) {
                                         children: "Cancel"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                        lineNumber: 377,
+                                        lineNumber: 307,
                                         columnNumber: 33
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -5115,46 +5016,46 @@ function ProductTable(param) {
                                         children: "Continue"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                        lineNumber: 380,
+                                        lineNumber: 310,
                                         columnNumber: 33
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                lineNumber: 376,
+                                lineNumber: 306,
                                 columnNumber: 29
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                        lineNumber: 373,
+                        lineNumber: 303,
                         columnNumber: 25
                     }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
                         children: [
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogHeader"], {
                                 children: [
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogTitle"], {
-                                        children: "Product"
+                                        children: "Edit Product"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                        lineNumber: 386,
+                                        lineNumber: 316,
                                         columnNumber: 33
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogDescription"], {
-                                        children: "Fill in the details below to update the product."
+                                        children: "Update product details below."
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                        lineNumber: 387,
+                                        lineNumber: 317,
                                         columnNumber: 33
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                lineNumber: 385,
+                                lineNumber: 315,
                                 columnNumber: 29
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                className: "flex-col gap-4",
+                                className: "flex flex-col gap-4",
                                 children: [
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                         className: "flex flex-col gap-2",
@@ -5164,12 +5065,11 @@ function ProductTable(param) {
                                                 children: "Product Name"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                lineNumber: 392,
+                                                lineNumber: 322,
                                                 columnNumber: 37
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
                                                 id: "edit-name",
-                                                name: "name",
                                                 value: editForm.name,
                                                 onChange: (e)=>setEditForm((f)=>({
                                                             ...f,
@@ -5177,32 +5077,31 @@ function ProductTable(param) {
                                                         }))
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                lineNumber: 393,
+                                                lineNumber: 323,
                                                 columnNumber: 37
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                        lineNumber: 391,
+                                        lineNumber: 321,
                                         columnNumber: 33
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        className: "flex flex-row gap-2 mt-4",
+                                        className: "flex gap-2",
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                className: "flex-[50%] flex flex-col gap-2",
+                                                className: "flex-1 flex flex-col gap-2",
                                                 children: [
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
                                                         htmlFor: "edit-barcode",
                                                         children: "Barcode"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                        lineNumber: 403,
+                                                        lineNumber: 332,
                                                         columnNumber: 41
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
                                                         id: "edit-barcode",
-                                                        name: "barcode",
                                                         value: editForm.barcode,
                                                         onChange: (e)=>setEditForm((f)=>({
                                                                     ...f,
@@ -5210,24 +5109,24 @@ function ProductTable(param) {
                                                                 }))
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                        lineNumber: 404,
+                                                        lineNumber: 333,
                                                         columnNumber: 41
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                lineNumber: 402,
+                                                lineNumber: 331,
                                                 columnNumber: 37
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                className: "flex-[50%] flex flex-col gap-2",
+                                                className: "flex-1 flex flex-col gap-2",
                                                 children: [
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
                                                         htmlFor: "edit-category",
                                                         children: "Category"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                        lineNumber: 413,
+                                                        lineNumber: 341,
                                                         columnNumber: 41
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dropdown$2d$menu$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DropdownMenu"], {
@@ -5235,208 +5134,151 @@ function ProductTable(param) {
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dropdown$2d$menu$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DropdownMenuTrigger"], {
                                                                 asChild: true,
                                                                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
-                                                                    id: "edit-category",
                                                                     readOnly: true,
-                                                                    value: ((_categories_find = categories.find((c)=>String(c.id) === String(editForm.category_id))) === null || _categories_find === void 0 ? void 0 : _categories_find.name) || "",
+                                                                    value: categoryMap.get(editForm.category_id) || "",
                                                                     placeholder: "Select category",
                                                                     className: "cursor-pointer"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                                    lineNumber: 416,
+                                                                    lineNumber: 344,
                                                                     columnNumber: 49
                                                                 }, this)
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                                lineNumber: 415,
+                                                                lineNumber: 343,
                                                                 columnNumber: 45
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dropdown$2d$menu$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DropdownMenuContent"], {
-                                                                className: "w-64",
-                                                                children: [
-                                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                                        className: "p-2",
-                                                                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
-                                                                            placeholder: "Search category...",
-                                                                            value: categorySearch,
-                                                                            onChange: (e)=>setCategorySearch(e.target.value),
-                                                                            className: "mb-2"
-                                                                        }, void 0, false, {
-                                                                            fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                                            lineNumber: 430,
-                                                                            columnNumber: 53
-                                                                        }, this)
-                                                                    }, void 0, false, {
+                                                                children: categories.map((cat)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dropdown$2d$menu$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DropdownMenuItem"], {
+                                                                        onClick: ()=>setEditForm((f)=>({
+                                                                                    ...f,
+                                                                                    category_id: String(cat.id)
+                                                                                })),
+                                                                        children: cat.name
+                                                                    }, cat.id, false, {
                                                                         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                                        lineNumber: 429,
-                                                                        columnNumber: 49
-                                                                    }, this),
-                                                                    categoriesLoading && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                                        className: "p-2 text-gray-400",
-                                                                        children: "Loading..."
-                                                                    }, void 0, false, {
-                                                                        fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                                        lineNumber: 438,
-                                                                        columnNumber: 71
-                                                                    }, this),
-                                                                    categoriesError && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                                        className: "p-2 text-red-500",
-                                                                        children: categoriesError
-                                                                    }, void 0, false, {
-                                                                        fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                                        lineNumber: 439,
-                                                                        columnNumber: 69
-                                                                    }, this),
-                                                                    !categoriesLoading && !categoriesError && categories.filter((cat)=>cat.name.toLowerCase().includes(categorySearch.toLowerCase())).map((cat)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dropdown$2d$menu$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DropdownMenuItem"], {
-                                                                            onClick: ()=>{
-                                                                                setEditForm((f)=>({
-                                                                                        ...f,
-                                                                                        category_id: String(cat.id)
-                                                                                    }));
-                                                                                setCategorySearch("");
-                                                                            },
-                                                                            children: cat.name
-                                                                        }, cat.id, false, {
-                                                                            fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                                            lineNumber: 448,
-                                                                            columnNumber: 61
-                                                                        }, this)),
-                                                                    !categoriesLoading && !categoriesError && categories.filter((cat)=>cat.name.toLowerCase().includes(categorySearch.toLowerCase())).length === 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                                        className: "p-2 text-gray-400",
-                                                                        children: "No categories found."
-                                                                    }, void 0, false, {
-                                                                        fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                                        lineNumber: 463,
-                                                                        columnNumber: 71
-                                                                    }, this)
-                                                                ]
-                                                            }, void 0, true, {
+                                                                        lineNumber: 353,
+                                                                        columnNumber: 53
+                                                                    }, this))
+                                                            }, void 0, false, {
                                                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                                lineNumber: 428,
+                                                                lineNumber: 351,
                                                                 columnNumber: 45
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                        lineNumber: 414,
+                                                        lineNumber: 342,
                                                         columnNumber: 41
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                lineNumber: 412,
+                                                lineNumber: 340,
                                                 columnNumber: 37
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                        lineNumber: 401,
+                                        lineNumber: 330,
                                         columnNumber: 33
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        className: "flex flex-row gap-2 my-4",
+                                        className: "flex gap-2",
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                className: "flex-[50%] flex flex-col gap-2",
+                                                className: "flex-1 flex flex-col gap-2",
                                                 children: [
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
                                                         htmlFor: "edit-price",
                                                         children: "Price"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                        lineNumber: 471,
+                                                        lineNumber: 367,
                                                         columnNumber: 41
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                         className: "relative",
                                                         children: [
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                                className: "absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500 pointer-events-none",
+                                                                className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500",
                                                                 children: "₱"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                                lineNumber: 473,
+                                                                lineNumber: 369,
                                                                 columnNumber: 45
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
                                                                 id: "edit-price",
-                                                                name: "price",
                                                                 type: "number",
-                                                                value: editForm.price === 0 ? "" : String(editForm.price),
+                                                                value: editForm.price || "",
                                                                 onChange: (e)=>setEditForm((f)=>({
                                                                             ...f,
-                                                                            price: e.target.value === "" ? 0 : Number(e.target.value)
+                                                                            price: Number(e.target.value) || 0
                                                                         })),
                                                                 className: "pl-8"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                                lineNumber: 476,
+                                                                lineNumber: 370,
                                                                 columnNumber: 45
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                        lineNumber: 472,
+                                                        lineNumber: 368,
                                                         columnNumber: 41
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                lineNumber: 470,
+                                                lineNumber: 366,
                                                 columnNumber: 37
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                className: "flex-[50%] flex flex-col gap-2",
+                                                className: "flex-1 flex flex-col gap-2",
                                                 children: [
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
                                                         htmlFor: "edit-quantity",
                                                         children: "Quantity"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                        lineNumber: 493,
+                                                        lineNumber: 381,
                                                         columnNumber: 41
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
                                                         id: "edit-quantity",
-                                                        name: "quantity",
                                                         type: "number",
-                                                        value: editForm.quantity === 0 ? "" : String(editForm.quantity),
+                                                        value: editForm.quantity || "",
                                                         onChange: (e)=>setEditForm((f)=>({
                                                                     ...f,
-                                                                    quantity: e.target.value === "" ? 0 : Number(e.target.value)
+                                                                    quantity: Number(e.target.value) || 0
                                                                 }))
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                        lineNumber: 494,
+                                                        lineNumber: 382,
                                                         columnNumber: 41
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                lineNumber: 492,
+                                                lineNumber: 380,
                                                 columnNumber: 37
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                        lineNumber: 469,
+                                        lineNumber: 365,
                                         columnNumber: 33
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogFooter"], {
                                         children: [
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogClose"], {
-                                                asChild: true,
-                                                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
-                                                    variant: "outline",
-                                                    onClick: ()=>setShowEditDialog(false),
-                                                    children: "Cancel"
-                                                }, void 0, false, {
-                                                    fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                    lineNumber: 511,
-                                                    columnNumber: 41
-                                                }, this)
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
+                                                variant: "outline",
+                                                onClick: ()=>setShowEditDialog(false),
+                                                children: "Cancel"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                lineNumber: 510,
+                                                lineNumber: 392,
                                                 columnNumber: 37
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -5444,31 +5286,31 @@ function ProductTable(param) {
                                                 children: "Update Product"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                                lineNumber: 515,
+                                                lineNumber: 395,
                                                 columnNumber: 37
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                        lineNumber: 509,
+                                        lineNumber: 391,
                                         columnNumber: 33
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                lineNumber: 390,
+                                lineNumber: 320,
                                 columnNumber: 29
                             }, this)
                         ]
                     }, void 0, true)
                 }, void 0, false, {
                     fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                    lineNumber: 365,
+                    lineNumber: 301,
                     columnNumber: 17
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                lineNumber: 364,
+                lineNumber: 300,
                 columnNumber: 13
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Dialog"], {
@@ -5482,20 +5324,20 @@ function ProductTable(param) {
                                     children: "Are you absolutely sure?"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                    lineNumber: 526,
+                                    lineNumber: 409,
                                     columnNumber: 25
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogDescription"], {
-                                    children: "This action cannot be undone. This will permanently delete the product and remove it from your database."
+                                    children: "This action cannot be undone. This will permanently delete the product."
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                    lineNumber: 527,
+                                    lineNumber: 410,
                                     columnNumber: 25
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                            lineNumber: 525,
+                            lineNumber: 408,
                             columnNumber: 21
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogFooter"], {
@@ -5506,44 +5348,43 @@ function ProductTable(param) {
                                     children: "Cancel"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                    lineNumber: 533,
+                                    lineNumber: 415,
                                     columnNumber: 25
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
                                     variant: "destructive",
                                     onClick: handleDeleteProduct,
-                                    disabled: !deleteProduct,
                                     children: "Continue"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                                    lineNumber: 536,
+                                    lineNumber: 418,
                                     columnNumber: 25
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                            lineNumber: 532,
+                            lineNumber: 414,
                             columnNumber: 21
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                    lineNumber: 524,
+                    lineNumber: 407,
                     columnNumber: 17
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-                lineNumber: 523,
+                lineNumber: 406,
                 columnNumber: 13
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/dashboard/_pages/Products/components/productCatalog/ProductTable.tsx",
-        lineNumber: 312,
+        lineNumber: 272,
         columnNumber: 9
     }, this);
 }
-_s(ProductTable, "IM+7yeEj1sJvp+Ry6YoZON9lD2Q=", false, function() {
+_s(ProductTable, "9+ZB2ueTDy7LsGlTEXp7Mm38swo=", false, function() {
     return [
         __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$index$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$locals$3e$__["default"],
         __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$global$2f$fetching$2f$useCategories$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCategories"]

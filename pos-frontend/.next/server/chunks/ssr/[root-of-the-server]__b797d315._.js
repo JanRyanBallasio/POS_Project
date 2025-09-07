@@ -2106,9 +2106,7 @@ function AddCategoryModal() {
                         });
                     }
                     closeModal("addCategory");
-                    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["toast"])("Category added", {
-                        description: createdName || "New category created."
-                    });
+                    showSuccessToast("Category added", createdName || "New category created.");
                 }
             });
         } catch (err) {
@@ -2547,6 +2545,83 @@ const productApi = {
 if ("TURBOPACK compile-time falsy", 0) //TURBOPACK unreachable
 ;
 }),
+"[project]/src/hooks/products/useAddProducts.ts [app-ssr] (ecmascript)", ((__turbopack_context__) => {
+"use strict";
+
+__turbopack_context__.s([
+    "useAddProduct",
+    ()=>useAddProduct
+]);
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/route-modules/app-page/vendored/ssr/react.js [app-ssr] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__ = __turbopack_context__.i("[project]/node_modules/swr/dist/_internal/config-context-client-BoS53ST9.mjs [app-ssr] (ecmascript) <export j as mutate>");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/hooks/products/useProductApi.ts [app-ssr] (ecmascript)");
+;
+;
+;
+// Use consistent key
+const PRODUCTS_KEY = "products:list";
+function useAddProduct() {
+    const [loading, setLoading] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(false);
+    const [error, setError] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(null);
+    const [success, setSuccess] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(false);
+    const addProduct = async (product)=>{
+        setLoading(true);
+        setError(null);
+        setSuccess(false);
+        try {
+            // Create product
+            const createdProduct = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["productApi"].create(product);
+            // Optimistic update - prepend new product
+            (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__["mutate"])(PRODUCTS_KEY, (current = [])=>[
+                    createdProduct,
+                    ...current
+                ], false);
+            // Dispatch custom event for real-time updates
+            window.dispatchEvent(new CustomEvent("product:added", {
+                detail: {
+                    product: createdProduct
+                }
+            }));
+            setSuccess(true);
+            setLoading(false);
+            // Final revalidation
+            (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__["mutate"])(PRODUCTS_KEY);
+            return createdProduct;
+        } catch (err) {
+            const message = err?.message || "Failed to add product";
+            // Handle field-specific errors
+            if (message.toLowerCase().includes("barcode")) {
+                setError({
+                    field: "barcode",
+                    message
+                });
+            } else if (message.toLowerCase().includes("name")) {
+                setError({
+                    field: "name",
+                    message
+                });
+            } else {
+                setError({
+                    message
+                });
+            }
+            setLoading(false);
+            return null;
+        }
+    };
+    const reset = ()=>{
+        setError(null);
+        setSuccess(false);
+    };
+    return {
+        addProduct,
+        loading,
+        error,
+        success,
+        reset
+    };
+}
+}),
 "[project]/src/hooks/global/fetching/useProducts.ts [app-ssr] (ecmascript)", ((__turbopack_context__) => {
 "use strict";
 
@@ -2589,188 +2664,6 @@ const useProducts = ()=>{
         refetch: mutate
     };
 };
-}),
-"[project]/src/hooks/products/useAddProducts.ts [app-ssr] (ecmascript)", ((__turbopack_context__) => {
-"use strict";
-
-__turbopack_context__.s([
-    "useAddProduct",
-    ()=>useAddProduct
-]);
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/route-modules/app-page/vendored/ssr/react.js [app-ssr] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__ = __turbopack_context__.i("[project]/node_modules/swr/dist/_internal/config-context-client-BoS53ST9.mjs [app-ssr] (ecmascript) <export j as mutate>");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/hooks/products/useProductApi.ts [app-ssr] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$global$2f$fetching$2f$useProducts$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/hooks/global/fetching/useProducts.ts [app-ssr] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$axios$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/lib/axios.ts [app-ssr] (ecmascript)"); // Import the centralized API_BASE
-;
-;
-;
-;
-;
-function useAddProduct() {
-    const [loading, setLoading] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(false);
-    const [error, setError] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(null);
-    const [success, setSuccess] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(false);
-    // Use SWR-backed product list for fast local checks
-    const { products } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$global$2f$fetching$2f$useProducts$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useProducts"])();
-    const addProduct = async (product)=>{
-        setLoading(true);
-        setError(null);
-        setSuccess(false);
-        try {
-            const barcodeVal = product.barcode ?? "";
-            const nameVal = (product.name ?? "").trim().toLowerCase();
-            // Build fast-lookup sets (O(n) to build, O(1) checks)
-            const barcodeSet = new Set((products ?? []).map((p)=>String(p.barcode)));
-            const nameSet = new Set((products ?? []).map((p)=>(p.name || "").trim().toLowerCase()));
-            if (barcodeVal && barcodeSet.has(String(barcodeVal))) {
-                setError({
-                    field: "barcode",
-                    message: "Barcode already exists. Please use a unique barcode."
-                });
-                setLoading(false);
-                return null;
-            }
-            if (nameVal && nameSet.has(nameVal)) {
-                setError({
-                    field: "name",
-                    message: "Product name already exists. Please use a unique name."
-                });
-                setLoading(false);
-                return null;
-            }
-            // Create on server - use productApi if available; fallback to fetch
-            let createdProduct = null;
-            try {
-                if (__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["productApi"] && typeof __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["productApi"].create === "function") {
-                    // productApi.create should throw on non-2xx; we still wrap for structured parsing below
-                    createdProduct = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["productApi"].create(product);
-                } else {
-                    // Use the centralized API_BASE instead of environment variable
-                    const res = await fetch(`${__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$axios$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["API_BASE"]}/products`, {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify(product)
-                    });
-                    const body = await res.json().catch(()=>({}));
-                    if (!res.ok) {
-                        // try to map field errors
-                        if (res.status === 409 || res.status === 400) {
-                            // server might send { field: "...", message: "..." } or { errors: [{ field, message }] }
-                            if (body?.field && body?.message) {
-                                setError({
-                                    field: body.field,
-                                    message: body.message
-                                });
-                            } else if (Array.isArray(body?.errors) && body.errors.length > 0) {
-                                const first = body.errors[0];
-                                setError({
-                                    field: first.field,
-                                    message: first.message
-                                });
-                            } else {
-                                setError({
-                                    message: body?.message || "Duplicate or invalid data"
-                                });
-                            }
-                        } else {
-                            setError({
-                                message: body?.message || `Failed to create product (${res.status})`
-                            });
-                        }
-                        setLoading(false);
-                        return null;
-                    }
-                    createdProduct = body?.data ?? body;
-                }
-            } catch (err) {
-                // Try to parse structured error from thrown object (productApi implementations vary)
-                const e = err;
-                if (e?.response && typeof e.response.json === "function") {
-                    const parsed = await e.response.json().catch(()=>null);
-                    if (parsed?.field && parsed?.message) {
-                        setError({
-                            field: parsed.field,
-                            message: parsed.message
-                        });
-                    } else if (Array.isArray(parsed?.errors) && parsed.errors.length > 0) {
-                        setError({
-                            field: parsed.errors[0].field,
-                            message: parsed.errors[0].message
-                        });
-                    } else {
-                        setError({
-                            message: parsed?.message || "Failed to add product"
-                        });
-                    }
-                } else {
-                    const msg = e?.message || String(e);
-                    // simple heuristic for duplicate messages
-                    if (msg.toLowerCase().includes("barcode")) {
-                        setError({
-                            field: "barcode",
-                            message: msg
-                        });
-                    } else if (msg.toLowerCase().includes("name")) {
-                        setError({
-                            field: "name",
-                            message: msg
-                        });
-                    } else {
-                        setError({
-                            message: msg
-                        });
-                    }
-                }
-                setLoading(false);
-                return null;
-            }
-            if (!createdProduct) {
-                setLoading(false);
-                setError({
-                    message: "Failed to add product"
-                });
-                return null;
-            }
-            // Optimistically update SWR cache
-            try {
-                await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__["mutate"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["PRODUCTS_KEY"], (current)=>{
-                    const filtered = (current ?? []).filter((p)=>p.id !== createdProduct.id);
-                    return [
-                        createdProduct,
-                        ...filtered
-                    ];
-                }, false);
-            } catch  {
-            // ignore mutate errors
-            }
-            (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__["mutate"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["PRODUCTS_KEY"]);
-            setSuccess(true);
-            setLoading(false);
-            return createdProduct;
-        } catch (err) {
-            setError({
-                message: err?.message || "Failed to add product"
-            });
-            setSuccess(false);
-            setLoading(false);
-            return null;
-        }
-    };
-    const reset = ()=>{
-        setError(null);
-        setSuccess(false);
-    };
-    return {
-        addProduct,
-        loading,
-        error,
-        success,
-        reset
-    };
-}
 }),
 "[project]/src/hooks/categories/useCategoryApi.ts [app-ssr] (ecmascript)", ((__turbopack_context__) => {
 "use strict";
@@ -3875,4 +3768,4 @@ function ProductRegisterModal() {
 }),
 ];
 
-//# sourceMappingURL=%5Broot-of-the-server%5D__75d3e74c._.js.map
+//# sourceMappingURL=%5Broot-of-the-server%5D__b797d315._.js.map

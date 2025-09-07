@@ -2126,6 +2126,63 @@ if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelper
     __turbopack_context__.k.registerExports(__turbopack_context__.m, globalThis.$RefreshHelpers$);
 }
 }),
+"[project]/src/utils/toast.ts [app-client] (ecmascript)", ((__turbopack_context__) => {
+"use strict";
+
+__turbopack_context__.s([
+    "showErrorToast",
+    ()=>showErrorToast,
+    "showInfoToast",
+    ()=>showInfoToast,
+    "showSuccessToast",
+    ()=>showSuccessToast,
+    "showWarningToast",
+    ()=>showWarningToast
+]);
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/sonner/dist/index.mjs [app-client] (ecmascript)");
+;
+const successStyle = {
+    '--normal-bg': 'light-dark(var(--color-green-600), var(--color-green-400))',
+    '--normal-text': 'var(--color-white)',
+    '--normal-border': 'light-dark(var(--color-green-600), var(--color-green-400))'
+};
+const warningStyle = {
+    '--normal-bg': 'light-dark(var(--color-amber-600), var(--color-amber-400))',
+    '--normal-text': 'var(--color-white)',
+    '--normal-border': 'light-dark(var(--color-amber-600), var(--color-amber-400))'
+};
+const errorStyle = {
+    '--normal-bg': 'light-dark(var(--destructive), color-mix(in oklab, var(--destructive) 60%, var(--background)))',
+    '--normal-text': 'var(--color-white)',
+    '--normal-border': 'transparent'
+};
+const showSuccessToast = (message, description)=>{
+    return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["toast"].success(message, {
+        description,
+        style: successStyle
+    });
+};
+const showWarningToast = (message, description)=>{
+    return (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["toast"])(message, {
+        description,
+        style: warningStyle
+    });
+};
+const showErrorToast = (message, description)=>{
+    return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["toast"].error(message, {
+        description,
+        style: errorStyle
+    });
+};
+const showInfoToast = (message, description)=>{
+    return (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["toast"])(message, {
+        description
+    });
+};
+if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelpers !== null) {
+    __turbopack_context__.k.registerExports(__turbopack_context__.m, globalThis.$RefreshHelpers$);
+}
+}),
 "[project]/src/components/ui/label.tsx [app-client] (ecmascript)", ((__turbopack_context__) => {
 "use strict";
 
@@ -2223,12 +2280,12 @@ __turbopack_context__.s([
 ]);
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react/jsx-dev-runtime.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react/index.js [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/sonner/dist/index.mjs [app-client] (ecmascript)");
 // import { CATEGORIES_KEY } from "@/hooks/categories/useCategoryApi";
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$index$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$locals$3e$__ = __turbopack_context__.i("[project]/node_modules/swr/dist/index/index.mjs [app-client] (ecmascript) <locals>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__ = __turbopack_context__.i("[project]/node_modules/swr/dist/_internal/config-context-client-BoS53ST9.mjs [app-client] (ecmascript) <export j as mutate>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/button.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/dialog.tsx [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$utils$2f$toast$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/utils/toast.ts [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/input.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/label.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$productRegister$2d$context$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/contexts/productRegister-context.tsx [app-client] (ecmascript)");
@@ -2342,22 +2399,16 @@ function AddCategoryModal() {
                                 setCategoryId(String(createdId));
                                 setCategoryName(createdName);
                             } else {
-                                (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["toast"])("Category added", {
-                                    description: "Added but ID was not returned."
-                                });
+                                (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$utils$2f$toast$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["showSuccessToast"])("Category added", "Added but ID was not returned.");
                             }
                             closeModal("addCategory");
-                            (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["toast"])("Category added", {
-                                description: createdName || "New category created."
-                            });
+                            (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$utils$2f$toast$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["showSuccessToast"])("Category added", createdName || "New category created.");
                         }
                     }["AddCategoryModal.useCallback[handleSubmit]"]
                 });
             } catch (err) {
                 var _err_message;
-                (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["toast"])("Failed to add category", {
-                    description: (_err_message = err === null || err === void 0 ? void 0 : err.message) !== null && _err_message !== void 0 ? _err_message : "An error occurred."
-                });
+                (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$utils$2f$toast$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["showErrorToast"])("Failed to add category", (_err_message = err === null || err === void 0 ? void 0 : err.message) !== null && _err_message !== void 0 ? _err_message : "An error occurred.");
             }
         }
     }["AddCategoryModal.useCallback[handleSubmit]"], [
@@ -2383,20 +2434,20 @@ function AddCategoryModal() {
                                 children: "Add Category"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-                                lineNumber: 114,
+                                lineNumber: 116,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogDescription"], {
                                 children: "Fill in the details below to add a new category."
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-                                lineNumber: 115,
+                                lineNumber: 117,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-                        lineNumber: 113,
+                        lineNumber: 115,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2410,7 +2461,7 @@ function AddCategoryModal() {
                                         children: "Name"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-                                        lineNumber: 120,
+                                        lineNumber: 122,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -2422,13 +2473,13 @@ function AddCategoryModal() {
                                         autoFocus: true
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-                                        lineNumber: 122,
+                                        lineNumber: 124,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-                                lineNumber: 119,
+                                lineNumber: 121,
                                 columnNumber: 13
                             }, this),
                             error && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2436,13 +2487,13 @@ function AddCategoryModal() {
                                 children: error
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-                                lineNumber: 133,
+                                lineNumber: 135,
                                 columnNumber: 23
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-                        lineNumber: 118,
+                        lineNumber: 120,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogFooter"], {
@@ -2458,7 +2509,7 @@ function AddCategoryModal() {
                                             children: clientError
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-                                            lineNumber: 139,
+                                            lineNumber: 141,
                                             columnNumber: 51
                                         }, this),
                                         error && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2466,13 +2517,13 @@ function AddCategoryModal() {
                                             children: error
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-                                            lineNumber: 140,
+                                            lineNumber: 142,
                                             columnNumber: 27
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-                                    lineNumber: 138,
+                                    lineNumber: 140,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2485,7 +2536,7 @@ function AddCategoryModal() {
                                             children: "Cancel"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-                                            lineNumber: 143,
+                                            lineNumber: 145,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -2494,40 +2545,40 @@ function AddCategoryModal() {
                                             children: loading ? "Saving..." : "Save"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-                                            lineNumber: 146,
+                                            lineNumber: 148,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-                                    lineNumber: 142,
+                                    lineNumber: 144,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-                            lineNumber: 137,
+                            lineNumber: 139,
                             columnNumber: 13
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-                        lineNumber: 136,
+                        lineNumber: 138,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-                lineNumber: 112,
+                lineNumber: 114,
                 columnNumber: 9
             }, this)
         }, void 0, false, {
             fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-            lineNumber: 111,
+            lineNumber: 113,
             columnNumber: 7
         }, this)
     }, void 0, false, {
         fileName: "[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx",
-        lineNumber: 110,
+        lineNumber: 112,
         columnNumber: 5
     }, this);
 }
@@ -2854,6 +2905,92 @@ if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelper
     __turbopack_context__.k.registerExports(__turbopack_context__.m, globalThis.$RefreshHelpers$);
 }
 }),
+"[project]/src/hooks/products/useAddProducts.ts [app-client] (ecmascript)", ((__turbopack_context__) => {
+"use strict";
+
+__turbopack_context__.s([
+    "useAddProduct",
+    ()=>useAddProduct
+]);
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react/index.js [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__ = __turbopack_context__.i("[project]/node_modules/swr/dist/_internal/config-context-client-BoS53ST9.mjs [app-client] (ecmascript) <export j as mutate>");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/hooks/products/useProductApi.ts [app-client] (ecmascript)");
+var _s = __turbopack_context__.k.signature();
+;
+;
+;
+// Use consistent key
+const PRODUCTS_KEY = "products:list";
+function useAddProduct() {
+    _s();
+    const [loading, setLoading] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
+    const [error, setError] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
+    const [success, setSuccess] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
+    const addProduct = async (product)=>{
+        setLoading(true);
+        setError(null);
+        setSuccess(false);
+        try {
+            // Create product
+            const createdProduct = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["productApi"].create(product);
+            // Optimistic update - prepend new product
+            (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__["mutate"])(PRODUCTS_KEY, function() {
+                let current = arguments.length > 0 && arguments[0] !== void 0 ? arguments[0] : [];
+                return [
+                    createdProduct,
+                    ...current
+                ];
+            }, false);
+            // Dispatch custom event for real-time updates
+            window.dispatchEvent(new CustomEvent("product:added", {
+                detail: {
+                    product: createdProduct
+                }
+            }));
+            setSuccess(true);
+            setLoading(false);
+            // Final revalidation
+            (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__["mutate"])(PRODUCTS_KEY);
+            return createdProduct;
+        } catch (err) {
+            const message = (err === null || err === void 0 ? void 0 : err.message) || "Failed to add product";
+            // Handle field-specific errors
+            if (message.toLowerCase().includes("barcode")) {
+                setError({
+                    field: "barcode",
+                    message
+                });
+            } else if (message.toLowerCase().includes("name")) {
+                setError({
+                    field: "name",
+                    message
+                });
+            } else {
+                setError({
+                    message
+                });
+            }
+            setLoading(false);
+            return null;
+        }
+    };
+    const reset = ()=>{
+        setError(null);
+        setSuccess(false);
+    };
+    return {
+        addProduct,
+        loading,
+        error,
+        success,
+        reset
+    };
+}
+_s(useAddProduct, "eITd/bcuSDaGtJGwb09Uuw3xk/k=");
+if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelpers !== null) {
+    __turbopack_context__.k.registerExports(__turbopack_context__.m, globalThis.$RefreshHelpers$);
+}
+}),
 "[project]/src/hooks/global/fetching/useProducts.ts [app-client] (ecmascript)", ((__turbopack_context__) => {
 "use strict";
 
@@ -2905,201 +3042,6 @@ const useProducts = ()=>{
 _s(useProducts, "VRI3YSxoWYZ/jyoKeeIu/AvyMKw=", false, function() {
     return [
         __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$index$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$locals$3e$__["default"]
-    ];
-});
-if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelpers !== null) {
-    __turbopack_context__.k.registerExports(__turbopack_context__.m, globalThis.$RefreshHelpers$);
-}
-}),
-"[project]/src/hooks/products/useAddProducts.ts [app-client] (ecmascript)", ((__turbopack_context__) => {
-"use strict";
-
-__turbopack_context__.s([
-    "useAddProduct",
-    ()=>useAddProduct
-]);
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react/index.js [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__ = __turbopack_context__.i("[project]/node_modules/swr/dist/_internal/config-context-client-BoS53ST9.mjs [app-client] (ecmascript) <export j as mutate>");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/hooks/products/useProductApi.ts [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$global$2f$fetching$2f$useProducts$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/hooks/global/fetching/useProducts.ts [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$axios$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/lib/axios.ts [app-client] (ecmascript)"); // Import the centralized API_BASE
-var _s = __turbopack_context__.k.signature();
-;
-;
-;
-;
-;
-function useAddProduct() {
-    _s();
-    const [loading, setLoading] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
-    const [error, setError] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
-    const [success, setSuccess] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
-    // Use SWR-backed product list for fast local checks
-    const { products } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$global$2f$fetching$2f$useProducts$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useProducts"])();
-    const addProduct = async (product)=>{
-        setLoading(true);
-        setError(null);
-        setSuccess(false);
-        try {
-            var _product_barcode;
-            const barcodeVal = (_product_barcode = product.barcode) !== null && _product_barcode !== void 0 ? _product_barcode : "";
-            var _product_name;
-            const nameVal = ((_product_name = product.name) !== null && _product_name !== void 0 ? _product_name : "").trim().toLowerCase();
-            // Build fast-lookup sets (O(n) to build, O(1) checks)
-            const barcodeSet = new Set((products !== null && products !== void 0 ? products : []).map((p)=>String(p.barcode)));
-            const nameSet = new Set((products !== null && products !== void 0 ? products : []).map((p)=>(p.name || "").trim().toLowerCase()));
-            if (barcodeVal && barcodeSet.has(String(barcodeVal))) {
-                setError({
-                    field: "barcode",
-                    message: "Barcode already exists. Please use a unique barcode."
-                });
-                setLoading(false);
-                return null;
-            }
-            if (nameVal && nameSet.has(nameVal)) {
-                setError({
-                    field: "name",
-                    message: "Product name already exists. Please use a unique name."
-                });
-                setLoading(false);
-                return null;
-            }
-            // Create on server - use productApi if available; fallback to fetch
-            let createdProduct = null;
-            try {
-                if (__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["productApi"] && typeof __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["productApi"].create === "function") {
-                    // productApi.create should throw on non-2xx; we still wrap for structured parsing below
-                    createdProduct = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["productApi"].create(product);
-                } else {
-                    // Use the centralized API_BASE instead of environment variable
-                    const res = await fetch("".concat(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$axios$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["API_BASE"], "/products"), {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify(product)
-                    });
-                    const body = await res.json().catch(()=>({}));
-                    if (!res.ok) {
-                        // try to map field errors
-                        if (res.status === 409 || res.status === 400) {
-                            // server might send { field: "...", message: "..." } or { errors: [{ field, message }] }
-                            if ((body === null || body === void 0 ? void 0 : body.field) && (body === null || body === void 0 ? void 0 : body.message)) {
-                                setError({
-                                    field: body.field,
-                                    message: body.message
-                                });
-                            } else if (Array.isArray(body === null || body === void 0 ? void 0 : body.errors) && body.errors.length > 0) {
-                                const first = body.errors[0];
-                                setError({
-                                    field: first.field,
-                                    message: first.message
-                                });
-                            } else {
-                                setError({
-                                    message: (body === null || body === void 0 ? void 0 : body.message) || "Duplicate or invalid data"
-                                });
-                            }
-                        } else {
-                            setError({
-                                message: (body === null || body === void 0 ? void 0 : body.message) || "Failed to create product (".concat(res.status, ")")
-                            });
-                        }
-                        setLoading(false);
-                        return null;
-                    }
-                    var _body_data;
-                    createdProduct = (_body_data = body === null || body === void 0 ? void 0 : body.data) !== null && _body_data !== void 0 ? _body_data : body;
-                }
-            } catch (err) {
-                // Try to parse structured error from thrown object (productApi implementations vary)
-                const e = err;
-                if ((e === null || e === void 0 ? void 0 : e.response) && typeof e.response.json === "function") {
-                    const parsed = await e.response.json().catch(()=>null);
-                    if ((parsed === null || parsed === void 0 ? void 0 : parsed.field) && (parsed === null || parsed === void 0 ? void 0 : parsed.message)) {
-                        setError({
-                            field: parsed.field,
-                            message: parsed.message
-                        });
-                    } else if (Array.isArray(parsed === null || parsed === void 0 ? void 0 : parsed.errors) && parsed.errors.length > 0) {
-                        setError({
-                            field: parsed.errors[0].field,
-                            message: parsed.errors[0].message
-                        });
-                    } else {
-                        setError({
-                            message: (parsed === null || parsed === void 0 ? void 0 : parsed.message) || "Failed to add product"
-                        });
-                    }
-                } else {
-                    const msg = (e === null || e === void 0 ? void 0 : e.message) || String(e);
-                    // simple heuristic for duplicate messages
-                    if (msg.toLowerCase().includes("barcode")) {
-                        setError({
-                            field: "barcode",
-                            message: msg
-                        });
-                    } else if (msg.toLowerCase().includes("name")) {
-                        setError({
-                            field: "name",
-                            message: msg
-                        });
-                    } else {
-                        setError({
-                            message: msg
-                        });
-                    }
-                }
-                setLoading(false);
-                return null;
-            }
-            if (!createdProduct) {
-                setLoading(false);
-                setError({
-                    message: "Failed to add product"
-                });
-                return null;
-            }
-            // Optimistically update SWR cache
-            try {
-                await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__["mutate"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["PRODUCTS_KEY"], (current)=>{
-                    const filtered = (current !== null && current !== void 0 ? current : []).filter((p)=>p.id !== createdProduct.id);
-                    return [
-                        createdProduct,
-                        ...filtered
-                    ];
-                }, false);
-            } catch (e) {
-            // ignore mutate errors
-            }
-            (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$_internal$2f$config$2d$context$2d$client$2d$BoS53ST9$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__j__as__mutate$3e$__["mutate"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useProductApi$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["PRODUCTS_KEY"]);
-            setSuccess(true);
-            setLoading(false);
-            return createdProduct;
-        } catch (err) {
-            setError({
-                message: (err === null || err === void 0 ? void 0 : err.message) || "Failed to add product"
-            });
-            setSuccess(false);
-            setLoading(false);
-            return null;
-        }
-    };
-    const reset = ()=>{
-        setError(null);
-        setSuccess(false);
-    };
-    return {
-        addProduct,
-        loading,
-        error,
-        success,
-        reset
-    };
-}
-_s(useAddProduct, "HquQYc4q3IV1Kg3x+gnWlhf8vD0=", false, function() {
-    return [
-        __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$global$2f$fetching$2f$useProducts$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useProducts"]
     ];
 });
 if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelpers !== null) {
@@ -3596,6 +3538,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$re
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$productRegister$2d$context$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/contexts/productRegister-context.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$stores$2f$productFormStore$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/stores/productFormStore.ts [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_pages$2f$Products$2f$components$2f$addCategoryModal$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/app/dashboard/_pages/Products/components/addCategoryModal.tsx [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$utils$2f$toast$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/utils/toast.ts [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$products$2f$useAddProducts$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/hooks/products/useAddProducts.ts [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$global$2f$fetching$2f$useProducts$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/hooks/global/fetching/useProducts.ts [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$global$2f$fetching$2f$useCategories$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/hooks/global/fetching/useCategories.ts [app-client] (ecmascript)");
@@ -3608,6 +3551,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$s
 ;
 var _s = __turbopack_context__.k.signature();
 "use client";
+;
 ;
 ;
 ;
@@ -3700,7 +3644,6 @@ function ProductRegisterModal() {
     const { refetch } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$global$2f$fetching$2f$useProducts$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useProducts"])();
     // local UI state
     const [categorySearch, setCategorySearch] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])("");
-    const [toastMessage, setToastMessage] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
     const [globalError, setGlobalError] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
     // react-hook-form
     const { register, handleSubmit, setValue, reset: resetForm, formState: { errors }, setError } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$react$2d$hook$2d$form$2f$dist$2f$index$2e$esm$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useForm"])({
@@ -3865,20 +3808,14 @@ function ProductRegisterModal() {
             try {
                 refetch === null || refetch === void 0 ? void 0 : refetch().catch(()=>{});
             } catch (e) {}
-            // show a lightweight toast (non-modal) so scanner focus isn't stolen
-            setToastMessage("Product added successfully");
-            window.setTimeout(()=>setToastMessage(null), 3000);
-        }
-    };
-    const closeToast = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
-        "ProductRegisterModal.useCallback[closeToast]": ()=>{
-            setToastMessage(null);
+            // show styled success toast
+            (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$utils$2f$toast$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["showSuccessToast"])("Product added successfully", "".concat(values.name, " has been added to inventory."));
             // ask the hidden scanner input to focus/clear
             try {
                 window.dispatchEvent(new Event("focusBarcodeScanner"));
             } catch (e) {}
         }
-    }["ProductRegisterModal.useCallback[closeToast]"], []);
+    };
     /* -------------------------
        Render
        ------------------------- */ return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
@@ -3894,20 +3831,20 @@ function ProductRegisterModal() {
                                     children: "Product"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                    lineNumber: 256,
+                                    lineNumber: 253,
                                     columnNumber: 25
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogDescription"], {
                                     children: "Fill in the details below to add a new product."
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                    lineNumber: 257,
+                                    lineNumber: 254,
                                     columnNumber: 25
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                            lineNumber: 255,
+                            lineNumber: 252,
                             columnNumber: 21
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3918,7 +3855,7 @@ function ProductRegisterModal() {
                                     children: globalError
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                    lineNumber: 261,
+                                    lineNumber: 258,
                                     columnNumber: 41
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3929,7 +3866,7 @@ function ProductRegisterModal() {
                                             children: "Product Name"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                            lineNumber: 264,
+                                            lineNumber: 261,
                                             columnNumber: 29
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -3942,7 +3879,7 @@ function ProductRegisterModal() {
                                             }
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                            lineNumber: 265,
+                                            lineNumber: 262,
                                             columnNumber: 29
                                         }, this),
                                         errors.name && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -3950,13 +3887,13 @@ function ProductRegisterModal() {
                                             children: errors.name.message
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                            lineNumber: 273,
+                                            lineNumber: 270,
                                             columnNumber: 45
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                    lineNumber: 263,
+                                    lineNumber: 260,
                                     columnNumber: 25
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3970,7 +3907,7 @@ function ProductRegisterModal() {
                                                     children: "Barcode"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                                    lineNumber: 278,
+                                                    lineNumber: 275,
                                                     columnNumber: 33
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -3982,7 +3919,7 @@ function ProductRegisterModal() {
                                                     }
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                                    lineNumber: 279,
+                                                    lineNumber: 276,
                                                     columnNumber: 33
                                                 }, this),
                                                 errors.barcode && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -3990,13 +3927,13 @@ function ProductRegisterModal() {
                                                     children: errors.barcode.message
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                                    lineNumber: 287,
+                                                    lineNumber: 284,
                                                     columnNumber: 52
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                            lineNumber: 277,
+                                            lineNumber: 274,
                                             columnNumber: 29
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4007,7 +3944,7 @@ function ProductRegisterModal() {
                                                     children: "Category"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                                    lineNumber: 291,
+                                                    lineNumber: 288,
                                                     columnNumber: 33
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4025,12 +3962,12 @@ function ProductRegisterModal() {
                                                                         className: "cursor-pointer"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                                                        lineNumber: 295,
+                                                                        lineNumber: 292,
                                                                         columnNumber: 45
                                                                     }, this)
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                                                    lineNumber: 294,
+                                                                    lineNumber: 291,
                                                                     columnNumber: 41
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dropdown$2d$menu$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DropdownMenuContent"], {
@@ -4045,12 +3982,12 @@ function ProductRegisterModal() {
                                                                                 className: "mb-2"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                                                                lineNumber: 305,
+                                                                                lineNumber: 302,
                                                                                 columnNumber: 49
                                                                             }, this)
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                                                            lineNumber: 304,
+                                                                            lineNumber: 301,
                                                                             columnNumber: 45
                                                                         }, this),
                                                                         categoriesLoading && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4058,7 +3995,7 @@ function ProductRegisterModal() {
                                                                             children: "Loading..."
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                                                            lineNumber: 313,
+                                                                            lineNumber: 310,
                                                                             columnNumber: 67
                                                                         }, this),
                                                                         categoriesError && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4066,7 +4003,7 @@ function ProductRegisterModal() {
                                                                             children: categoriesError
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                                                            lineNumber: 314,
+                                                                            lineNumber: 311,
                                                                             columnNumber: 65
                                                                         }, this),
                                                                         !categoriesLoading && !categoriesError && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$scroll$2d$area$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ScrollArea"], {
@@ -4081,7 +4018,7 @@ function ProductRegisterModal() {
                                                                                             children: cat.name
                                                                                         }, idString, false, {
                                                                                             fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                                                                            lineNumber: 322,
+                                                                                            lineNumber: 319,
                                                                                             columnNumber: 65
                                                                                         }, this);
                                                                                     }),
@@ -4090,30 +4027,30 @@ function ProductRegisterModal() {
                                                                                         children: "No categories found."
                                                                                     }, void 0, false, {
                                                                                         fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                                                                        lineNumber: 328,
+                                                                                        lineNumber: 325,
                                                                                         columnNumber: 93
                                                                                     }, this)
                                                                                 ]
                                                                             }, void 0, true, {
                                                                                 fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                                                                lineNumber: 318,
+                                                                                lineNumber: 315,
                                                                                 columnNumber: 53
                                                                             }, this)
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                                                            lineNumber: 317,
+                                                                            lineNumber: 314,
                                                                             columnNumber: 49
                                                                         }, this)
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                                                    lineNumber: 303,
+                                                                    lineNumber: 300,
                                                                     columnNumber: 41
                                                                 }, this)
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                                            lineNumber: 293,
+                                                            lineNumber: 290,
                                                             columnNumber: 37
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -4125,18 +4062,18 @@ function ProductRegisterModal() {
                                                                 className: "w-4 h-4"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                                                lineNumber: 341,
+                                                                lineNumber: 338,
                                                                 columnNumber: 41
                                                             }, this)
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                                            lineNumber: 335,
+                                                            lineNumber: 332,
                                                             columnNumber: 37
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                                    lineNumber: 292,
+                                                    lineNumber: 289,
                                                     columnNumber: 33
                                                 }, this),
                                                 errors.category_id && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -4144,19 +4081,19 @@ function ProductRegisterModal() {
                                                     children: errors.category_id.message
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                                    lineNumber: 344,
+                                                    lineNumber: 341,
                                                     columnNumber: 56
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                            lineNumber: 290,
+                                            lineNumber: 287,
                                             columnNumber: 29
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                    lineNumber: 276,
+                                    lineNumber: 273,
                                     columnNumber: 25
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4170,7 +4107,7 @@ function ProductRegisterModal() {
                                                     children: "Price"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                                    lineNumber: 350,
+                                                    lineNumber: 347,
                                                     columnNumber: 33
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4181,7 +4118,7 @@ function ProductRegisterModal() {
                                                             children: "₱"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                                            lineNumber: 352,
+                                                            lineNumber: 349,
                                                             columnNumber: 37
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -4198,13 +4135,13 @@ function ProductRegisterModal() {
                                                             className: "pl-8"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                                            lineNumber: 353,
+                                                            lineNumber: 350,
                                                             columnNumber: 37
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                                    lineNumber: 351,
+                                                    lineNumber: 348,
                                                     columnNumber: 33
                                                 }, this),
                                                 errors.price && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -4212,13 +4149,13 @@ function ProductRegisterModal() {
                                                     children: errors.price.message
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                                    lineNumber: 365,
+                                                    lineNumber: 362,
                                                     columnNumber: 50
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                            lineNumber: 349,
+                                            lineNumber: 346,
                                             columnNumber: 29
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4229,7 +4166,7 @@ function ProductRegisterModal() {
                                                     children: "Quantity"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                                    lineNumber: 369,
+                                                    lineNumber: 366,
                                                     columnNumber: 33
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -4245,7 +4182,7 @@ function ProductRegisterModal() {
                                                     }
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                                    lineNumber: 370,
+                                                    lineNumber: 367,
                                                     columnNumber: 33
                                                 }, this),
                                                 errors.quantity && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -4253,25 +4190,25 @@ function ProductRegisterModal() {
                                                     children: errors.quantity.message
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                                    lineNumber: 380,
+                                                    lineNumber: 377,
                                                     columnNumber: 53
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                            lineNumber: 368,
+                                            lineNumber: 365,
                                             columnNumber: 29
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                    lineNumber: 348,
+                                    lineNumber: 345,
                                     columnNumber: 25
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                            lineNumber: 260,
+                            lineNumber: 257,
                             columnNumber: 21
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogFooter"], {
@@ -4283,12 +4220,12 @@ function ProductRegisterModal() {
                                         children: "Cancel"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                        lineNumber: 387,
+                                        lineNumber: 384,
                                         columnNumber: 29
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                    lineNumber: 386,
+                                    lineNumber: 383,
                                     columnNumber: 25
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -4297,46 +4234,35 @@ function ProductRegisterModal() {
                                     children: loading ? "Adding..." : "Add Product"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                                    lineNumber: 390,
+                                    lineNumber: 387,
                                     columnNumber: 25
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                            lineNumber: 385,
+                            lineNumber: 382,
                             columnNumber: 21
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                    lineNumber: 254,
+                    lineNumber: 251,
                     columnNumber: 17
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                lineNumber: 253,
+                lineNumber: 250,
                 columnNumber: 13
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_pages$2f$Products$2f$components$2f$addCategoryModal$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {}, void 0, false, {
                 fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                lineNumber: 397,
+                lineNumber: 394,
                 columnNumber: 13
-            }, this),
-            toastMessage && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                className: "fixed bottom-6 right-6 z-50 bg-green-600 text-white px-4 py-2 rounded shadow-lg cursor-pointer",
-                role: "status",
-                "aria-live": "polite",
-                onClick: closeToast,
-                children: toastMessage
-            }, void 0, false, {
-                fileName: "[project]/src/components/global/ProductRegisterModal.tsx",
-                lineNumber: 401,
-                columnNumber: 17
             }, this)
         ]
     }, void 0, true);
 }
-_s(ProductRegisterModal, "amXCbWBBx3GzSxaPmZc7gJkxWog=", false, function() {
+_s(ProductRegisterModal, "lPqF7jRB7Jo6gEvZnIK/dHfCrkw=", false, function() {
     return [
         __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$productRegister$2d$context$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useProductModal"],
         __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$stores$2f$productFormStore$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useProductFormStore"],
@@ -4367,4 +4293,4 @@ if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelper
 }),
 ]);
 
-//# sourceMappingURL=src_16d718e5._.js.map
+//# sourceMappingURL=src_8b2a0637._.js.map
