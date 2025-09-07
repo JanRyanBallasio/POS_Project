@@ -109,7 +109,8 @@ const userController = {
       if (!matched && password === stored) {
         matched = true;
         try {
-          const hashed = await bcrypt.hash(password, 10);
+          const saltRounds = process.env.NODE_ENV === 'production' ? 12 : 8;
+          const hashed = await bcrypt.hash(password, saltRounds);
           await supabase.from('Users').update({ password: hashed }).eq('id', user.id);
           console.log(`Upgraded password to hashed for user ${user.id}`);
         } catch (upgradeErr) {
@@ -125,7 +126,7 @@ const userController = {
       const token = jwtUtils.generateToken(payload, '8h');
 
 
-       // don't leak password
+      // don't leak password
       delete user.password;
 
       res.json({ success: true, token, data: user });

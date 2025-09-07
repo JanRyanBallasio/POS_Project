@@ -14,6 +14,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { showSuccessToast, showErrorToast } from "@/utils/toast";
+
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useProductModal } from "@/contexts/productRegister-context";
@@ -91,16 +93,16 @@ export default function AddCategoryModal() {
                 setCategoryId(String(createdId));
                 setCategoryName(createdName);
               } else {
-                toast("Category added", { description: "Added but ID was not returned." });
+                showSuccessToast("Category added", "Added but ID was not returned.");
               }
 
               closeModal("addCategory");
-              toast("Category added", { description: createdName || "New category created." });
+              showSuccessToast("Category added", createdName || "New category created.");
             },
           }
         );
       } catch (err: any) {
-        toast("Failed to add category", { description: err?.message ?? "An error occurred." });
+        showErrorToast("Failed to add category", err?.message ?? "An error occurred.");
       }
     },
     [name, addCategory, setCategoryId, setCategoryName, closeModal]

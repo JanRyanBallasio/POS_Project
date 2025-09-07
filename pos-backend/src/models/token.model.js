@@ -1,43 +1,54 @@
-module.exports = (sequelize, DataTypes) => {
-  return sequelize.define(
-    'RefreshToken',
-    {
-      id: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
-        primaryKey: true,
-      },
-      token: {
-        type: DataTypes.TEXT,
-        allowNull: false,
-        unique: true,
-      },
-      expiresAt: {
-        type: DataTypes.DATE,
-        allowNull: false,
-        field: 'expires_at',
-      },
-      userId: {
-        type: DataTypes.BIGINT,     
-        allowNull: false,
-        field: 'user_id',
-      },
-      createdAt: {
-        type: DataTypes.DATE,
-        allowNull: false,
-        defaultValue: DataTypes.NOW,
-        field: 'created_at',
-      },
-      updatedAt: {
-        type: DataTypes.DATE,
-        allowNull: false,
-        defaultValue: DataTypes.NOW,
-        field: 'updated_at',
-      },
-    },
-    {
-      tableName: 'RefreshTokens',
-      underscored: true,
-    }
-  );
-};
+const { supabase } = require('../config/db');
+
+class RefreshToken {
+  static async create(token, userId, expiresAt) {
+    const { data, error } = await supabase
+      .from('RefreshTokens')
+      .insert([{ token, user_id: userId, expires_at: expiresAt }])
+      .select('*')
+      .single();
+    
+    if (error) throw error;
+    return data;
+  }
+
+  static async findByToken(token) {
+    const { data, error } = await supabase
+      .from('RefreshTokens')
+      .select('*')
+      .eq('token', token)
+      .single();
+    
+    if (error && error.code !== 'PGRST116') throw error;
+    return data;
+  }
+
+  static async deleteByToken(token) {
+    const { error } = await supabase
+      .from('RefreshTokens')
+      .delete()
+      .eq('token', token);
+    
+    if (error) throw error;
+  }
+
+  static async deleteExpired() {
+    const { error } = await supabase
+      .from('RefreshTokens')
+      .delete()
+      .lt('expires_at', new Date().toISOString());
+    
+    if (error) throw error;
+  }
+
+  static async deleteByUserId(userId) {
+    const { error } = await supabase
+      .from('RefreshTokens')
+      .delete()
+      .eq('user_id', userId);
+    
+    if (error) throw error;
+  }
+}
+
+module.exports = RefreshToken;
