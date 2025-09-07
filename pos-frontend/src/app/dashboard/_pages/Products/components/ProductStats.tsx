@@ -4,15 +4,17 @@ import { productApi } from "@/hooks/products/useProductApi";
 import type { Product } from "@/hooks/products/useProductApi";
 import { useMemo } from "react";
 
+// Use consistent key
+const PRODUCTS_KEY = "products:list";
 const fetcher = () => productApi.getAll();
 
 export default function ProductStats() {
-  const { data: products = [], isLoading } = useSWR("/api/products", fetcher, {
+  const { data: products = [], isLoading } = useSWR(PRODUCTS_KEY, fetcher, {
     revalidateOnFocus: false,
-    dedupingInterval: 60_000,
+    dedupingInterval: 30_000,
   });
 
-  const { totalProducts, lowStockItems, outOfStockItems, totalValueFormatted } = useMemo(() => {
+  const stats = useMemo(() => {
     let totalProducts = 0;
     let lowStockItems = 0;
     let outOfStockItems = 0;
@@ -26,19 +28,22 @@ export default function ProductStats() {
       totalValue += p.price * p.quantity;
     }
 
-    const totalValueFormatted = `₱ ${totalValue.toLocaleString(undefined, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}`;
-
-    return { totalProducts, lowStockItems, outOfStockItems, totalValueFormatted };
+    return {
+      totalProducts,
+      lowStockItems,
+      outOfStockItems,
+      totalValueFormatted: `₱ ${totalValue.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}`,
+    };
   }, [products]);
 
   const statsData = [
-    { title: "Total Products", content: isLoading ? "..." : totalProducts },
-    { title: "Low Stock Items", content: isLoading ? "..." : lowStockItems },
-    { title: "Out of Stock", content: isLoading ? "..." : outOfStockItems },
-    { title: "Total Value", content: isLoading ? "..." : totalValueFormatted },
+    { title: "Total Products", content: isLoading ? "..." : stats.totalProducts },
+    { title: "Low Stock Items", content: isLoading ? "..." : stats.lowStockItems },
+    { title: "Out of Stock", content: isLoading ? "..." : stats.outOfStockItems },
+    { title: "Total Value", content: isLoading ? "..." : stats.totalValueFormatted },
   ];
 
   return (
@@ -47,7 +52,7 @@ export default function ProductStats() {
         <Card key={idx}>
           <CardContent className="flex flex-col justify-center items-start h-full">
             <h1 className="text-xl font-semibold pb-4">{stat.title}</h1>
-            <p className="text-2xl font-bold ">{stat.content}</p>
+            <p className="text-2xl font-bold">{stat.content}</p>
           </CardContent>
         </Card>
       ))}
