@@ -8,7 +8,7 @@ import { Plus } from "lucide-react";
 import { useProductModal } from "@/contexts/productRegister-context";
 import { useProductFormStore } from "@/stores/productFormStore";
 import AddCategoryModal from "@/app/dashboard/_pages/Products/components/addCategoryModal";
-
+import { showSuccessToast } from "@/utils/toast";
 import { useAddProduct } from "@/hooks/products/useAddProducts";
 import { useProducts } from "@/hooks/global/fetching/useProducts";
 import { useCategories } from "@/hooks/global/fetching/useCategories";
@@ -92,8 +92,8 @@ export default function ProductRegisterModal() {
 
     // local UI state
     const [categorySearch, setCategorySearch] = useState("");
-    const [toastMessage, setToastMessage] = useState<string | null>(null);
     const [globalError, setGlobalError] = useState<string | null>(null);
+
     // react-hook-form
     const { register, handleSubmit, setValue, reset: resetForm, formState: { errors }, setError } = useForm<ProductFormValues>({
         resolver: zodResolver(productSchema) as any,
@@ -228,20 +228,17 @@ export default function ProductRegisterModal() {
             // schedule background refetch (don't block UI)
             try { refetch?.().catch(() => { }); } catch { }
 
-            // show a lightweight toast (non-modal) so scanner focus isn't stolen
-            setToastMessage("Product added successfully");
-            window.setTimeout(() => setToastMessage(null), 3000);
+            // show styled success toast
+            showSuccessToast("Product added successfully", `${values.name} has been added to inventory.`);
+
+            // ask the hidden scanner input to focus/clear
+            try {
+                window.dispatchEvent(new Event("focusBarcodeScanner"));
+            } catch { }
         }
     };
 
 
-    const closeToast = useCallback(() => {
-        setToastMessage(null);
-        // ask the hidden scanner input to focus/clear
-        try {
-            window.dispatchEvent(new Event("focusBarcodeScanner"));
-        } catch { }
-    }, []);
 
 
     /* -------------------------
@@ -395,18 +392,6 @@ export default function ProductRegisterModal() {
             </Dialog>
 
             <AddCategoryModal />
-
-            {/* Non-modal toast (won't trap focus) */}
-            {toastMessage && (
-                <div
-                    className="fixed bottom-6 right-6 z-50 bg-green-600 text-white px-4 py-2 rounded shadow-lg cursor-pointer"
-                    role="status"
-                    aria-live="polite"
-                    onClick={closeToast}
-                >
-                    {toastMessage}
-                </div>
-            )}
         </>
     );
 }

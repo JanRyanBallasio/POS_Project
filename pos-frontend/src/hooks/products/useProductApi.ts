@@ -2,7 +2,7 @@ import { mutate } from "swr";
 import axios from '@/lib/axios';
 import { isAxiosError } from 'axios';
 
-export const PRODUCTS_KEY = "/products";
+export const PRODUCTS_KEY = "products:list";
 export interface Product {
   id: number;
   name: string;

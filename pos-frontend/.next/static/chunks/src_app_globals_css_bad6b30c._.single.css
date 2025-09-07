@@ -121,8 +121,11 @@
     --color-red-200: #ffcaca;
     --color-red-500: #fb2c36;
     --color-red-600: #e40014;
+    --color-amber-400: #fcbb00;
+    --color-amber-600: #dd7400;
     --color-yellow-500: #edb200;
     --color-green-300: #7bf1a8;
+    --color-green-400: #05df72;
     --color-green-600: #00a544;
     --color-blue-200: #bedbff;
     --color-blue-500: #3080ff;
@@ -179,8 +182,11 @@
       --color-red-200: color(display-p3 .969562 .798149 .794299);
       --color-red-500: color(display-p3 .903738 .262579 .253307);
       --color-red-600: color(display-p3 .830323 .140383 .133196);
+      --color-amber-400: color(display-p3 .959186 .738519 .118268);
+      --color-amber-600: color(display-p3 .827144 .467166 .0336006);
       --color-yellow-500: color(display-p3 .903651 .703062 .0745389);
       --color-green-300: color(display-p3 .600292 .935514 .68114);
+      --color-green-400: color(display-p3 .399536 .862346 .49324);
       --color-green-600: color(display-p3 .243882 .640824 .294808);
       --color-blue-200: color(display-p3 .76688 .855207 .987483);
       --color-blue-500: color(display-p3 .266422 .491219 .988624);
@@ -198,8 +204,11 @@
       --color-red-200: lab(86.017% 19.8815 7.75869);
       --color-red-500: lab(55.4814% 75.0732 48.8528);
       --color-red-600: lab(48.4493% 77.4328 61.5452);
+      --color-amber-400: lab(80.1641% 16.6016 99.2089);
+      --color-amber-600: lab(60.3514% 40.5624 87.1228);
       --color-yellow-500: lab(76.3898% 14.5258 98.4589);
       --color-green-300: lab(86.9953% -47.2691 25.0054);
+      --color-green-400: lab(78.503% -64.9265 39.7492);
       --color-green-600: lab(59.0978% -58.6621 41.2579);
       --color-blue-200: lab(86.15% -4.04379 -21.0797);
       --color-blue-500: lab(54.1736% 13.3368 -74.6839);
@@ -759,16 +768,8 @@
     right: calc(var(--spacing) * 4);
   }
 
-  .right-6 {
-    right: calc(var(--spacing) * 6);
-  }
-
   .bottom-0 {
     bottom: calc(var(--spacing) * 0);
-  }
-
-  .bottom-6 {
-    bottom: calc(var(--spacing) * 6);
   }
 
   .left-0 {
@@ -777,6 +778,10 @@
 
   .left-2 {
     left: calc(var(--spacing) * 2);
+  }
+
+  .left-3 {
+    left: calc(var(--spacing) * 3);
   }
 
   .left-\[50\%\] {
@@ -1917,10 +1922,6 @@
 
   .bg-green-300 {
     background-color: var(--color-green-300);
-  }
-
-  .bg-green-600 {
-    background-color: var(--color-green-600);
   }
 
   .bg-muted {
