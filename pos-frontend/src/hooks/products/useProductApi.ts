@@ -241,6 +241,16 @@ export const productApi = {
       throw new Error(errorMsg);
     }
 
+    // Handle both soft and hard deletes
+    const result = response.data;
+    if (result.soft_deleted) {
+      // For soft deletes, remove from the list on frontend
+      // The product is still in database but marked as deleted
+      console.log("Product soft deleted:", result.message);
+    } else if (result.hard_deleted) {
+      console.log("Product permanently deleted:", result.message);
+    }
+
     try {
       mutate(PRODUCTS_KEY, (old: ProductsListShape | undefined | null) => removeProductFromList(old, id), false).catch(() => { });
       mutate(["product", id], null, false).catch(() => { });

@@ -16,7 +16,7 @@ module.exports = (sequelize, DataTypes) => {
                     key: "id",
                 },
             },
-            purchased_pri: {
+            purchased_price: {
                 type: DataTypes.FLOAT,
                 allowNull: true,
             },
