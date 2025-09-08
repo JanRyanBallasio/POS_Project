@@ -1,5 +1,4 @@
-import { Input } from "@/components/ui/input";
-import React, { useEffect } from "react";
+import React from "react";
 
 interface BarcodeScannerInputProps {
   inputRef: React.RefObject<HTMLInputElement | null>;
@@ -16,67 +15,67 @@ export default function BarcodeScannerInput({
   handleKeyPress,
   disabled = false,
 }: BarcodeScannerInputProps) {
-  useEffect(() => {
-    const onProductAdded = (e: Event) => {
-      const detail = (e as CustomEvent)?.detail;
-      // if sender asked to prevent focusing (e.g., product added from Products tab), do nothing
-      if (detail?.preventScan) return;
+  // Handle blur events - only refocus if no other input is focused
+  const handleBlur = () => {
+    if (!disabled) {
+      setTimeout(() => {
+        const activeElement = document.activeElement as HTMLElement;
+        const isInputFocused = activeElement && (
+          activeElement.tagName === 'INPUT' || 
+          activeElement.tagName === 'TEXTAREA' ||
+          activeElement.contentEditable === 'true'
+        );
+        
+        // Only refocus scanner if no other input/textarea is focused
+        if (inputRef.current && !isInputFocused) {
+          inputRef.current.focus();
+        }
+      }, 100);
+    }
+  };
 
-      const el = inputRef?.current;
-      if (!el) return;
+  // Handle paste events
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pastedText = e.clipboardData.getData('text').trim();
+    if (pastedText) {
+      const mockEvent = {
+        target: { value: pastedText + '\n' }
+      } as React.ChangeEvent<HTMLInputElement>;
 
-      try {
-        el.focus();
-      } catch {}
-
-      // clear DOM value so next hardware scan starts fresh
-      try {
-        el.value = "";
-      } catch {}
-
-      const syntheticEvent = { target: el } as unknown as React.ChangeEvent<HTMLInputElement>;
-      try {
-        handleBarcodeChange(syntheticEvent);
-      } catch {
-        el.dispatchEvent(new Event("input", { bubbles: true }));
-      }
-    };
-
-    const onFocusRequest = () => {
-      const el = inputRef?.current;
-      if (!el) return;
-      try {
-        el.focus();
-      } catch {}
-      try {
-        el.value = "";
-      } catch {}
-      const syntheticEvent = { target: el } as unknown as React.ChangeEvent<HTMLInputElement>;
-      try {
-        handleBarcodeChange(syntheticEvent);
-      } catch {
-        el.dispatchEvent(new Event("input", { bubbles: true }));
-      }
-    };
-
-    window.addEventListener("product:added", onProductAdded as EventListener);
-    window.addEventListener("focusBarcodeScanner", onFocusRequest as EventListener);
-
-    return () => {
-      window.removeEventListener("product:added", onProductAdded as EventListener);
-      window.removeEventListener("focusBarcodeScanner", onFocusRequest as EventListener);
-    };
-  }, [inputRef, handleBarcodeChange]);
+      handleBarcodeChange(mockEvent);
+    }
+  };
 
   return (
-    <Input
-      ref={inputRef}
-      className="opacity-0 absolute -top-1000"
-      value={barcodeInput}
-      onChange={handleBarcodeChange}
-      onKeyPress={handleKeyPress}
-      placeholder="Scanner input..."
-      disabled={disabled}
-    />
+    <div className="mb-4">
+      {/* Hidden scanner input - positioned off-screen but accessible */}
+      <input
+        ref={inputRef}
+        type="text"
+        value={barcodeInput}
+        onChange={handleBarcodeChange}
+        onKeyDown={handleKeyPress}
+        onPaste={handlePaste}
+        onBlur={handleBlur}
+        disabled={disabled}
+        autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck={false}
+        style={{
+          position: 'absolute',
+          left: '-9999px',
+          top: '-9999px',
+          width: '1px',
+          height: '1px',
+          opacity: 0,
+          pointerEvents: 'none',
+          zIndex: -1,
+        }}
+        tabIndex={-1}
+        aria-hidden="true"
+      />
+    </div>
   );
 }
