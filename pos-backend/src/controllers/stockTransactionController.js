@@ -49,6 +49,45 @@ const stockTransactionController = {
         return res.status(500).json({ success: false, error: itemsErr.message || itemsErr })
       }
 
+      // ADD THIS: Update product quantities (INCREASE for stock additions)
+      console.log('🔄 Starting product quantity updates...');
+      
+      const updatePromises = items.map(async (item) => {
+        const productId = item.product_id ?? item.productId;
+        const quantity = parseInt(item.quantity ?? item.qty ?? 0, 10) || 0;
+        
+        if (productId && quantity > 0) {
+          // Get current quantity and add the new stock
+          const { data: currentProduct, error: fetchError } = await supabase
+            .from('Products')
+            .select('quantity')
+            .eq('id', productId)
+            .single();
+
+          if (!fetchError && currentProduct) {
+            const currentQuantity = Number(currentProduct.quantity) || 0;
+            const newQuantity = currentQuantity + quantity; // ADD instead of subtract (opposite of sales)
+            
+            const { error: updateError } = await supabase
+              .from('Products')
+              .update({ quantity: newQuantity })
+              .eq('id', productId);
+
+            if (updateError) {
+              console.error(`Failed to update quantity for product ${productId}:`, updateError);
+            } else {
+              console.log(`✅ Updated product ${productId}: ${currentQuantity} + ${quantity} = ${newQuantity}`);
+            }
+          } else {
+            console.error(`Product ${productId} not found or fetch error:`, fetchError);
+          }
+        }
+      });
+
+      // Execute all updates in parallel
+      await Promise.all(updatePromises);
+      console.log('✅ Product quantity updates completed');
+
       return res.status(201).json({ success: true, transaction: tx, items: insertedItems })
     } catch (err) {
       console.error('createStockTransaction error', err)
