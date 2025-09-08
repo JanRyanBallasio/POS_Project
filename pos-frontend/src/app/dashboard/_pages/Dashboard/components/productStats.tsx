@@ -30,16 +30,22 @@ type SaleItem = {
 type Product = {
   id: number
   name: string
+  category_id: number
+}
+
+type Category = {
+  id: number
+  name: string
 }
 
 type ChartData = {
-  product: string
+  category: string
   quantity: number
 }
 
 const chartConfig: ChartConfig = {
   quantity: {
-    label: 'Quantity Sold',
+    label: 'Transactions',
     color: 'var(--color-primary)'
   }
 }
@@ -48,14 +54,17 @@ const fetcher = async (url: string) => {
   return response.data.data;
 };
 
-
 export default function ProductStats() {
   const { data: saleItems = [], error: saleItemsError, isLoading: saleItemsLoading } = useSWR<SaleItem[]>(
-    '/sales-items', // Use relative path
+    '/sales-items',
     fetcher
   )
   const { data: products = [], error: productsError, isLoading: productsLoading } = useSWR<Product[]>(
-    '/products', // Use relative path
+    '/products',
+    fetcher
+  )
+  const { data: categories = [], error: categoriesError, isLoading: categoriesLoading } = useSWR<Category[]>(
+    '/categories',
     fetcher
   )
 
@@ -67,33 +76,47 @@ export default function ProductStats() {
   })
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | 'normal'>('normal')
 
-  const productMap = useMemo(() => {
-    const map: Record<number, string> = {}
+  // Map product_id to category_id
+  const productCategoryMap = useMemo(() => {
+    const map: Record<number, number> = {}
     products.forEach(p => {
-      map[p.id] = p.name
+      map[p.id] = p.category_id
     })
     return map
   }, [products])
+
+  // Map category_id to category name
+  const categoryNameMap = useMemo(() => {
+    const map: Record<number, string> = {}
+    categories.forEach(c => {
+      map[c.id] = c.name
+    })
+    return map
+  }, [categories])
 
   const isSameOrAfter = (a: Date, b: Date) =>
     a.setHours(0, 0, 0, 0) >= b.setHours(0, 0, 0, 0)
   const isSameOrBefore = (a: Date, b: Date) =>
     a.setHours(0, 0, 0, 0) <= b.setHours(0, 0, 0, 0)
 
+  // Group by category_id and show category name
   const chartData = useMemo(() => {
-    const grouped: { [product_id: number]: number } = {}
+    const grouped: { [category_id: string]: number } = {}
     saleItems.forEach(item => {
       const date = new Date(item.created_at)
       if (
         (!range?.from || isSameOrAfter(date, range.from)) &&
         (!range?.to || isSameOrBefore(date, range.to))
       ) {
-        grouped[item.product_id] = (grouped[item.product_id] || 0) + item.quantity
+        const category_id = productCategoryMap[item.product_id]
+        if (category_id !== undefined) {
+          grouped[category_id] = (grouped[category_id] || 0) + item.quantity
+        }
       }
     })
     let arr = Object.entries(grouped)
-      .map(([product_id, quantity]) => ({
-        product: productMap[Number(product_id)] || `Product ${product_id}`,
+      .map(([category_id, quantity]) => ({
+        category: categoryNameMap[Number(category_id)] || `Category ${category_id}`,
         quantity
       }))
     if (sortOrder === 'asc') {
@@ -102,21 +125,21 @@ export default function ProductStats() {
       arr = arr.sort((a, b) => b.quantity - a.quantity)
     }
     return arr
-  }, [saleItems, range, productMap, sortOrder])
+  }, [saleItems, range, productCategoryMap, categoryNameMap, sortOrder])
 
   const total = useMemo(
     () => chartData.reduce((acc, curr) => acc + curr.quantity, 0),
     [chartData]
   )
 
-  if (saleItemsLoading || productsLoading) return <div>Loading...</div>
-  if (saleItemsError || productsError) return <div>Error loading product stats.</div>
+  if (saleItemsLoading || productsLoading || categoriesLoading) return <div>Loading...</div>
+  if (saleItemsError || productsError || categoriesError) return <div>Error loading product stats.</div>
 
   return (
     <Card className='@container/card w-full'>
       <CardHeader className='flex flex-col border-b @md/card:grid'>
         <CardTitle>Product Analytics</CardTitle>
-        <CardDescription>Showing most sold products for this month.</CardDescription>
+        <CardDescription>Showing most sold categories for this month.</CardDescription>
         <CardAction className='mt-2 @md/card:mt-0'>
           <div className="flex gap-2 items-center mt-2">
             <Button
@@ -182,7 +205,7 @@ export default function ProductStats() {
           >
             <CartesianGrid vertical={false} />
             <XAxis
-              dataKey='product'
+              dataKey='category'
               tickLine={false}
               axisLine={false}
               tickMargin={8}

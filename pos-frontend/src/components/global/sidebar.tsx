@@ -21,11 +21,11 @@ import {
 
 // ...existing code...
 const main = [
-  // {
-  //   title: "Dashboardsssss",
-  //   url: "/dashboard/mains",
-  //   icon: LayoutDashboard,
-  // },
+  {
+    title: "Dashboard",
+    url: "/dashboard/db",
+    icon: LayoutDashboard,
+  },
   {
     title: "Point of Sale",
     url: "/dashboard/main",
