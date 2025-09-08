@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import useSWR from 'swr'
+import axios from "@/lib/axios";
 import { CartesianGrid, Line, LineChart, XAxis } from 'recharts'
 import { CalendarIcon, List, ChevronDown, ChevronUp } from 'lucide-react'
 import type { DateRange } from 'react-day-picker'
@@ -38,16 +39,16 @@ const chartConfig: ChartConfig = {
   }
 }
 
+// Replace the fetcher
 const fetcher = async (url: string) => {
-  const res = await fetch(url)
-  const json = await res.json()
-  return json.data
-}
+  const response = await axios.get(url);
+  return response.data.data;
+};
 
 export default function ProductStats() {
-  const API_URL = process.env.NEXT_PUBLIC_backend_api_url
+  // Remove the API_URL line and use relative path
   const { data: sales = [], error, isLoading } = useSWR<Sale[]>(
-    `${API_URL}/sales`,
+    '/sales', // Use relative path
     fetcher
   )
   const today = new Date()

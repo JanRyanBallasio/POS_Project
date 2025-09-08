@@ -43,17 +43,19 @@ const chartConfig: ChartConfig = {
     color: 'var(--color-primary)'
   }
 }
-const fetcher = async (url: string) => (await axios.get(url)).data.data;
+const fetcher = async (url: string) => {
+  const response = await axios.get(url);
+  return response.data.data;
+};
 
 
 export default function ProductStats() {
-  const API_URL = process.env.NEXT_PUBLIC_backend_api_url
   const { data: saleItems = [], error: saleItemsError, isLoading: saleItemsLoading } = useSWR<SaleItem[]>(
-    `${API_URL}/sales-items`,
+    '/sales-items', // Use relative path
     fetcher
   )
   const { data: products = [], error: productsError, isLoading: productsLoading } = useSWR<Product[]>(
-    `${API_URL}/products`,
+    '/products', // Use relative path
     fetcher
   )
 
