@@ -284,7 +284,7 @@ exports.generate = async function (req, res) {
 
     const filename = `receipt-${Date.now()}.pdf`;
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
     res.setHeader("Content-Length", Buffer.byteLength(pdfBuffer));
     // expose Content-Disposition so browsers on other origins can read filename if needed
     res.setHeader("Access-Control-Expose-Headers", "Content-Disposition,Content-Length");
