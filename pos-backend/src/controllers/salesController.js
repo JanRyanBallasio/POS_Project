@@ -54,7 +54,7 @@ const salesController = {
       
       console.log("✅ Sale items created successfully");
 
-      // 3. UPDATE PRODUCT QUANTITIES - Optimized batch update
+      // 3. UPDATE PRODUCT QUANTITIES
       console.log("🔄 Starting product quantity updates...");
       
       const updatePromises = items.map(async (item) => {
@@ -87,6 +87,38 @@ const salesController = {
 
       // Execute all updates in parallel
       await Promise.all(updatePromises);
+
+      // 4. AWARD CUSTOMER POINTS (1 peso = 1 point)
+      if (customer_id && total_purchase > 0) {
+        console.log("🎯 Awarding customer points...");
+        
+        const pointsToAward = Math.floor(total_purchase); // 1 peso = 1 point (round down)
+        
+        // Get current customer points
+        const { data: currentCustomer, error: customerFetchError } = await supabase
+          .from("Customer")
+          .select("points")
+          .eq("id", customer_id)
+          .single();
+
+        if (customerFetchError) {
+          console.log("⚠️ Could not fetch customer points:", customerFetchError);
+        } else {
+          const currentPoints = Number(currentCustomer.points) || 0;
+          const newPoints = currentPoints + pointsToAward;
+          
+          const { error: pointsUpdateError } = await supabase
+            .from("Customer")
+            .update({ points: newPoints })
+            .eq("id", customer_id);
+
+          if (pointsUpdateError) {
+            console.log("❌ Failed to update customer points:", pointsUpdateError);
+          } else {
+            console.log(`✅ Customer points updated: ${currentPoints} + ${pointsToAward} = ${newPoints}`);
+          }
+        }
+      }
 
       console.log("=== SALES CREATION COMPLETED ===");
       res.json({ success: true, sale_id });
