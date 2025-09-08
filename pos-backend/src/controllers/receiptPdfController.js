@@ -138,7 +138,7 @@ function renderHtml({ customer, cartTotal, amount, change, items, points }) {
   <body>
     <div class="paper" id="receipt">
       <div class="center">
-        <div class="store-name">YZY Store</div>
+        <div class="store-name">YZY Stores</div>
         <div class="store-sub">Eastern Slide, Tuding</div>
       </div>
       <div class="divider"></div>
