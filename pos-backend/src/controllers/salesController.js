@@ -88,11 +88,11 @@ const salesController = {
       // Execute all updates in parallel
       await Promise.all(updatePromises);
 
-      // 4. AWARD CUSTOMER POINTS (1 peso = 1 point)
+      // 4. AWARD CUSTOMER POINTS (₱1000 = 10 points)
       if (customer_id && total_purchase > 0) {
         console.log("🎯 Awarding customer points...");
         
-        const pointsToAward = Math.floor(total_purchase); // 1 peso = 1 point (round down)
+        const pointsToAward = Math.floor(total_purchase / 100); // 1000 pesos = 10 points
         
         // Get current customer points
         const { data: currentCustomer, error: customerFetchError } = await supabase
