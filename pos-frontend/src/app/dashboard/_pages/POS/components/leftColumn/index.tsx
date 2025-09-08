@@ -1,4 +1,3 @@
-// ...existing code...
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScanLine, CheckIcon } from "lucide-react";
@@ -9,7 +8,7 @@ import { useProducts } from "@/hooks/global/fetching/useProducts";
 import { useBarcodeScan } from "@/hooks/pos/leftCol/useBarcodeScan";
 import { useProductSearch } from "@/hooks/pos/leftCol/useProductsSearch";
 import { useCartKeyboard } from "@/contexts/cart-context";
-import { useEffect, useState } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import CartTable from "./CartTable";
 import ProductSearch from "./ProductSearch";
 import BarcodeScannerInput from "./BarcodeScannerInput";
@@ -44,13 +43,20 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
     refocusScanner,
     updateCartItemPrice,
     deleteCartItem,
+    lastAddedItemId,
   } = useCart();
-  
+
   const { barcodeInput, inputRef, handleBarcodeChange, handleKeyPress, refocusScanner: hookRefocus } =
     useBarcodeScan(handleScanAndAddToCart);
-  
+
   const { setOpen, setBarcode } = useProductModal();
   useCartKeyboard(selectedRowId);
+
+  const handleSearchSelect = (product: any) => {
+    addProductToCart(product);
+    clearSearch();
+    hookRefocus();
+  };
 
   const {
     searchQuery,
@@ -58,10 +64,11 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
     showSearchResults,
     handleSearchChange,
     clearSearch,
-  } = useProductSearch(products);
+  } = useProductSearch(products, handleSearchSelect); // Pass the callback here
 
   const [showRegisterDialog, setShowRegisterDialog] = useState(false);
   const [unregisteredBarcode, setUnregisteredBarcode] = useState<string | null>(null);
+  const productSearchInputRef = useRef<HTMLInputElement>(null!);
 
   useEffect(() => {
     setScannerRef(inputRef as React.RefObject<HTMLInputElement>);
@@ -80,21 +87,26 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
     }
   }, [step]);
 
-  const handleSearchSelect = (product: any) => {
-    addProductToCart(product);
-    clearSearch();
-    hookRefocus();
-  };
+  useEffect(() => {
+    const handleShortcut = (e: KeyboardEvent) => {
+      // Only trigger in POS step 1 and only for Numpad 8
+      if (step === 1 && e.code === "Numpad8") {
+        e.preventDefault();
+        if (productSearchInputRef.current) {
+          productSearchInputRef.current.focus();
+          productSearchInputRef.current.select();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleShortcut);
+    return () => window.removeEventListener("keydown", handleShortcut);
+  }, [step]);
 
   async function handleScanAndAddToCart(barcode: string) {
-    console.log("🔍 Frontend: Starting barcode scan process for:", barcode);
-    
     const clean = (v: string | null | undefined) => (v == null ? "" : String(v).replace(/[\u0000-\u001F\u007F-\u009F]/g, "").trim());
     const cleaned = clean(barcode);
-    console.log("🧹 Frontend: Cleaned barcode:", cleaned);
 
     if (!cleaned || cleaned.length < 2) {
-      console.log("❌ Frontend: Invalid barcode length");
       return;
     }
 
@@ -103,49 +115,41 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
     };
 
     const cleanedNormalized = normalizeBarcode(cleaned);
-    console.log("🔢 Frontend: Normalized barcode:", cleanedNormalized);
 
     // 1) Try local cache with multiple comparison strategies
     const foundProduct = products.find((p) => {
       const productBarcode = clean(p?.barcode);
-      
+
       if (!productBarcode) return false;
-      
+
       if (productBarcode === cleaned) {
-        console.log(`✅ Frontend: EXACT MATCH found: ${p.name}`);
         return true;
       }
-      
+
       if (normalizeBarcode(productBarcode) === cleanedNormalized) {
-        console.log(`✅ Frontend: NORMALIZED MATCH found: ${p.name}`);
         return true;
       }
-      
+
       return false;
     });
 
     if (foundProduct) {
-      console.log("✅ Frontend: Found product in cache:", foundProduct);
       await scanAndAddToCart(cleaned, foundProduct);
       return;
     }
-
-    console.log("❌ Frontend: Product not found in cache, trying server lookup...");
 
     // 2) Fallback to server lookup
     try {
       const serverProduct = await productApi.getByBarcode(cleaned);
       if (serverProduct) {
-        console.log("✅ Frontend: Found product on server:", serverProduct);
         await scanAndAddToCart(cleaned, serverProduct);
         return;
       }
     } catch (error) {
-      console.log("❌ Frontend: Server lookup failed:", error);
+      // Server lookup failed
     }
 
     // 3) Product not found -> prompt to register
-    console.log("❌ Frontend: Product not found anywhere, showing register dialog");
     setUnregisteredBarcode(cleaned);
     setShowRegisterDialog(true);
   }
@@ -160,14 +164,22 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
     // Use both refocus functions to ensure compatibility
     refocusScanner();
     hookRefocus();
-    
+
     // Dispatch the global focus event
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new Event('focusBarcodeScanner'));
     }
-    
+
     setRefocused(true);
     setTimeout(() => setRefocused(false), 1000);
+  };
+
+  // Handle clicks on empty areas to refocus scanner
+  const handleEmptyAreaClick = (e: React.MouseEvent) => {
+    // Only refocus if clicking on the card content itself, not on child elements
+    if (e.target === e.currentTarget) {
+      handleRefocus();
+    }
   };
 
   return (
@@ -180,7 +192,7 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
             Scanner Active
           </div>
         )}
-        
+
         {/* Refocus Button */}
         <Button
           variant="outline"
@@ -199,11 +211,8 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
         </Button>
       </div>
 
-      <Card
-        className="w-full h-full flex flex-col"
-        onClick={handleRefocus}
-      >
-        <CardContent className="p-6 flex-1 flex flex-col min-h-0">
+      <Card className="w-full h-full flex flex-col">
+        <CardContent className="p-6 flex-1 flex flex-col min-h-0" onClick={handleEmptyAreaClick}>
           <BarcodeScannerInput
             inputRef={inputRef}
             barcodeInput={barcodeInput}
@@ -212,6 +221,7 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
             disabled={step === 2 || step === 3}
           />
           <ProductSearch
+            inputRef={productSearchInputRef} // <-- Pass the ref here
             searchQuery={searchQuery}
             searchResults={searchResults}
             showSearchResults={showSearchResults}
@@ -221,7 +231,8 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
             refocusScanner={hookRefocus}
             disabled={step === 2 || step === 3}
           />
-          <div className="rounded-md border flex-1 flex flex-col min-h-0 overflow-auto relative">
+          {/* Simplified container - no nested divs */}
+          <div className="rounded-md border flex-1 overflow-auto">
             <CartTable
               cart={cart}
               selectedRowId={selectedRowId}
@@ -255,4 +266,3 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
     </div>
   );
 }
-// ...existing code...

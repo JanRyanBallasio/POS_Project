@@ -15,66 +15,31 @@ export default function BarcodeScannerInput({
   handleKeyPress,
   disabled = false,
 }: BarcodeScannerInputProps) {
-  // Handle blur events - only refocus if no other input is focused
-  const handleBlur = () => {
-    if (!disabled) {
-      setTimeout(() => {
-        const activeElement = document.activeElement as HTMLElement;
-        const isInputFocused = activeElement && (
-          activeElement.tagName === 'INPUT' || 
-          activeElement.tagName === 'TEXTAREA' ||
-          activeElement.contentEditable === 'true'
-        );
-        
-        // Only refocus scanner if no other input/textarea is focused
-        if (inputRef.current && !isInputFocused) {
-          inputRef.current.focus();
-        }
-      }, 100);
-    }
-  };
-
-  // Handle paste events
-  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
-    e.preventDefault();
-    const pastedText = e.clipboardData.getData('text').trim();
-    if (pastedText) {
-      const mockEvent = {
-        target: { value: pastedText + '\n' }
-      } as React.ChangeEvent<HTMLInputElement>;
-
-      handleBarcodeChange(mockEvent);
-    }
-  };
-
   return (
     <div className="mb-4">
-      {/* Hidden scanner input - positioned off-screen but accessible */}
       <input
         ref={inputRef}
+        id="barcode-scanner"
         type="text"
         value={barcodeInput}
         onChange={handleBarcodeChange}
         onKeyDown={handleKeyPress}
-        onPaste={handlePaste}
-        onBlur={handleBlur}
-        disabled={disabled}
-        autoComplete="off"
-        autoCorrect="off"
-        autoCapitalize="off"
-        spellCheck={false}
+        className="barcode-scanner-input opacity-0 absolute -z-10 pointer-events-none"
         style={{
           position: 'absolute',
-          left: '-9999px',
           top: '-9999px',
+          left: '-9999px',
           width: '1px',
           height: '1px',
-          opacity: 0,
-          pointerEvents: 'none',
-          zIndex: -1,
+          outline: 'none',
+          border: 'none',
         }}
+        placeholder="Scan or type barcode..."
+        data-barcode-scanner="true"
+        disabled={disabled}
+        autoComplete="off"
+        autoFocus
         tabIndex={-1}
-        aria-hidden="true"
       />
     </div>
   );
