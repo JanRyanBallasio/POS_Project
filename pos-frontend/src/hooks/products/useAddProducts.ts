@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { mutate } from "swr";
 import { productApi, Product } from "@/hooks/products/useProductApi";
+import { AxiosError } from "axios";
 
 // Use consistent key
 const PRODUCTS_KEY = "products:list";
@@ -19,6 +20,8 @@ export function useAddProduct() {
     setSuccess(false);
 
     try {
+      console.log("Adding product:", product);
+      
       // Create product
       const createdProduct = await productApi.create(product);
 
@@ -42,15 +45,43 @@ export function useAddProduct() {
 
       return createdProduct;
     } catch (err: any) {
-      const message = err?.message || "Failed to add product";
+      console.error('Add product error:', err);
       
-      // Handle field-specific errors
-      if (message.toLowerCase().includes("barcode")) {
-        setError({ field: "barcode", message });
-      } else if (message.toLowerCase().includes("name")) {
-        setError({ field: "name", message });
-      } else {
-        setError({ message });
+      // 🔥 ENHANCED: Better error handling for all cases
+      if (err.response?.data) {
+        const serverError = err.response.data;
+        console.log("Server error response:", serverError);
+        
+        // Server sent field-specific error (400 status)
+        if (serverError.field && serverError.message) {
+          setError({ 
+            field: serverError.field, 
+            message: serverError.message 
+          });
+        } 
+        // Server sent general error message
+        else if (serverError.message) {
+          setError({ message: serverError.message });
+        } 
+        // Server error without message
+        else if (serverError.error) {
+          setError({ message: serverError.error });
+        }
+        // 500 errors - check if it's actually a validation issue
+        else if (err.response.status === 500) {
+          setError({ message: "Server error while processing request. Please try again." });
+        }
+        else {
+          setError({ message: "Failed to add product. Please try again." });
+        }
+      } 
+      // Network or client-side errors
+      else if (err.message) {
+        setError({ message: err.message });
+      } 
+      // Fallback for unknown errors
+      else {
+        setError({ message: "Failed to add product. Please check your connection and try again." });
       }
       
       setLoading(false);

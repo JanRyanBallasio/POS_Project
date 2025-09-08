@@ -3,36 +3,96 @@ const { supabase } = require("../config/db");
 const salesController = {
   createSale: async (req, res) => {
     try {
+      console.log("=== SALES CREATION STARTED ===");
+      console.log("Request body:", JSON.stringify(req.body, null, 2));
+      
       const { customer_id, total_purchase, items } = req.body;
 
+      // Validate items array
+      if (!Array.isArray(items) || items.length === 0) {
+        console.log("❌ No items provided or items is not an array");
+        return res.status(400).json({ success: false, error: "Items array is required" });
+      }
+
+      console.log("📝 Items to process:", items.length);
+
       // 1. Insert the sale
+      console.log("🔄 Creating sale record...");
       const { data: saleData, error: saleError } = await supabase
         .from("Sales")
         .insert([{ customer_id, total_purchase }])
-        .select("id") // Get the inserted sale's id
+        .select("id")
         .single();
 
-      if (saleError) throw saleError;
+      if (saleError) {
+        console.log("❌ Sale creation error:", saleError);
+        throw saleError;
+      }
+      
       const sale_id = saleData.id;
+      console.log("✅ Sale created with ID:", sale_id);
 
       // 2. Insert sale items
-      if (Array.isArray(items) && items.length > 0) {
-        const saleItems = items.map(item => ({
-          sale_id,
-          product_id: item.product_id,
-          quantity: item.quantity,
-          price: item.price,
-        }));
+      console.log("🔄 Creating sale items...");
+      const saleItems = items.map(item => ({
+        sale_id,
+        product_id: item.product_id,
+        quantity: item.quantity,
+        price: item.price,
+      }));
 
-        const { error: itemsError } = await supabase
-          .from("SaleItems")
-          .insert(saleItems);
+      console.log("📝 Sale items to insert:", JSON.stringify(saleItems, null, 2));
 
-        if (itemsError) throw itemsError;
+      const { error: itemsError } = await supabase
+        .from("SaleItems")
+        .insert(saleItems);
+
+      if (itemsError) {
+        console.log("❌ Sale items creation error:", itemsError);
+        throw itemsError;
       }
+      
+      console.log("✅ Sale items created successfully");
 
+      // 3. UPDATE PRODUCT QUANTITIES - Optimized batch update
+      console.log("🔄 Starting product quantity updates...");
+      
+      const updatePromises = items.map(async (item) => {
+        // Get current quantity and update in single query using RPC
+        const { error: updateError } = await supabase
+          .rpc('decrease_product_quantity', {
+            product_id_param: item.product_id,
+            quantity_to_subtract: item.quantity
+          });
+
+        if (updateError) {
+          // Fallback to manual update if RPC fails
+          const { data: currentProduct, error: fetchError } = await supabase
+            .from("Products")
+            .select("quantity")
+            .eq("id", item.product_id)
+            .single();
+
+          if (!fetchError) {
+            const currentQuantity = Number(currentProduct.quantity) || 0;
+            const newQuantity = Math.max(0, currentQuantity - item.quantity);
+            
+            await supabase
+              .from("Products")
+              .update({ quantity: newQuantity })
+              .eq("id", item.product_id);
+          }
+        }
+      });
+
+      // Execute all updates in parallel
+      await Promise.all(updatePromises);
+
+      console.log("=== SALES CREATION COMPLETED ===");
       res.json({ success: true, sale_id });
     } catch (error) {
+      console.log("❌ SALES CREATION FAILED:", error.message);
+      console.log("Error details:", error);
       res.status(500).json({ success: false, error: error.message });
     }
   },

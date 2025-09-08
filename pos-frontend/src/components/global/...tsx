@@ -163,7 +163,9 @@ export default function ProductRegisterModal() {
     useEffect(() => {
         setGlobalError(null);
         if (!error) return;
+        
         if (error.field) {
+            // Clear any existing error for this field first
             setError(error.field as any, { message: error.message, type: "server" });
         } else {
             setGlobalError(error.message);
@@ -255,7 +257,11 @@ export default function ProductRegisterModal() {
                     </DialogHeader>
 
                     <div className="flex-col gap-4">
-                        {globalError && <p className="text-sm text-red-500 mb-2">{globalError}</p>}
+                        {globalError && (
+                            <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
+                                <p className="text-sm text-red-600">{globalError}</p>
+                            </div>
+                        )}
 
                         <div className="flex flex-col gap-2">
                             <Label htmlFor="name-1">Product Name</Label>
@@ -266,6 +272,7 @@ export default function ProductRegisterModal() {
                                     register("name").onChange?.(e as any);
                                     onFieldChangeStore("name", e.target.value);
                                 }}
+                                className={errors.name ? "border-red-500" : ""}
                             />
                             {errors.name && <p className="text-sm text-red-500 mt-1">{errors.name.message}</p>}
                         </div>
@@ -280,6 +287,7 @@ export default function ProductRegisterModal() {
                                         setValue("barcode", e.target.value as any);
                                         onFieldChangeStore("barcode", e.target.value);
                                     }}
+                                    className={errors.barcode ? "border-red-500" : ""}
                                 />
                                 {errors.barcode && <p className="text-sm text-red-500 mt-1">{errors.barcode.message}</p>}
                             </div>
@@ -294,7 +302,7 @@ export default function ProductRegisterModal() {
                                                 readOnly
                                                 value={selectedCategoryName}
                                                 placeholder="Select category"
-                                                className="cursor-pointer"
+                                                className={`cursor-pointer ${errors.category_id ? "border-red-500" : ""}`}
                                             />
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent className="w-64 p-0">
@@ -356,7 +364,7 @@ export default function ProductRegisterModal() {
                                             setValue("price", v === "" ? undefined : Number(v) as any, { shouldValidate: true });
                                             onFieldChangeStore("price", v);
                                         }}
-                                        className="pl-8"
+                                        className={`pl-8 ${errors.price ? "border-red-500" : ""}`}
                                     />
                                 </div>
                                 {errors.price && <p className="text-sm text-red-500 mt-1">{errors.price.message}</p>}
@@ -373,6 +381,7 @@ export default function ProductRegisterModal() {
                                         setValue("quantity", v === "" ? undefined : Number(v) as any, { shouldValidate: true });
                                         onFieldChangeStore("quantity", v);
                                     }}
+                                    className={errors.quantity ? "border-red-500" : ""}
                                 />
                                 {errors.quantity && <p className="text-sm text-red-500 mt-1">{errors.quantity.message}</p>}
                             </div>

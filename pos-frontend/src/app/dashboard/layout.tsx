@@ -4,7 +4,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/global/sidebar";
 import Navbar from "@/components/global/navbar";
 import { ProductModalProvider } from "@/contexts/productRegister-context";
-import ProductRegisterModal from "@/components/global/ProductRegisterModal";
+import ProductRegisterModal from "@/components/product/components/ProductRegisterModal";
 
 export const metadata: Metadata = {
   title: "Store",

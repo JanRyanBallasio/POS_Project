@@ -1,4 +1,4 @@
-// File: D:\Code\POS_Project\pos-frontend\src\app\(authentication)\register\page.tsx
+// File: D:\Code\POS\POS_Project\pos-frontend\src\app\(authentication)\register\page.tsx
 import * as entry from '../../../../../src/app/(authentication)/register/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
