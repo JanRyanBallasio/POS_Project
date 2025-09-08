@@ -99,10 +99,16 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     const now = Date.now();
     const productKey = product.barcode || product.id?.toString() || product.name;
     
+    console.log("🛒 addOrIncrement called:", {
+      productName: product.name,
+      productKey,
+      currentTime: now
+    });
+    
     // Check for recent addition of the same product (within 1 second)
     const lastTime = lastScanTime.get(productKey);
     if (lastTime && (now - lastTime) < 1000) {
-      console.log("🛒 Cart: Duplicate addition prevented for:", productKey);
+      console.log("⏰ Duplicate prevention triggered, ignoring:", productKey);
       return;
     }
     
@@ -111,8 +117,12 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     setCart((prevCart) => {
       const existing = prevCart.find((item) => productEqual(item.product, product));
       if (existing) {
+        console.log("📈 Incrementing existing item:", {
+          itemId: existing.id,
+          productName: product.name,
+          newQuantity: existing.quantity + 1
+        });
         setLastAddedItemId(existing.id);
-        console.log("🛒 Cart: Incrementing existing item:", product.name);
         return prevCart.map((item) =>
           productEqual(item.product, product) ? { ...item, quantity: item.quantity + 1 } : item
         );
@@ -122,8 +132,13 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         quantity: 1,
         id: genId(),
       };
+      console.log("➕ Adding new item to cart:", {
+        itemId: cartItem.id,
+        productName: product.name,
+        quantity: 1
+      });
       setLastAddedItemId(cartItem.id);
-      console.log("🛒 Cart: Adding new item:", product.name);
+      console.log("🎯 Set lastAddedItemId to:", cartItem.id);
       return [...prevCart, cartItem];
     });
   }, [lastScanTime]);
@@ -143,7 +158,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       }
 
       if (pendingScans.has(cleanedBarcode)) {
-        console.log("🛒 Cart: Scan already pending for:", cleanedBarcode);
         return;
       }
 
@@ -152,32 +166,23 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         setScanError(null);
         setPendingScans(prev => new Set([...prev, cleanedBarcode]));
 
-        console.log("🛒 Cart: scanAndAddToCart called with barcode:", cleanedBarcode);
-        console.log("🛒 Cart: preValidatedProduct:", preValidatedProduct);
-
         let product: Product | null = null;
 
         // Use pre-validated product if provided
         if (preValidatedProduct) {
-          console.log("✅ Cart: Using pre-validated product:", preValidatedProduct);
           product = preValidatedProduct;
         } else {
-          console.log("🌐 Cart: No pre-validated product, fetching from API...");
           try {
             product = await productApi.getByBarcode(cleanedBarcode);
-            console.log("🛒 Cart: productApi.getByBarcode result:", product);
           } catch (apiError) {
-            console.log("❌ Cart: API fetch failed:", apiError);
             product = null;
           }
         }
 
         if (product) {
-          console.log("✅ Cart: Adding product to cart:", product);
           addOrIncrement(product);
           setScanError(null);
         } else {
-          console.log("❌ Cart: Product not found, opening register modal");
           try {
             if (typeof setContextBarcode === "function") {
               setContextBarcode(cleanedBarcode);
@@ -191,7 +196,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           setScanError(`Product not found: ${cleanedBarcode}`);
         }
       } catch (error) {
-        console.log("❌ Cart: scanAndAddToCart error:", error);
         const errorMessage = error instanceof Error ? error.message : "Error scanning barcode";
         setScanError(errorMessage);
         console.warn('[scanAndAddToCart] Error:', error);
@@ -302,12 +306,90 @@ export const useCartKeyboard = (selectedRowId: string | null) => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
       const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
-      const isScanner = target.id === 'barcode-scanner' || target.classList?.contains('barcode-scanner-input');
+      const isScanner = target.getAttribute('data-barcode-scanner') === 'true'; // Add this line
+
+      // FIXED: More comprehensive customer search detection
+      const isCustomerSearch = target.tagName === 'INPUT' && (
+        target.getAttribute('data-customer-search') === 'true' ||
+        (target as HTMLInputElement).placeholder?.toLowerCase().includes('search name') ||
+        (target as HTMLInputElement).placeholder?.toLowerCase().includes('customer') ||
+        target.closest('[data-customer-search]') !== null
+      );
+
+      // CRITICAL FIX: Exit early for ANY customer search interaction
+      if (isCustomerSearch || (window as any).customerSearchActive) {
+        // Don't process ANY events when in customer search
+        return;
+      }
+      
       const isBody = target.tagName === 'BODY';
       
-      // Handle numpad 0 for refocusing - only if not typing in an input
+      // Handle Ctrl+Enter for POS navigation - ONLY when NOT in customer search
+      if (e.ctrlKey && e.key === 'Enter') {
+        const activeElement = document.activeElement;
+        const isCashInput = activeElement && activeElement.getAttribute('placeholder') === '0.00';
+        const currentStep = (window as any).posStep || 1;
+
+        // Only block in Step 1
+        if (currentStep === 1 && (isCustomerSearch || (window as any).customerSearchActive)) {
+          return;
+        }
+
+        if (currentStep === 1) {
+          if (!isCashInput) {
+            // Focus cash input if not already focused, and STOP
+            const cashInput = document.querySelector('input[placeholder="0.00"]') as HTMLInputElement;
+            if (cashInput) {
+              cashInput.focus();
+              cashInput.select();
+            }
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+          }
+        }
+
+        // For step 2 and 3, allow Ctrl+Enter even if customer search is focused
+        e.preventDefault();
+        e.stopPropagation();
+        window.dispatchEvent(new CustomEvent('pos:next-step'));
+        return;
+      }
+      
+      // Handle Ctrl+1 for POS navigation to Step 2 - ONLY when NOT in customer search
+      if (e.ctrlKey && e.key === '1') {
+        const activeElement = document.activeElement;
+        const isCashInput = activeElement && activeElement.getAttribute('placeholder') === '0.00';
+        const currentStep = (window as any).posStep || 1;
+
+        if (isCustomerSearch || (window as any).customerSearchActive) {
+          return;
+        }
+
+        if (currentStep === 1) {
+          if (!isCashInput) {
+            // Focus cash input if not already focused, and STOP
+            const cashInput = document.querySelector('input[placeholder="0.00"]') as HTMLInputElement;
+            if (cashInput) {
+              cashInput.focus();
+              cashInput.select();
+            }
+            e.preventDefault();
+            e.stopPropagation();
+            return; // <-- Do NOT dispatch pos:next-step!
+          }
+          // If already focused, let pos:next-step handler decide if amount is sufficient
+        }
+
+        // For step 2 and 3, just proceed as usual
+        e.preventDefault();
+        e.stopPropagation();
+        window.dispatchEvent(new CustomEvent('pos:next-step'));
+        return;
+      }
+      
+      // Handle numpad 0 for refocusing - BUT NOT when typing in customer search
       if ((e.key === "0" && e.code === "Numpad0") || e.key === "F5") {
-        // Don't interfere if user is typing in search or other inputs
         if (!isInput || isScanner) {
           e.preventDefault();
           e.stopPropagation();
@@ -317,9 +399,19 @@ export const useCartKeyboard = (selectedRowId: string | null) => {
         return;
       }
       
-      if (!selectedRowId) return;
-      // Only handle +/- keys if not typing in inputs (except scanner)
-      if (!isBody && !isScanner && isInput) return;
+      if (!selectedRowId) {
+        // If no item is selected, refocus scanner for any key press
+        // BUT NOT if typing in customer search or any input
+        if (!isInput && !isBody) {
+          refocusScanner();
+        }
+        return;
+      }
+      
+      // Handle +/- keys: Allow if on body, scanner input, or not in any input
+      const shouldHandlePlusMinus = isBody || isScanner || (!isInput && !isCustomerSearch);
+      
+      if (!shouldHandlePlusMinus) return;
       
       const isPlusKey = e.key === "+" || e.code === "NumpadAdd" || (e.code === "Equal" && e.shiftKey);
       const isMinusKey = e.key === "-" || e.code === "NumpadSubtract" || e.code === "Minus";
@@ -336,15 +428,11 @@ export const useCartKeyboard = (selectedRowId: string | null) => {
         } else if (item.quantity > 1) {
           updateCartItemQuantity(item.id, item.quantity - 1);
         }
-        
-        setTimeout(() => {
-          refocusScanner();
-          window.dispatchEvent(new Event('focusBarcodeScanner'));
-        }, 50);
       }
     };
     
-    document.addEventListener("keydown", handleKeyDown, { capture: true, passive: false });
-    return () => document.removeEventListener("keydown", handleKeyDown, { capture: true });
+    // Use capture: false to let customer search handle events first
+    document.addEventListener("keydown", handleKeyDown, { capture: false, passive: false });
+    return () => document.removeEventListener("keydown", handleKeyDown, { capture: false });
   }, [selectedRowId, cart, updateCartItemQuantity, refocusScanner]);
 };

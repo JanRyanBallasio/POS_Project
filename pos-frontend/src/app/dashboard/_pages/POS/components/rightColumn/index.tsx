@@ -28,6 +28,11 @@ export default function RightColumn({ step, setStep }: POSRightColProps) {
     setChange(amountValue - cartTotal);
   }, [amount, cartTotal]);
 
+  const handleCustomerAutoSelect = useCallback((customer: Customer) => {
+    selectCustomer(customer);
+    setCustomerQuery(customer.name);
+  }, []);
+
   const {
     customerQuery,
     setCustomerQuery,
@@ -37,7 +42,7 @@ export default function RightColumn({ step, setStep }: POSRightColProps) {
     clearCustomer,
     allCustomers,
     setAllCustomers,
-  } = useCustomerTagging();
+  } = useCustomerTagging(handleCustomerAutoSelect); // Pass the callback here
 
   // Calculator
   const handleNext = useCallback(() => {
@@ -49,6 +54,119 @@ export default function RightColumn({ step, setStep }: POSRightColProps) {
       alert("Insufficient amount");
     }
   }, [amount, cartTotal, setStep]);
+  const handleNewTransaction = useCallback(async () => {
+    if (isProcessingSale || cart.length === 0) return;
+
+    try {
+      setIsProcessingSale(true);
+
+      const salesPayload = {
+        customer_id: selectedCustomer?.id || null,
+        total_purchase: cartTotal,
+        items: cart.map((item) => ({
+          product_id: item.product.id,
+          quantity: item.quantity,
+          price: item.product.price,
+        })),
+      };
+
+      await axios.post('/sales', salesPayload);
+
+      // Refresh customer data if needed (but don't keep them selected)
+      try {
+        const customerResp = await axios.get('/customers');
+        if (customerResp.data?.success && Array.isArray(customerResp.data.data)) {
+          setAllCustomers(customerResp.data.data);
+        }
+      } catch (err) {
+        console.warn('Failed to refresh customer data:', err);
+      }
+
+      // CRITICAL FIX: Reset ALL state - including customer data - IMMEDIATELY
+      clearCustomer(); // Clear customer FIRST
+      setStep(1);
+      setAmount("");
+      setChange(0);
+      clearCart();
+      
+      // CRITICAL FIX: Clear global flags immediately
+      (window as any).customerSearchActive = false;
+      
+      // Delay refocus slightly to ensure all state is reset
+      setTimeout(() => {
+        refocusScanner();
+      }, 100);
+
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.error || err.message || "Unknown error";
+      alert("Error saving sale: " + errorMessage);
+    } finally {
+      setIsProcessingSale(false);
+    }
+  }, [cart, selectedCustomer, cartTotal, clearCustomer, clearCart, refocusScanner, isProcessingSale, setAllCustomers]);
+
+  // Handle Ctrl+Enter for different steps
+  useEffect(() => {
+    const handlePosNext = () => {
+      console.log("🔥 RightColumn handlePosNext triggered:", {
+        step,
+        isProcessingSale,
+        customerSearchActive: (window as any).customerSearchActive,
+        activeElement: document.activeElement,
+        activeElementTag: document.activeElement?.tagName,
+      });
+
+      if (isProcessingSale) {
+        console.log("❌ RightColumn: Processing sale, ignoring");
+        return;
+      }
+
+      // CRITICAL FIX: Check global flag first
+      if ((window as any).customerSearchActive) {
+        console.log("❌ RightColumn: Customer search globally active, ignoring pos:next-step");
+        return;
+      }
+
+      // CRITICAL FIX: Check if event originated from customer search
+      const activeElement = document.activeElement;
+      const isCustomerSearch = activeElement && (
+        (activeElement as HTMLElement).getAttribute('data-customer-search') === 'true' ||
+        (activeElement as HTMLInputElement).placeholder?.toLowerCase().includes('search name') ||
+        (activeElement as HTMLElement).closest('[data-customer-search]') !== null
+      );
+      
+      if (isCustomerSearch) {
+        console.log("❌ RightColumn: Customer search active, ignoring pos:next-step");
+        return;
+      }
+
+      // FIXED: Handle ALL steps including step 1
+      if (step === 1) {
+        // Step 1: Move to step 2 only if amount is sufficient
+        const amountValue = parseFloat(amount) || 0;
+        if (amountValue >= cartTotal && cart.length > 0) {
+          console.log("✅ RightColumn: Step 1 -> Step 2");
+          setStep(2);
+        } else {
+          console.log("❌ RightColumn: Insufficient amount or empty cart");
+        }
+      } else if (step === 2) {
+        console.log("✅ RightColumn: Step 2 -> Step 3");
+        setStep(3);
+      } else if (step === 3) {
+        console.log("✅ RightColumn: Step 3 -> New Transaction");
+        handleNewTransaction();
+      }
+    };
+
+    // CRITICAL FIX: Listen for ALL steps
+    console.log("🎯 RightColumn: Adding pos:next-step listener for step", step);
+    window.addEventListener('pos:next-step', handlePosNext);
+    return () => {
+      console.log("🗑️ RightColumn: Removing pos:next-step listener for step", step);
+      window.removeEventListener('pos:next-step', handlePosNext);
+    };
+  }, [step, isProcessingSale, handleNewTransaction, amount, cartTotal, cart]); // Add missing dependencies
 
   // Print Receipt - Optimized
   const handlePrintReceipt = useCallback(async () => {
@@ -94,40 +212,8 @@ export default function RightColumn({ step, setStep }: POSRightColProps) {
     }
   }, [cart, selectedCustomer, cartTotal, amount, change, isProcessingSale]);
 
-  // New Transaction - Optimized
-  const handleNewTransaction = useCallback(async () => {
-    if (isProcessingSale || cart.length === 0) return;
+  // New Transaction - Updated to properly reset customer data
 
-    try {
-      setIsProcessingSale(true);
-      
-      const salesPayload = {
-        customer_id: selectedCustomer?.id || null,
-        total_purchase: cartTotal,
-        items: cart.map((item) => ({
-          product_id: item.product.id,
-          quantity: item.quantity,
-          price: item.product.price,
-        })),
-      };
-      
-      await axios.post('/sales', salesPayload);
-      
-      // Reset state
-      setStep(1);
-      setAmount("");
-      clearCustomer();
-      setChange(0);
-      clearCart();
-      refocusScanner();
-      
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.error || err.message || "Unknown error";
-      alert("Error saving sale: " + errorMessage);
-    } finally {
-      setIsProcessingSale(false);
-    }
-  }, [cart, selectedCustomer, cartTotal, setStep, clearCustomer, clearCart, refocusScanner, isProcessingSale]);
 
   const handleCustomerAdded = useCallback((newCustomer: Customer) => {
     setAllCustomers((prev) => [...prev, newCustomer]);
@@ -135,8 +221,36 @@ export default function RightColumn({ step, setStep }: POSRightColProps) {
     setCustomerQuery(newCustomer.name);
   }, [setAllCustomers, selectCustomer, setCustomerQuery]);
 
+  // Add this effect to clear customer when going back to step 1
+  useEffect(() => {
+    if (step === 1) {
+      // Clear customer data when returning to step 1 from any other step
+      clearCustomer();
+    }
+  }, [step, clearCustomer]);
+
+  // Modified click handler to not interfere with customer search
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't refocus scanner if we're in step 2 or 3, or if clicking on customer search area
+    if (step === 2 || step === 3) {
+      return;
+    }
+
+    // Only refocus if clicking on the card itself, not child elements
+    if (e.target === e.currentTarget) {
+      refocusScanner();
+    }
+  };
+
+  useEffect(() => {
+    (window as any).posStep = step;
+    return () => {
+      delete (window as any).posStep;
+    };
+  }, [step]);
+
   return (
-    <Card className="h-full flex flex-col" onClick={refocusScanner}>
+    <Card className="h-full flex flex-col" onClick={handleCardClick}>
       <CardContent className="flex-1 flex flex-col p-4 pb-0">
         <h1 className="text-xl font-medium">Total</h1>
         <div className="w-full py-3 mb-2">
@@ -175,20 +289,20 @@ export default function RightColumn({ step, setStep }: POSRightColProps) {
                 onCustomerAdded={handleCustomerAdded}
               />
               <CardFooter className="px-4 pb-4 pt-4 flex flex-col gap-3">
-                <Button 
-                  className="w-full h-14 text-xl font-medium" 
-                  variant="outline" 
+                <Button
+                  className="w-full h-14 text-xl font-medium"
+                  variant="outline"
                   onClick={() => setStep(1)}
                   disabled={isProcessingSale}
                 >
                   Back
                 </Button>
-                <Button 
-                  className="w-full h-14 text-xl font-medium" 
+                <Button
+                  className="w-full h-14 text-xl font-medium"
                   onClick={() => setStep(3)}
                   disabled={isProcessingSale}
                 >
-                  Finish Transaction
+                  Finish Transaction <span className="ml-2 text-sm opacity-75">(Ctrl+Enter)</span>
                 </Button>
               </CardFooter>
             </>
@@ -197,20 +311,20 @@ export default function RightColumn({ step, setStep }: POSRightColProps) {
             <>
               <Receipt selectedCustomer={selectedCustomer} cartTotal={cartTotal} />
               <CardFooter className="px-4 pb-4 pt-4 flex flex-col gap-2">
-                <Button 
-                  className="w-full h-14 text-xl font-medium" 
+                <Button
+                  className="w-full h-14 text-xl font-medium"
                   onClick={handlePrintReceipt}
                   disabled={isProcessingSale}
                 >
                   {isProcessingSale ? "Processing..." : "Print Receipt"}
                 </Button>
-                <Button 
-                  className="w-full h-14 text-xl font-medium" 
-                  variant="outline" 
+                <Button
+                  className="w-full h-14 text-xl font-medium"
+                  variant="outline"
                   onClick={handleNewTransaction}
                   disabled={isProcessingSale}
                 >
-                  Close
+                  Close <span className="ml-2 text-sm opacity-75">(Ctrl+Enter)</span>
                 </Button>
               </CardFooter>
             </>

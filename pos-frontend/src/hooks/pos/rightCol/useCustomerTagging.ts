@@ -1,4 +1,3 @@
-// ...existing code...
 import { useState, useEffect, useCallback } from "react";
 import axios from "@/lib/axios";
 
@@ -8,7 +7,7 @@ export interface Customer {
   points: number;
 }
 
-export function useCustomerTagging() {
+export function useCustomerTagging(onAutoSelect?: (customer: Customer) => void) {
   const [customerQuery, setCustomerQuery] = useState("");
   const [allCustomers, setAllCustomers] = useState<Customer[]>([]);
   const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
@@ -42,12 +41,47 @@ export function useCustomerTagging() {
     );
   }, [customerQuery, allCustomers]);
 
+  // FIXED: Auto-select when only one customer is found - CRITICAL TIMING FIX
+  useEffect(() => {
+    if (filteredCustomers.length === 1 && customerQuery.trim().length >= 2 && onAutoSelect && !selectedCustomer) {
+      const autoSelectTimer = setTimeout(() => {
+        const customer = filteredCustomers[0];
+        
+        console.log("🎯 useCustomerTagging: About to auto-select customer:", customer.name);
+        
+        // CRITICAL FIX: Set a longer delay before clearing the flag to prevent race conditions
+        onAutoSelect(customer);
+        selectCustomer(customer);
+        setCustomerQuery(customer.name);
+        
+        // CRITICAL FIX: Use a longer delay to ensure all events are properly handled
+        setTimeout(() => {
+          console.log("🎯 useCustomerTagging: Clearing global flag after auto-selection");
+          (window as any).customerSearchActive = false;
+        }, 200); // Longer delay to prevent race condition
+        
+      }, 800); // Increased delay to 800ms to prevent premature auto-selection
+
+      return () => clearTimeout(autoSelectTimer);
+    }
+  }, [filteredCustomers, customerQuery, onAutoSelect, selectedCustomer]);
+
   const selectCustomer = (customer: Customer) => {
     setSelectedCustomer(customer);
     setCustomerQuery(customer.name);
+    // ADDED: Clear global flag when manually selecting customer too - with delay
+    setTimeout(() => {
+      (window as any).customerSearchActive = false;
+    }, 100);
   };
 
-  const clearCustomer = () => setSelectedCustomer(null);
+  // UPDATED: Clear both selected customer AND query - AGGRESSIVE CLEAR
+  const clearCustomer = () => {
+    console.log("🧹 useCustomerTagging: Clearing customer data");
+    setSelectedCustomer(null);
+    setCustomerQuery(""); // <-- Add this line to clear the input!
+    (window as any).customerSearchActive = false;
+  };
 
   return {
     customerQuery,
@@ -61,4 +95,3 @@ export function useCustomerTagging() {
     setAllCustomers,
   };
 }
-// ...existing code...
