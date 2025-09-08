@@ -168,7 +168,45 @@ export default function RightColumn({ step, setStep }: POSRightColProps) {
     };
   }, [step, isProcessingSale, handleNewTransaction, amount, cartTotal, cart]); // Add missing dependencies
 
-  // Print Receipt - Optimized
+  // Print PDF (opens in new tab)
+  const handlePrintPDF = useCallback(async () => {
+    if (isProcessingSale) return;
+
+    const items = cart.map((item) => ({
+      desc: item.product?.name ?? item.product?.barcode ?? "Item",
+      qty: Number(item.quantity || 0),
+      amount: Number(((item.product?.price || 0) * item.quantity).toFixed(2)),
+    }));
+
+    const payload = {
+      customer: selectedCustomer || { name: "N/A" },
+      cartTotal: Number(cartTotal || 0),
+      amount: Number(parseFloat(amount) || cartTotal || 0),
+      change: Number(change || 0),
+      items,
+    };
+
+    try {
+      setIsProcessingSale(true);
+      const res = await axios.post('/receipt', payload, {
+        responseType: 'blob'
+      });
+
+      const blob = res.data;
+      const url = URL.createObjectURL(blob);
+
+      window.open(url, '_blank');
+
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.error || err.message || "Unknown error";
+      alert("Error generating receipt: " + errorMessage);
+    } finally {
+      setIsProcessingSale(false);
+    }
+  }, [cart, selectedCustomer, cartTotal, amount, change, isProcessingSale]);
+
+  // Print Receipt - Optimized for Next.js (client-only)
   const handlePrintReceipt = useCallback(async () => {
     if (isProcessingSale) return;
 
@@ -188,7 +226,6 @@ export default function RightColumn({ step, setStep }: POSRightColProps) {
 
     try {
       setIsProcessingSale(true);
-      // Create a FormData object to POST (or use JSON as before)
       const res = await axios.post('/receipt', payload, {
         responseType: 'blob'
       });
@@ -196,14 +233,22 @@ export default function RightColumn({ step, setStep }: POSRightColProps) {
       const blob = res.data;
       const url = URL.createObjectURL(blob);
 
-      // Open PDF in a new tab
-      window.open(url, '_blank');
+      // Ensure this code only runs on the client
+      if (typeof window !== 'undefined') {
+        // Dynamically import print-js only on the client
+        const printJS = (await import('print-js')).default;
+        printJS({
+          printable: url,
+          type: 'pdf',
+          showModal: false,
+          onError: (err: any) => alert('Print error: ' + err),
+          onLoadingEnd: () => setTimeout(() => URL.revokeObjectURL(url), 10000),
+        });
+      }
 
-      // Optionally, revoke the object URL after some time
-      setTimeout(() => URL.revokeObjectURL(url), 10000);
     } catch (err: any) {
       const errorMessage = err.response?.data?.error || err.message || "Unknown error";
-      alert("Error generating receipt: " + errorMessage);
+      alert("Error printing receipt: " + errorMessage);
     } finally {
       setIsProcessingSale(false);
     }
@@ -314,6 +359,14 @@ export default function RightColumn({ step, setStep }: POSRightColProps) {
                   disabled={isProcessingSale}
                 >
                   {isProcessingSale ? "Processing..." : "Print Receipt"}
+                </Button>
+                <Button
+                  className="w-full h-14 text-xl font-medium"
+                  variant="outline"
+                  onClick={handlePrintPDF}
+                  disabled={isProcessingSale}
+                >
+                  Print PDF
                 </Button>
                 <Button
                   className="w-full h-14 text-xl font-medium"
