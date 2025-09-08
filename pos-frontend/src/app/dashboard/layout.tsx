@@ -17,8 +17,8 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }>) {
   return (
-     <ProductModalProvider>
-      <SidebarProvider>
+    <ProductModalProvider>
+      <SidebarProvider defaultOpen={false}>
         <AppSidebar />
         <main className="w-full h-screen flex flex-col">
           <ProductRegisterModal />
