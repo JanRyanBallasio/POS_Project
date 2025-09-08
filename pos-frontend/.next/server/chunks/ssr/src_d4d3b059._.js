@@ -1466,21 +1466,16 @@ function RightColumn({ step, setStep }) {
         };
         try {
             setIsProcessingSale(true);
+            // Create a FormData object to POST (or use JSON as before)
             const res = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$axios$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"].post('/receipt', payload, {
                 responseType: 'blob'
             });
             const blob = res.data;
-            const cd = res.headers['content-disposition'] || "";
-            const m = cd.match(/filename="?(.+?)"?($|;)/);
-            const filename = m ? m[1] : `receipt-${Date.now()}.pdf`;
             const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            URL.revokeObjectURL(url);
+            // Open PDF in a new tab
+            window.open(url, '_blank');
+            // Optionally, revoke the object URL after some time
+            setTimeout(()=>URL.revokeObjectURL(url), 10000);
         } catch (err) {
             const errorMessage = err.response?.data?.error || err.message || "Unknown error";
             alert("Error generating receipt: " + errorMessage);
@@ -1548,7 +1543,7 @@ function RightColumn({ step, setStep }) {
                     children: "Total"
                 }, void 0, false, {
                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                    lineNumber: 255,
+                    lineNumber: 252,
                     columnNumber: 9
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1560,25 +1555,25 @@ function RightColumn({ step, setStep }) {
                                 children: "₱"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                lineNumber: 258,
+                                lineNumber: 255,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("h1", {
                                 children: cartTotal.toFixed(2)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                lineNumber: 259,
+                                lineNumber: 256,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                        lineNumber: 257,
+                        lineNumber: 254,
                         columnNumber: 11
                     }, this)
                 }, void 0, false, {
                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                    lineNumber: 256,
+                    lineNumber: 253,
                     columnNumber: 9
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1593,7 +1588,7 @@ function RightColumn({ step, setStep }) {
                             cartIsEmpty: cart.length === 0
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                            lineNumber: 264,
+                            lineNumber: 261,
                             columnNumber: 13
                         }, this),
                         step === 2 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Fragment"], {
@@ -1604,14 +1599,14 @@ function RightColumn({ step, setStep }) {
                                     change: change
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                    lineNumber: 275,
+                                    lineNumber: 272,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                     className: "flex-1"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                    lineNumber: 276,
+                                    lineNumber: 273,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_pages$2f$POS$2f$components$2f$rightColumn$2f$CustomerSearch$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
@@ -1624,7 +1619,7 @@ function RightColumn({ step, setStep }) {
                                     onAddCustomer: ()=>setAddCustomerOpen(true)
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                    lineNumber: 277,
+                                    lineNumber: 274,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_pages$2f$POS$2f$components$2f$rightColumn$2f$AddCustomerModal$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
@@ -1633,7 +1628,7 @@ function RightColumn({ step, setStep }) {
                                     onCustomerAdded: handleCustomerAdded
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                    lineNumber: 286,
+                                    lineNumber: 283,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardFooter"], {
@@ -1647,7 +1642,7 @@ function RightColumn({ step, setStep }) {
                                             children: "Back"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                            lineNumber: 292,
+                                            lineNumber: 289,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
@@ -1661,19 +1656,19 @@ function RightColumn({ step, setStep }) {
                                                     children: "(Ctrl+Enter)"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                                    lineNumber: 305,
+                                                    lineNumber: 302,
                                                     columnNumber: 38
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                            lineNumber: 300,
+                                            lineNumber: 297,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                    lineNumber: 291,
+                                    lineNumber: 288,
                                     columnNumber: 15
                                 }, this)
                             ]
@@ -1685,7 +1680,7 @@ function RightColumn({ step, setStep }) {
                                     cartTotal: cartTotal
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                    lineNumber: 312,
+                                    lineNumber: 309,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardFooter"], {
@@ -1698,7 +1693,7 @@ function RightColumn({ step, setStep }) {
                                             children: isProcessingSale ? "Processing..." : "Print Receipt"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                            lineNumber: 314,
+                                            lineNumber: 311,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
@@ -1713,19 +1708,19 @@ function RightColumn({ step, setStep }) {
                                                     children: "(Ctrl+Enter)"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                                    lineNumber: 327,
+                                                    lineNumber: 324,
                                                     columnNumber: 25
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                            lineNumber: 321,
+                                            lineNumber: 318,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                    lineNumber: 313,
+                                    lineNumber: 310,
                                     columnNumber: 15
                                 }, this)
                             ]
@@ -1733,18 +1728,18 @@ function RightColumn({ step, setStep }) {
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                    lineNumber: 262,
+                    lineNumber: 259,
                     columnNumber: 9
                 }, this)
             ]
         }, void 0, true, {
             fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-            lineNumber: 254,
+            lineNumber: 251,
             columnNumber: 7
         }, this)
     }, void 0, false, {
         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-        lineNumber: 253,
+        lineNumber: 250,
         columnNumber: 5
     }, this);
 }

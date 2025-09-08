@@ -188,22 +188,19 @@ export default function RightColumn({ step, setStep }: POSRightColProps) {
 
     try {
       setIsProcessingSale(true);
+      // Create a FormData object to POST (or use JSON as before)
       const res = await axios.post('/receipt', payload, {
         responseType: 'blob'
       });
 
       const blob = res.data;
-      const cd = res.headers['content-disposition'] || "";
-      const m = cd.match(/filename="?(.+?)"?($|;)/);
-      const filename = m ? m[1] : `receipt-${Date.now()}.pdf`;
       const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+
+      // Open PDF in a new tab
+      window.open(url, '_blank');
+
+      // Optionally, revoke the object URL after some time
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
     } catch (err: any) {
       const errorMessage = err.response?.data?.error || err.message || "Unknown error";
       alert("Error generating receipt: " + errorMessage);
