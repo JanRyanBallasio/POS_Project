@@ -22,7 +22,7 @@ export function useBarcodeScan(onScan: (barcode: string) => void | Promise<void>
     };
 
     focusInput();
-    
+
     const handleFocusScanner = () => {
       if (!processingRef.current && inputRef.current) {
         inputRef.current.focus();
@@ -30,18 +30,22 @@ export function useBarcodeScan(onScan: (barcode: string) => void | Promise<void>
       }
     };
 
-    // Updated global key handler - respects user input
+    // Updated global key handler - respects customer input
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      // Check if user is typing in an input field
       const activeElement = document.activeElement;
       const isTypingInInput = activeElement && (
-        activeElement.tagName === 'INPUT' || 
+        activeElement.tagName === 'INPUT' ||
         activeElement.tagName === 'TEXTAREA' ||
         (activeElement as HTMLElement).contentEditable === 'true'
       );
 
-      // Only capture scanner shortcuts if not typing in an input
-      if (!isTypingInInput && ((e.key === "0" && e.code === "Numpad0") || e.key === "F5")) {
+      // FIXED: Don't interfere with customer search
+      const isCustomerSearch = activeElement && (
+        (activeElement as HTMLElement).getAttribute('data-customer-search') === 'true' ||
+        (activeElement as HTMLInputElement).placeholder?.toLowerCase().includes('search name')
+      );
+
+      if (!isTypingInInput && !isCustomerSearch && ((e.key === "0" && e.code === "Numpad0") || e.key === "F5")) {
         e.preventDefault();
         e.stopPropagation();
         handleFocusScanner();
@@ -62,15 +66,15 @@ export function useBarcodeScan(onScan: (barcode: string) => void | Promise<void>
   const runScan = async (raw: string) => {
     const now = Date.now();
     const clean = String(raw).replace(/[\n\r\t]/g, "").trim();
-    
+
     if (!clean || clean.length < 2) return;
     if (processingRef.current) {
       console.log("🔍 Scanner: Already processing, ignoring:", clean);
       return;
     }
 
-    if (clean === lastProcessedBarcode.current && 
-        (now - lastProcessedTime.current) < DUPLICATE_PREVENT_MS) {
+    if (clean === lastProcessedBarcode.current &&
+      (now - lastProcessedTime.current) < DUPLICATE_PREVENT_MS) {
       console.log("🔍 Scanner: Duplicate scan prevented:", clean);
       return;
     }
@@ -83,16 +87,16 @@ export function useBarcodeScan(onScan: (barcode: string) => void | Promise<void>
     processingRef.current = true;
     lastProcessedBarcode.current = clean;
     lastProcessedTime.current = now;
-    
+
     console.log("🔍 Scanner: Processing barcode:", clean);
-    
+
     try {
       await Promise.resolve(onScan(clean));
     } catch (error) {
       console.warn('[useBarcodeScan] Scan error:', error);
     } finally {
       setBarcodeInput("");
-      
+
       setTimeout(() => {
         processingRef.current = false;
         try {
