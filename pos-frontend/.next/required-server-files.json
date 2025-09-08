@@ -96,7 +96,7 @@
         "transform": "lodash/{{member}}"
       }
     },
-    "outputFileTracingRoot": "D:\\Code\\POS_Project\\pos-frontend",
+    "outputFileTracingRoot": "D:\\Code\\POS\\POS_Project\\pos-frontend",
     "experimental": {
       "useSkewCookie": false,
       "cacheLife": {
@@ -285,20 +285,20 @@
     "bundlePagesRouterDependencies": false,
     "configFileName": "next.config.ts",
     "turbopack": {
-      "root": "D:\\Code\\POS_Project\\pos-frontend"
+      "root": "D:\\Code\\POS\\POS_Project\\pos-frontend"
     },
     "_originalRewrites": {
       "beforeFiles": [],
       "afterFiles": [
         {
           "source": "/api/:path*",
-          "destination": "http://3.107.238.186:5000/api/:path*"
+          "destination": "http://localhost:5000/api/:path*"
         }
       ],
       "fallback": []
     }
   },
-  "appDir": "D:\\Code\\POS_Project\\pos-frontend",
+  "appDir": "D:\\Code\\POS\\POS_Project\\pos-frontend",
   "relativeAppDir": "",
   "files": [
     ".next\\routes-manifest.json",
