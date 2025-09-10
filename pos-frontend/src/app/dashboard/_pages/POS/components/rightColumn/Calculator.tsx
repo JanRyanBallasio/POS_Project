@@ -22,6 +22,21 @@ export default function Calculator({
 }: CalculatorProps) {
   const cashInputRef = useRef<HTMLInputElement>(null);
 
+  // NEW: focus handler for global event
+  useEffect(() => {
+    const handleFocusCash = () => {
+      try {
+        if (cashInputRef.current && !cartIsEmpty) {
+          cashInputRef.current.focus();
+          cashInputRef.current.select();
+        }
+      } catch { }
+    };
+
+    window.addEventListener("focusCashInput", handleFocusCash);
+    return () => window.removeEventListener("focusCashInput", handleFocusCash);
+  }, [cartIsEmpty]);
+
   const handleCalcButtonClick = (value: string) => {
     if (value === "C") {
       setAmount("");
@@ -40,11 +55,21 @@ export default function Calculator({
   };
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.ctrlKey && e.key === 'Enter') {
+    // Ctrl+Enter behavior remains (global handler in pos-screen also dispatches focus)
+    if (e.ctrlKey && e.key === "Enter") {
       e.preventDefault();
       e.stopPropagation();
-      // Do NOT call window.dispatchEvent here, let global handler do it
-      // If you want to allow local shortcut, you can call window.dispatchEvent here
+      return;
+    }
+
+    // When Enter is pressed while the cash input is focused, advance POS step (step 1 complete)
+    if (e.key === "Enter" && !e.ctrlKey) {
+      if (e.target === cashInputRef.current) {
+        e.preventDefault();
+        e.stopPropagation();
+        // Dispatch the step-1-specific event (cash input confirms step 1 -> step 2)
+        window.dispatchEvent(new CustomEvent("pos:step-1-complete"));
+      }
     }
   };
 
@@ -61,6 +86,7 @@ export default function Calculator({
       <Label className="text-lg mb-2 font-medium">Cash</Label>
       <Input
         ref={cashInputRef}
+        data-pos-cash-input="true"
         className="h-20 !text-5xl text-right font-medium mb-6 border-2 border-gray-300 shadow-sm placeholder:text-5xl placeholder:font-medium placeholder:text-gray-400"
         value={amount}
         onChange={handleInputChange}

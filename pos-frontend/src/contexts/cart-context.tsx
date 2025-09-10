@@ -25,7 +25,7 @@ interface CartContextType {
   lastAddedItemId: string | null;
   scanAndAddToCart: (barcode: string, preValidatedProduct?: Product | null) => Promise<void>;
   addProductToCart: (product: Product) => void;
-  refocusScanner: () => void;
+  refocusScanner: (force?: boolean) => void;
   setScannerRef: (ref: RefObject<HTMLInputElement>) => void;
   updateCartItemQuantity: (id: string, quantity: number) => void;
   updateCartItemPrice: (id: string, price: number) => void;
@@ -68,31 +68,112 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     setScannerInputRef(ref);
   }, []);
 
-  const refocusScanner = useCallback(() => {
+  const refocusScanner = useCallback((force = false) => {
     try {
-      if (scannerInputRef?.current) {
-        scannerInputRef.current.focus();
+      const el = scannerInputRef?.current;
+      if (!el) return;
+      const active = document.activeElement as HTMLElement | null;
+
+      // If not forced, don't steal focus while user is actively typing in a visible input we care about
+      if (!force && active) {
+        const tag = active.tagName;
+        const isTyping =
+          tag === "INPUT" ||
+          tag === "TEXTAREA" ||
+          (active as HTMLElement).isContentEditable === true;
+
+        const isProductSearch =
+          active.getAttribute?.("data-product-search") === "true" ||
+          String((active as HTMLInputElement).placeholder || "")
+            .toLowerCase()
+            .includes("search by product");
+
+        const isCustomerSearch =
+          active.getAttribute?.("data-customer-search") === "true" ||
+          String((active as HTMLInputElement).placeholder || "")
+            .toLowerCase()
+            .includes("search name");
+
+        const isPriceInput = !!active.getAttribute?.("data-cart-price-input");
+        const isQtyInput = !!active.getAttribute?.("data-cart-qty-input");
+        const isCashInput =
+          active.getAttribute?.("data-pos-cash-input") === "true" ||
+          (active.getAttribute && active.getAttribute("placeholder") === "0.00");
+
+        // If user is actively typing in any of those, do not override unless forced
+        if (
+          isTyping &&
+          (isProductSearch || isCustomerSearch || isPriceInput || isQtyInput || isCashInput)
+        ) {
+          return;
+        }
       }
-    } catch { }
+
+      // Defer to next frame so DOM updates (removal/add) complete first
+      requestAnimationFrame(() => {
+        try {
+          scannerInputRef?.current?.focus();
+          // If the scanner input supports select, select its content
+          (scannerInputRef?.current as HTMLInputElement | null)?.select?.();
+        } catch {
+          // swallow focus errors
+        }
+      });
+    } catch {
+      // ignore
+    }
   }, [scannerInputRef]);
 
+  // Use refocusScanner inside deleteCartItem to ensure focus returns after deletion
+  const deleteCartItem = useCallback((id: string) => {
+    // compute next selected id (row above or new first) based on current cart
+    let nextSelectedId: string | null = null;
+    if (cart && cart.length > 0) {
+      const idx = cart.findIndex((item) => item.id === id);
+      if (cart.length > 1) {
+        if (idx > 0) {
+          nextSelectedId = cart[idx - 1].id;
+        } else {
+          // deleted first item -> select the new first (old index 1)
+          nextSelectedId = cart[1]?.id ?? null;
+        }
+      } else {
+        nextSelectedId = null;
+      }
+    }
+
+    setCart((prevCart) => prevCart.filter((item) => item.id !== id));
+    setLastAddedItemId((prev) => (prev === id ? null : prev));
+
+    // Notify listeners about deletion and desired next selection
+    try {
+      window.dispatchEvent(
+        new CustomEvent("cart:item-deleted", {
+          detail: { deletedId: id, nextSelectedId },
+        })
+      );
+    } catch (err) {
+      // ignore in environments without window
+    }
+
+    // Ensure scanner regains focus after DOM update (force true)
+    refocusScanner(true);
+  }, [cart, refocusScanner]);
+
+  // Update quantity for an item
   const updateCartItemQuantity = useCallback((id: string, quantity: number) => {
-    setCart((prevCart) =>
-      prevCart.map((item) => (item.id === id ? { ...item, quantity } : item))
+    setCart((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, quantity: Math.max(1, Number(quantity) || 1) } : item))
     );
   }, []);
 
+  // Update price for an item
   const updateCartItemPrice = useCallback((id: string, price: number) => {
-    setCart((prevCart) =>
-      prevCart.map((item) =>
-        item.id === id ? { ...item, product: { ...item.product, price } } : item
+    setCart((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, product: { ...item.product, price: Number(isFinite(Number(price)) ? price : 0) } } : item
       )
     );
-  }, []);
-
-  const deleteCartItem = useCallback((id: string) => {
-    setCart((prevCart) => prevCart.filter((item) => item.id !== id));
-    setLastAddedItemId(prev => prev === id ? null : prev);
   }, []);
 
   const addOrIncrement = useCallback((product: Product) => {
@@ -139,7 +220,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       });
       setLastAddedItemId(cartItem.id);
       console.log("🎯 Set lastAddedItemId to:", cartItem.id);
-      return [...prevCart, cartItem];
+
+      // PREPEND new item so latest products show first
+      return [cartItem, ...prevCart];
     });
   }, [lastScanTime]);
 
@@ -298,7 +381,7 @@ export const useCart = () => {
 };
 
 export const useCartKeyboard = (selectedRowId: string | null) => {
-  const { cart, updateCartItemQuantity, refocusScanner } = useCart();
+  const { cart, updateCartItemQuantity, refocusScanner, deleteCartItem } = useCart();
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -306,9 +389,17 @@ export const useCartKeyboard = (selectedRowId: string | null) => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
       const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
-      const isScanner = target.getAttribute('data-barcode-scanner') === 'true'; // Add this line
+      const isScanner = target.getAttribute('data-barcode-scanner') === 'true' || (target.id === 'barcode-scanner');
+      const activeEl = document.activeElement as HTMLElement | null;
 
-      // FIXED: More comprehensive customer search detection
+      // detect product search input (matches placeholder used in ProductSearch)
+      const isProductSearch = activeEl && activeEl.tagName === 'INPUT' && (
+        (activeEl as HTMLInputElement).placeholder?.toLowerCase().includes('search by product') ||
+        activeEl.getAttribute('data-product-search') === 'true' ||
+        activeEl.closest('[data-product-search]') !== null
+      );
+
+      // More comprehensive customer search detection
       const isCustomerSearch = target.tagName === 'INPUT' && (
         target.getAttribute('data-customer-search') === 'true' ||
         (target as HTMLInputElement).placeholder?.toLowerCase().includes('search name') ||
@@ -316,79 +407,260 @@ export const useCartKeyboard = (selectedRowId: string | null) => {
         target.closest('[data-customer-search]') !== null
       );
 
-      // CRITICAL FIX: Exit early for ANY customer search interaction
-      if (isCustomerSearch || (window as any).customerSearchActive) {
-        // Don't process ANY events when in customer search
+      const currentStep = (window as any).posStep || 1;
+
+      // Quick add-customer shortcut: Ctrl+Shift+C -> open Add Customer modal
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "c") {
+        e.preventDefault();
+        e.stopPropagation();
+        try {
+          window.dispatchEvent(new CustomEvent("customer:add"));
+        } catch {}
         return;
       }
       
-      const isBody = target.tagName === 'BODY';
+      // Quick add-customer shortcut: Ctrl+Shift+C (unchanged)
+      // if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "c") {
+      //   e.preventDefault();
+      //   e.stopPropagation();
+      //   window.dispatchEvent(new CustomEvent("customer:add"));
+      //   return;
+      // }
       
-      // Handle Ctrl+Enter for POS navigation - ONLY when NOT in customer search
-      if (e.ctrlKey && e.key === 'Enter') {
-        const activeElement = document.activeElement;
-        const isCashInput = activeElement && activeElement.getAttribute('placeholder') === '0.00';
-        const currentStep = (window as any).posStep || 1;
-
-        // Only block in Step 1
-        if (currentStep === 1 && (isCustomerSearch || (window as any).customerSearchActive)) {
+      // STEP-2 ONLY SHORTCUTS (mirror pattern used for STEP-1)
+      if (currentStep === 2) {
+        // Ctrl+C -> focus customer input (select text). Do not interfere with Shift or other combos.
+        if (e.ctrlKey && !e.shiftKey && e.key.toLowerCase() === "c") {
+          e.preventDefault();
+          e.stopPropagation();
+          const customerInput = document.querySelector<HTMLInputElement>(
+            'input[data-customer-search="true"], input[placeholder*="customer"], input[placeholder*="search name"]'
+          );
+          if (customerInput) {
+            try {
+              customerInput.focus();
+              customerInput.select();
+              // mark global flag so other handlers can detect customer typing
+              (window as any).customerSearchActive = true;
+              // clear the flag on blur to restore global shortcuts
+              const onBlur = () => {
+                try {
+                  (window as any).customerSearchActive = false;
+                } catch {}
+                customerInput.removeEventListener("blur", onBlur);
+              };
+              customerInput.addEventListener("blur", onBlur);
+            } catch {}
+          }
           return;
         }
 
-        if (currentStep === 1) {
-          if (!isCashInput) {
-            // Focus cash input if not already focused, and STOP
-            const cashInput = document.querySelector('input[placeholder="0.00"]') as HTMLInputElement;
-            if (cashInput) {
-              cashInput.focus();
-              cashInput.select();
-            }
-            e.preventDefault();
-            e.stopPropagation();
+        // Ctrl+B -> go back to Step 1
+        if (e.ctrlKey && !e.shiftKey && e.key.toLowerCase() === "b") {
+          e.preventDefault();
+          e.stopPropagation();
+          window.dispatchEvent(new CustomEvent("pos:step-1-back"));
+          return;
+        }
+
+        // Plain Enter in Step 2 -> advance to Step 3.
+        // Only block advancement when focused element is a TEXTAREA or contentEditable.
+        if (e.key === "Enter" && !e.ctrlKey) {
+          const activeEl = document.activeElement as HTMLElement | null;
+          // If focus is inside the AddCustomer modal, let the modal handle Enter (do not dispatch step event).
+          const isInAddCustomerModal = !!activeEl && typeof activeEl.closest === "function" && !!activeEl.closest('[data-add-customer-modal="true"]');
+          if (isInAddCustomerModal) {
+            // allow modal inputs / buttons to receive the Enter key
             return;
           }
+          const isTextArea = !!activeEl && activeEl.tagName === "TEXTAREA";
+          const isContentEditable = !!activeEl && (activeEl as HTMLElement).isContentEditable === true;
+          if (!isTextArea && !isContentEditable) {
+            e.preventDefault();
+            e.stopPropagation();
+            window.dispatchEvent(new CustomEvent("pos:step-2-complete"));
+            return;
+          }
+          // otherwise let the focused element handle Enter (e.g. multiline inputs)
+          return;
         }
+ 
+         // keep Step 2-specific shortcuts here if you want more (e.g. Ctrl+D delete in step2), then return
+       } // end STEP-2 block
 
-        // For step 2 and 3, allow Ctrl+Enter even if customer search is focused
+      // STEP-3: Enter -> complete/close transaction (unless typing in a textarea/contentEditable)
+      if (currentStep === 3 && e.key === "Enter" && !e.ctrlKey) {
+        const activeEl = document.activeElement as HTMLElement | null;
+        const isTextArea = !!activeEl && activeEl.tagName === "TEXTAREA";
+        const isContentEditable = !!activeEl && (activeEl as HTMLElement).isContentEditable === true;
+        // If focused element is multiline/contentEditable let it handle Enter
+        if (isTextArea || isContentEditable) {
+          return;
+        }
         e.preventDefault();
         e.stopPropagation();
-        window.dispatchEvent(new CustomEvent('pos:next-step'));
+        try {
+          window.dispatchEvent(new CustomEvent("pos:step-3-complete"));
+        } catch {}
         return;
       }
-      
-      // Handle Ctrl+1 for POS navigation to Step 2 - ONLY when NOT in customer search
-      if (e.ctrlKey && e.key === '1') {
-        const activeElement = document.activeElement;
-        const isCashInput = activeElement && activeElement.getAttribute('placeholder') === '0.00';
-        const currentStep = (window as any).posStep || 1;
 
-        if (isCustomerSearch || (window as any).customerSearchActive) {
+      // STEP-1 ONLY SHORTCUTS
+      if (currentStep === 1) {
+        // F2 handled in leftColumn already (keeps responsibility there) - keep global no-op to avoid interference
+        if (e.key === 'F2') {
+          // do not prevent ProductSearch local handler; leftColumn handles focusing
           return;
         }
 
-        if (currentStep === 1) {
-          if (!isCashInput) {
-            // Focus cash input if not already focused, and STOP
-            const cashInput = document.querySelector('input[placeholder="0.00"]') as HTMLInputElement;
-            if (cashInput) {
-              cashInput.focus();
-              cashInput.select();
+        // Arrow navigation: move selection up/down in cart
+        // Allow when not typing in a regular input OR when the scanner input is focused
+        if (( !isInput || isScanner ) && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
+           e.preventDefault();
+           e.stopPropagation();
+           if (e.key === "ArrowDown") {
+             window.dispatchEvent(new CustomEvent("cart:select-next"));
+           } else {
+             window.dispatchEvent(new CustomEvent("cart:select-prev"));
+           }
+           return;
+         }
+
+        // Ctrl+Shift+P -> focus selected row price input
+        if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'p') {
+          e.preventDefault();
+          e.stopPropagation();
+          if (selectedRowId) {
+            const priceInput = document.querySelector(`input[data-cart-price-input="${selectedRowId}"]`) as HTMLInputElement | null;
+            if (priceInput) {
+              priceInput.focus();
+              priceInput.select();
             }
-            e.preventDefault();
-            e.stopPropagation();
-            return; // <-- Do NOT dispatch pos:next-step!
           }
-          // If already focused, let pos:next-step handler decide if amount is sufficient
+          return;
         }
 
-        // For step 2 and 3, just proceed as usual
+        // Ctrl+D -> delete selected item, refocus scanner
+        if (e.ctrlKey && !e.shiftKey && e.key.toLowerCase() === 'd') {
+          e.preventDefault();
+          e.stopPropagation();
+          if (selectedRowId) {
+            try {
+              deleteCartItem(selectedRowId);
+            } catch (err) { /* ignore */ }
+            refocusScanner();
+          }
+          return;
+        }
+
+        // +/- quantity adjustments while not typing in a different input (preserve previous behavior but limited to step 1)
+        const isPlusKey = e.key === "+" || e.code === "NumpadAdd" || (e.code === "Equal" && e.shiftKey);
+        const isMinusKey = e.key === "-" || e.code === "NumpadSubtract" || e.code === "Minus";
+        if ((isPlusKey || isMinusKey) && !isInput) {
+          e.preventDefault();
+          e.stopPropagation();
+          if (!selectedRowId) {
+            refocusScanner();
+            return;
+          }
+          const item = cart.find((i) => i.id === selectedRowId);
+          if (!item) {
+            refocusScanner();
+            return;
+          }
+          if (isPlusKey) {
+            updateCartItemQuantity(item.id, item.quantity + 1);
+          } else if (item.quantity > 1) {
+            updateCartItemQuantity(item.id, item.quantity - 1);
+          }
+          // Always refocus scanner after quantity change
+          refocusScanner();
+          return;
+        }
+
+        // If Enter pressed while editing a price input: confirm (blur) and refocus scanner
+        if (e.key === 'Enter' && !e.ctrlKey) {
+          const activeIsPriceInput = !!activeEl && !!(activeEl.getAttribute && activeEl.getAttribute('data-cart-price-input'));
+          if (activeIsPriceInput) {
+            e.preventDefault();
+            e.stopPropagation();
+            try { (activeEl as HTMLInputElement).blur(); } catch {}
+            refocusScanner();
+            return;
+          }
+
+          // Let ProductSearch (and other local inputs) handle Enter — do not advance step from here
+          const activeIsProductSearch = isProductSearch;
+          if (activeIsProductSearch) {
+            return;
+          }
+
+          // For other inputs in step 1, do nothing here
+          return;
+        }
+      } // end step 1-only block
+
+      // existing handlers for Ctrl+Enter / Ctrl+1 / scanner / plus/minus in other steps
+      const isBody = target.tagName === 'BODY';
+
+      // Handle Ctrl+Enter for POS navigation - preserve focus behavior and dispatch step-specific event
+      if (e.ctrlKey && e.key === 'Enter') {
+        const activeElement = document.activeElement as HTMLElement | null;
+        const isCashInput = activeElement && (activeElement.getAttribute('data-pos-cash-input') === 'true' || activeElement.getAttribute('placeholder') === '0.00');
+
+        // Only in Step 1: if not already on cash input, focus it instead of advancing
+        if (currentStep === 1 && !isCashInput) {
+          const cashInput = document.querySelector('input[placeholder="0.00"], input[data-pos-cash-input="true"]') as HTMLInputElement;
+          if (cashInput) {
+            cashInput.focus();
+            cashInput.select();
+          }
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
+
+        // Otherwise dispatch the current step complete event
         e.preventDefault();
         e.stopPropagation();
-        window.dispatchEvent(new CustomEvent('pos:next-step'));
+        if (currentStep === 1) {
+          window.dispatchEvent(new CustomEvent('pos:step-1-complete'));
+        } else if (currentStep === 2) {
+          window.dispatchEvent(new CustomEvent('pos:step-2-complete'));
+        } else if (currentStep === 3) {
+          // New: allow Ctrl+Enter to complete Step 3 (finish/close transaction)
+          window.dispatchEvent(new CustomEvent('pos:step-3-complete'));
+        }
         return;
       }
-      
-      // Handle numpad 0 for refocusing - BUT NOT when typing in customer search
+
+      // Handle Ctrl+1 - behave like a "go to next from step 1" shortcut
+      if (e.ctrlKey && e.key === '1') {
+        const activeElement = document.activeElement as HTMLElement | null;
+        const isCashInput = activeElement && (activeElement.getAttribute('data-pos-cash-input') === 'true' || activeElement.getAttribute('placeholder') === '0.00');
+
+        if (currentStep === 1 && !isCashInput) {
+          const cashInput = document.querySelector('input[placeholder="0.00"], input[data-pos-cash-input="true"]') as HTMLInputElement;
+          if (cashInput) {
+            cashInput.focus();
+            cashInput.select();
+          }
+          e.preventDefault();
+          e.stopPropagation();
+          return; // focus only, do not advance
+        }
+
+        e.preventDefault();
+        e.stopPropagation();
+        if (currentStep === 1) {
+          window.dispatchEvent(new CustomEvent('pos:step-1-complete'));
+        } else if (currentStep === 2) {
+          window.dispatchEvent(new CustomEvent('pos:step-2-complete'));
+        }
+        return;
+      }
+
+      // Handle numpad 0 / F5 for refocusing scanner (unchanged)
       if ((e.key === "0" && e.code === "Numpad0") || e.key === "F5") {
         if (!isInput || isScanner) {
           e.preventDefault();
@@ -398,28 +670,25 @@ export const useCartKeyboard = (selectedRowId: string | null) => {
         }
         return;
       }
-      
+
       if (!selectedRowId) {
-        // If no item is selected, refocus scanner for any key press
-        // BUT NOT if typing in customer search or any input
         if (!isInput && !isBody) {
           refocusScanner();
         }
         return;
       }
-      
-      // Handle +/- keys: Allow if on body, scanner input, or not in any input
+
+      // +/- quantity handling (only when appropriate) - unchanged
       const shouldHandlePlusMinus = isBody || isScanner || (!isInput && !isCustomerSearch);
-      
       if (!shouldHandlePlusMinus) return;
-      
+
       const isPlusKey = e.key === "+" || e.code === "NumpadAdd" || (e.code === "Equal" && e.shiftKey);
       const isMinusKey = e.key === "-" || e.code === "NumpadSubtract" || e.code === "Minus";
 
       if (isPlusKey || isMinusKey) {
         e.preventDefault();
         e.stopPropagation();
-        
+
         const item = cart.find((i) => i.id === selectedRowId);
         if (!item) return;
 
@@ -430,9 +699,10 @@ export const useCartKeyboard = (selectedRowId: string | null) => {
         }
       }
     };
-    
-    // Use capture: false to let customer search handle events first
-    document.addEventListener("keydown", handleKeyDown, { capture: false, passive: false });
-    return () => document.removeEventListener("keydown", handleKeyDown, { capture: false });
+
+    // Use capture:true so this global handler runs before element-level handlers.
+    // This ensures Enter in step 2 is caught even when focus is inside inputs.
+    document.addEventListener("keydown", handleKeyDown, { capture: true, passive: false });
+    return () => document.removeEventListener("keydown", handleKeyDown, { capture: true });
   }, [selectedRowId, cart, updateCartItemQuantity, refocusScanner]);
-};
+ };
