@@ -7217,37 +7217,40 @@ var _s = __turbopack_context__.k.signature();
 ;
 function Stats() {
     _s();
-    // aggregated overall (could be used elsewhere if needed)
+    // default hook values to empty arrays to avoid runtime errors if backend shape changes
+    // keep full-range aggregated data (if needed) and also fetch today's aggregated data separately
     const { saleItems: allAggregated = [], loading: saleItemsLoading } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$global$2f$fetching$2f$useSaleItems$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useSaleItems"])();
-    // other hooks
     const { products = [], loading: productsLoading } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$global$2f$fetching$2f$useProducts$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useProducts"])();
     const { sales = [], loading: salesLoading } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$global$2f$fetching$2f$useSales$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useSales"])();
-    // Get today's date boundaries (local) and convert to ISO for the controller
+    // Get today's date in UTC (YYYY-MM-DD)
+    const getUTCDateString = (date)=>{
+        const d = typeof date === "string" ? new Date(date) : date;
+        return d.toISOString().slice(0, 10);
+    };
+    const todayUTC = getUTCDateString(new Date());
+    // Filter sales for today (UTC)
+    const todaysSalesList = (sales || []).filter((sale)=>{
+        return getUTCDateString(sale.created_at) === todayUTC;
+    });
+    // Today's Sales (sum total_purchase for today's sales)
+    const todaysSales = todaysSalesList.reduce((sum, sale)=>sum + sale.total_purchase, 0);
+    // Today's Transactions (count of sales today)
+    const todaysTransactions = todaysSalesList.length;
+    // Total Products
+    const totalProducts = (products || []).length;
+    // Build today's ISO range and ask the backend for aggregated counts for today
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
     const endOfToday = new Date();
     endOfToday.setHours(23, 59, 59, 999);
     const todayFromIso = startOfToday.toISOString();
     const todayToIso = endOfToday.toISOString();
-    // Fetch aggregated sale-items only for today
     const { saleItems: todaysSaleItems = [], loading: todaysSaleItemsLoading } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$global$2f$fetching$2f$useSaleItems$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useSaleItems"])({
         from: todayFromIso,
         to: todayToIso
     });
-    // Items Sold Today (sum quantities from aggregated server response for today's range)
+    // Items Sold Today (sum quantities from aggregated server response)
     const itemsSoldToday = (todaysSaleItems || []).reduce((sum, item)=>sum + (Number(item.quantity) || 0), 0);
-    // Get today's sales from Sales rows (unchanged)
-    const getUTCDateString = (date)=>{
-        const d = typeof date === "string" ? new Date(date) : date;
-        return d.toISOString().slice(0, 10);
-    };
-    const todayUTC = getUTCDateString(new Date());
-    const todaysSalesList = (sales || []).filter((sale)=>{
-        return getUTCDateString(sale.created_at) === todayUTC;
-    });
-    const todaysSales = todaysSalesList.reduce((sum, sale)=>sum + sale.total_purchase, 0);
-    const todaysTransactions = todaysSalesList.length;
-    const totalProducts = (products || []).length;
     const statsData = [
         {
             title: "Today's Sales",
@@ -7256,18 +7259,18 @@ function Stats() {
                 size: 20
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/stats.tsx",
-                lineNumber: 51,
+                lineNumber: 55,
                 columnNumber: 19
             }, this)
         },
         {
             title: "Items Sold Today",
-            content: saleItemsLoading || todaysSaleItemsLoading ? "..." : itemsSoldToday.toLocaleString(),
+            content: saleItemsLoading ? "..." : itemsSoldToday.toLocaleString(),
             icon: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$package$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Package$3e$__["Package"], {
                 size: 20
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/stats.tsx",
-                lineNumber: 56,
+                lineNumber: 60,
                 columnNumber: 19
             }, this)
         },
@@ -7278,7 +7281,7 @@ function Stats() {
                 size: 20
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/stats.tsx",
-                lineNumber: 61,
+                lineNumber: 65,
                 columnNumber: 19
             }, this)
         }
@@ -7296,7 +7299,7 @@ function Stats() {
                                 children: stat.title
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/stats.tsx",
-                                lineNumber: 70,
+                                lineNumber: 74,
                                 columnNumber: 25
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -7304,13 +7307,13 @@ function Stats() {
                                 children: stat.icon
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/stats.tsx",
-                                lineNumber: 71,
+                                lineNumber: 75,
                                 columnNumber: 25
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/stats.tsx",
-                        lineNumber: 69,
+                        lineNumber: 73,
                         columnNumber: 21
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -7319,23 +7322,23 @@ function Stats() {
                             children: stat.content
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/stats.tsx",
-                            lineNumber: 74,
+                            lineNumber: 78,
                             columnNumber: 25
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/stats.tsx",
-                        lineNumber: 73,
+                        lineNumber: 77,
                         columnNumber: 21
                     }, this)
                 ]
             }, idx, true, {
                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/stats.tsx",
-                lineNumber: 68,
+                lineNumber: 72,
                 columnNumber: 17
             }, this))
     }, void 0, false, {
         fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/stats.tsx",
-        lineNumber: 66,
+        lineNumber: 70,
         columnNumber: 9
     }, this);
 }

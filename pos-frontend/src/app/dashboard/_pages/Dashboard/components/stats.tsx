@@ -5,44 +5,48 @@ import { useProducts } from "@/hooks/global/fetching/useProducts";
 import { useSales } from "@/hooks/global/fetching/useSales"; // Make sure you have this hook
 
 export default function Stats() {
-    // aggregated overall (could be used elsewhere if needed)
+    // default hook values to empty arrays to avoid runtime errors if backend shape changes
+    // keep full-range aggregated data (if needed) and also fetch today's aggregated data separately
     const { saleItems: allAggregated = [], loading: saleItemsLoading } = useSaleItems();
-
-    // other hooks
     const { products = [], loading: productsLoading } = useProducts();
     const { sales = [], loading: salesLoading } = useSales();
-
-    // Get today's date boundaries (local) and convert to ISO for the controller
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
-    const endOfToday = new Date();
-    endOfToday.setHours(23, 59, 59, 999);
-
-    const todayFromIso = startOfToday.toISOString();
-    const todayToIso = endOfToday.toISOString();
-
-    // Fetch aggregated sale-items only for today
-    const { saleItems: todaysSaleItems = [], loading: todaysSaleItemsLoading } = useSaleItems({
-      from: todayFromIso,
-      to: todayToIso
-    });
-
-    // Items Sold Today (sum quantities from aggregated server response for today's range)
-    const itemsSoldToday = (todaysSaleItems || []).reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
-
-    // Get today's sales from Sales rows (unchanged)
+    
+    // Get today's date in UTC (YYYY-MM-DD)
     const getUTCDateString = (date: Date | string) => {
         const d = typeof date === "string" ? new Date(date) : date;
         return d.toISOString().slice(0, 10);
     };
     const todayUTC = getUTCDateString(new Date());
+
+    // Filter sales for today (UTC)
     const todaysSalesList = (sales || []).filter(sale => {
         return getUTCDateString(sale.created_at) === todayUTC;
     });
 
+    // Today's Sales (sum total_purchase for today's sales)
     const todaysSales = todaysSalesList.reduce((sum, sale) => sum + sale.total_purchase, 0);
+
+    // Today's Transactions (count of sales today)
     const todaysTransactions = todaysSalesList.length;
+
+    // Total Products
     const totalProducts = (products || []).length;
+
+    // Build today's ISO range and ask the backend for aggregated counts for today
+    const startOfToday = new Date()
+    startOfToday.setHours(0, 0, 0, 0)
+    const endOfToday = new Date()
+    endOfToday.setHours(23, 59, 59, 999)
+    const todayFromIso = startOfToday.toISOString()
+    const todayToIso = endOfToday.toISOString()
+
+    const { saleItems: todaysSaleItems = [], loading: todaysSaleItemsLoading } = useSaleItems({
+      from: todayFromIso,
+      to: todayToIso
+    })
+
+    // Items Sold Today (sum quantities from aggregated server response)
+    const itemsSoldToday = (todaysSaleItems || []).reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
 
     const statsData = [
         {
@@ -52,7 +56,7 @@ export default function Stats() {
         },
         {
             title: "Items Sold Today",
-            content: (saleItemsLoading || todaysSaleItemsLoading) ? "..." : itemsSoldToday.toLocaleString(),
+            content: saleItemsLoading ? "..." : itemsSoldToday.toLocaleString(),
             icon: <Package size={20} />,
         },
         {
