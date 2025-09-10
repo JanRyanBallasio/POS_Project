@@ -16,7 +16,7 @@ interface POSRightColProps {
   setStep: React.Dispatch<React.SetStateAction<1 | 2 | 3>>;
 }
 
-export default function RightColumn({ step, setStep }: POSRightColProps) {
+export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: (s: 1|2|3) => void }) {
   const { cart, cartTotal, refocusScanner, clearCart } = useCart();
   const [amount, setAmount] = useState("");
   const [change, setChange] = useState(0);
@@ -105,108 +105,7 @@ export default function RightColumn({ step, setStep }: POSRightColProps) {
     }
   }, [cart, selectedCustomer, cartTotal, clearCustomer, clearCart, refocusScanner, isProcessingSale, setAllCustomers]);
 
-  // Handle Ctrl+Enter for different steps
-  useEffect(() => {
-    const handlePosNext = () => {
-      console.log("🔥 RightColumn handlePosNext triggered:", {
-        step,
-        isProcessingSale,
-        customerSearchActive: (window as any).customerSearchActive,
-        activeElement: document.activeElement,
-        activeElementTag: document.activeElement?.tagName,
-      });
-
-      if (isProcessingSale) {
-        console.log("❌ RightColumn: Processing sale, ignoring");
-        return;
-      }
-
-      // CRITICAL FIX: Check global flag first
-      if ((window as any).customerSearchActive) {
-        console.log("❌ RightColumn: Customer search globally active, ignoring pos:next-step");
-        return;
-      }
-
-      // CRITICAL FIX: Check if event originated from customer search
-      const activeElement = document.activeElement;
-      const isCustomerSearch = activeElement && (
-        (activeElement as HTMLElement).getAttribute('data-customer-search') === 'true' ||
-        (activeElement as HTMLInputElement).placeholder?.toLowerCase().includes('search name') ||
-        (activeElement as HTMLElement).closest('[data-customer-search]') !== null
-      );
-      
-      if (isCustomerSearch) {
-        console.log("❌ RightColumn: Customer search active, ignoring pos:next-step");
-        return;
-      }
-
-      // FIXED: Handle ALL steps including step 1
-      if (step === 1) {
-        // Step 1: Move to step 2 only if amount is sufficient
-        const amountValue = parseFloat(amount) || 0;
-        if (amountValue >= cartTotal && cart.length > 0) {
-          console.log("✅ RightColumn: Step 1 -> Step 2");
-          setStep(2);
-        } else {
-          console.log("❌ RightColumn: Insufficient amount or empty cart");
-        }
-      } else if (step === 2) {
-        console.log("✅ RightColumn: Step 2 -> Step 3");
-        setStep(3);
-      } else if (step === 3) {
-        console.log("✅ RightColumn: Step 3 -> New Transaction");
-        handleNewTransaction();
-      }
-    };
-
-    // CRITICAL FIX: Listen for ALL steps
-    console.log("🎯 RightColumn: Adding pos:next-step listener for step", step);
-    window.addEventListener('pos:next-step', handlePosNext);
-    return () => {
-      console.log("🗑️ RightColumn: Removing pos:next-step listener for step", step);
-      window.removeEventListener('pos:next-step', handlePosNext);
-    };
-  }, [step, isProcessingSale, handleNewTransaction, amount, cartTotal, cart]); // Add missing dependencies
-
-  // Print PDF (opens in new tab)
-  const handlePrintPDF = useCallback(async () => {
-    if (isProcessingSale) return;
-
-    const items = cart.map((item) => ({
-      desc: item.product?.name ?? item.product?.barcode ?? "Item",
-      qty: Number(item.quantity || 0),
-      amount: Number(((item.product?.price || 0) * item.quantity).toFixed(2)),
-    }));
-
-    const payload = {
-      customer: selectedCustomer || { name: "N/A" },
-      cartTotal: Number(cartTotal || 0),
-      amount: Number(parseFloat(amount) || cartTotal || 0),
-      change: Number(change || 0),
-      items,
-    };
-
-    try {
-      setIsProcessingSale(true);
-      const res = await axios.post('/receipt', payload, {
-        responseType: 'blob'
-      });
-
-      const blob = res.data;
-      const url = URL.createObjectURL(blob);
-
-      window.open(url, '_blank');
-
-      setTimeout(() => URL.revokeObjectURL(url), 10000);
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.error || err.message || "Unknown error";
-      alert("Error generating receipt: " + errorMessage);
-    } finally {
-      setIsProcessingSale(false);
-    }
-  }, [cart, selectedCustomer, cartTotal, amount, change, isProcessingSale]);
-
-  // Print Receipt - Optimized for Next.js (client-only)
+  // Print Receipt (server-generated PDF via /receipt) — old behavior
   const handlePrintReceipt = useCallback(async () => {
     if (isProcessingSale) return;
 
@@ -226,26 +125,38 @@ export default function RightColumn({ step, setStep }: POSRightColProps) {
 
     try {
       setIsProcessingSale(true);
-      const res = await axios.post('/receipt', payload, {
-        responseType: 'blob'
-      });
-
+      const res = await axios.post('/receipt', payload, { responseType: 'blob' });
       const blob = res.data;
       const url = URL.createObjectURL(blob);
 
-      // Ensure this code only runs on the client
+      // Client-only: prefer print-js, but always fallback to opening the PDF in a new tab.
       if (typeof window !== 'undefined') {
-        // Dynamically import print-js only on the client
-        const printJS = (await import('print-js')).default;
-        printJS({
-          printable: url,
-          type: 'pdf',
-          showModal: false,
-          onError: (err: any) => alert('Print error: ' + err),
-          onLoadingEnd: () => setTimeout(() => URL.revokeObjectURL(url), 10000),
-        });
-      }
+        try {
+          const printJS = (await import('print-js')).default;
+          if (printJS) {
+            printJS({
+              printable: url,
+              type: 'pdf',
+              showModal: false,
+              onError: (err: any) => alert('Print error: ' + err),
+              onLoadingEnd: () => setTimeout(() => URL.revokeObjectURL(url), 10000),
+            });
+            return;
+          }
+        } catch (err) {
+          console.warn('print-js import failed, falling back to window.open', err);
+        }
 
+        // Fallback: open PDF in new tab (runs only on client)
+        try {
+          window.open(url, '_blank');
+          setTimeout(() => URL.revokeObjectURL(url), 10000);
+        } catch (err) {
+          console.warn('Failed to open PDF in new tab:', err);
+          // last resort: revoke URL later
+          setTimeout(() => URL.revokeObjectURL(url), 10000);
+        }
+      }
     } catch (err: any) {
       const errorMessage = err.response?.data?.error || err.message || "Unknown error";
       alert("Error printing receipt: " + errorMessage);
@@ -254,42 +165,173 @@ export default function RightColumn({ step, setStep }: POSRightColProps) {
     }
   }, [cart, selectedCustomer, cartTotal, amount, change, isProcessingSale]);
 
-  // New Transaction - Updated to properly reset customer data
-
-
-  const handleCustomerAdded = useCallback((newCustomer: Customer) => {
-    setAllCustomers((prev) => [...prev, newCustomer]);
-    selectCustomer(newCustomer);
-    setCustomerQuery(newCustomer.name);
-  }, [setAllCustomers, selectCustomer, setCustomerQuery]);
-
-  // Add this effect to clear customer when going back to step 1
-  useEffect(() => {
-    if (step === 1) {
-      // Clear customer data when returning to step 1 from any other step
-      clearCustomer();
+  // Print to PDF (fallback to window.print for now)
+  const handlePrintPDF = useCallback(() => {
+    try {
+      // TODO: replace with PDF generation logic if available
+      window.print();
+    } catch (err) {
+      console.warn("Print PDF failed:", err);
     }
-  }, [step, clearCustomer]);
+  }, []);
 
-  // Modified click handler to not interfere with customer search
-  const handleCardClick = (e: React.MouseEvent) => {
-    // Don't refocus scanner if we're in step 2 or 3, or if clicking on customer search area
-    if (step === 2 || step === 3) {
+  // Called when a new customer has been added from the AddCustomerModal
+  const handleCustomerAdded = useCallback(
+    (customer: any) => {
+      try {
+        // Add new customer to local list and select them
+        setAllCustomers((prev: any[] = []) => [...prev, customer]);
+        setAddCustomerOpen(false);
+        // selectCustomer comes from useCustomerTagging
+        if (typeof selectCustomer === "function") selectCustomer(customer);
+      } catch (err) {
+        console.warn("handleCustomerAdded error:", err);
+      }
+    },
+    [setAllCustomers, selectCustomer]
+  );
+
+  // Card click handler - useful to refocus scanner and clear transient state
+  const handleCardClick = useCallback(() => {
+    try {
+      refocusScanner();
+    } catch (err) {
+      console.warn("handleCardClick error:", err);
+    }
+  }, [refocusScanner]);
+  
+  // NEW: centralized step-advance handler used by keyboard listeners
+  const handlePosNext = useCallback(() => {
+    console.log("🔥 RightColumn handlePosNext triggered:", {
+      step,
+      isProcessingSale,
+      customerSearchActive: (window as any).customerSearchActive,
+      activeElement: document.activeElement,
+      activeElementTag: document.activeElement?.tagName,
+    });
+
+    if (isProcessingSale) {
+      console.log("❌ RightColumn: Processing sale, ignoring");
       return;
     }
 
-    // Only refocus if clicking on the card itself, not child elements
-    if (e.target === e.currentTarget) {
-      refocusScanner();
+    // If we're already in Step 2, always advance to Step 3 when this handler is invoked.
+    // This intentionally bypasses the customerSearchActive / isCustomerSearch guards which
+    // previously prevented Enter from finishing the transaction.
+    if (step === 2) {
+      console.log("✅ RightColumn: Step 2 -> Step 3 (forced bypass of customer-search guard)");
+      setStep(3);
+      return;
     }
-  };
 
+    if ((window as any).customerSearchActive) {
+      console.log("❌ RightColumn: Customer search globally active, ignoring");
+      return;
+    }
+
+    const activeElement = document.activeElement;
+    const isCustomerSearch = activeElement && (
+      (activeElement as HTMLElement).getAttribute('data-customer-search') === 'true' ||
+      (activeElement as HTMLInputElement).placeholder?.toLowerCase().includes('search name') ||
+      (activeElement as HTMLElement).closest('[data-customer-search]') !== null
+    );
+
+    if (isCustomerSearch) {
+      console.log("❌ RightColumn: Customer search active, ignoring");
+      return;
+    }
+
+    if (step === 1) {
+      // use existing validation function for step 1
+      handleNext();
+      return;
+    }
+
+    if (step === 3) {
+      console.log("✅ RightColumn: Step 3 -> New Transaction");
+      handleNewTransaction();
+      return;
+    }
+  }, [step, isProcessingSale, handleNewTransaction, handleNext, setStep]);
+
+  // Handle Ctrl+Enter / pos:next-step (backwards compatible)
   useEffect(() => {
-    (window as any).posStep = step;
+    if (typeof window === 'undefined') return;
+
+    console.log("🎯 RightColumn: Adding pos:next-step listener for step", step);
+    window.addEventListener('pos:next-step', handlePosNext);
     return () => {
-      delete (window as any).posStep;
+      console.log("🗑️ RightColumn: Removing pos:next-step listener for step", step);
+      window.removeEventListener('pos:next-step', handlePosNext);
     };
-  }, [step]);
+  }, [handlePosNext, step]);
+
+  // Listen for pos:step-1-back (Ctrl+B) — when on Step 2, go back to Step 1
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onStep1Back = (e: Event) => {
+      if (step === 2) {
+        setStep(1);
+      }
+    };
+    window.addEventListener("pos:step-1-back", onStep1Back);
+    return () => window.removeEventListener("pos:step-1-back", onStep1Back);
+  }, [step, setStep]);
+  
+  // Listen for customer:add (Ctrl+Shift+C) — open AddCustomerModal
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onCustomerAdd = (e: Event) => {
+      setAddCustomerOpen(true);
+    };
+    window.addEventListener("customer:add", onCustomerAdd);
+    return () => window.removeEventListener("customer:add", onCustomerAdd);
+  }, [setAddCustomerOpen]);
+  
+   // Global keyboard shortcut for Step 3: Shift+P -> print receipt
+   useEffect(() => {
+     if (typeof window === "undefined") return;
+     const onKey = (e: KeyboardEvent) => {
+       // Only respond on Step 3, only Shift+P (no Ctrl/Alt)
+       if (step === 3 && e.shiftKey && !e.ctrlKey && !e.altKey && e.key.toLowerCase() === "p") {
+         e.preventDefault();
+         e.stopPropagation();
+         handlePrintReceipt();
+       }
+     };
+     document.addEventListener("keydown", onKey, { capture: true });
+     return () => document.removeEventListener("keydown", onKey, { capture: true });
+   }, [step, handlePrintReceipt]);
+
+  // Step-specific listeners (step-1 / step-2)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleStep1Complete = (e: Event) => {
+      if (step !== 1) return;
+      handlePosNext();
+    };
+
+    const handleStep2Complete = (e: Event) => {
+      if (step !== 2) return;
+      handlePosNext();
+    };
+
+    const handleStep3Complete = (e: Event) => {
+      if (step !== 3) return;
+      // directly finalize the transaction when step 3 complete is requested
+      handleNewTransaction();
+    };
+
+    window.addEventListener('pos:step-1-complete', handleStep1Complete);
+    window.addEventListener('pos:step-2-complete', handleStep2Complete);
+    window.addEventListener('pos:step-3-complete', handleStep3Complete);
+    return () => {
+      window.removeEventListener('pos:step-1-complete', handleStep1Complete);
+      window.removeEventListener('pos:step-2-complete', handleStep2Complete);
+      window.removeEventListener('pos:step-3-complete', handleStep3Complete);
+    };
+  }, [step, handlePosNext]);
 
   return (
     <Card className="h-full flex flex-col" onClick={handleCardClick}>
@@ -359,14 +401,6 @@ export default function RightColumn({ step, setStep }: POSRightColProps) {
                   disabled={isProcessingSale}
                 >
                   {isProcessingSale ? "Processing..." : "Print Receipt"}
-                </Button>
-                <Button
-                  className="w-full h-14 text-xl font-medium"
-                  variant="outline"
-                  onClick={handlePrintPDF}
-                  disabled={isProcessingSale}
-                >
-                  Print PDF
                 </Button>
                 <Button
                   className="w-full h-14 text-xl font-medium"

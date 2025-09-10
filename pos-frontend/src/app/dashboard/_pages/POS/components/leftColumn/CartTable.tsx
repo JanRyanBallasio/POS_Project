@@ -47,10 +47,10 @@ export default function CartTable({
 
   // Auto-select the last added item - but only once per item
   useEffect(() => {
-    if (lastAddedItemId && 
-        cart.find(item => item.id === lastAddedItemId) && 
-        lastAutoSelectedId.current !== lastAddedItemId) {
-      
+    if (lastAddedItemId &&
+      cart.find(item => item.id === lastAddedItemId) &&
+      lastAutoSelectedId.current !== lastAddedItemId) {
+
       lastAutoSelectedId.current = lastAddedItemId;
       selectRow(lastAddedItemId);
     }
@@ -67,13 +67,13 @@ export default function CartTable({
   const handleRowClick = (itemId: string, e: React.MouseEvent) => {
     // Prevent the click from bubbling up to parent elements
     e.stopPropagation();
-    
+
     // Blur the scanner input to remove the red border
     const scannerInput = document.getElementById('barcode-scanner') as HTMLInputElement;
     if (scannerInput) {
       scannerInput.blur();
     }
-    
+
     // Select the row
     selectRow(itemId);
   };
@@ -119,21 +119,21 @@ export default function CartTable({
               key={item.id}
               className={cn(
                 "hover:bg-gray-50 cursor-pointer transition-all duration-200",
-                isSelected 
-                  ? "bg-gray-100 dark:bg-gray-800" 
+                isSelected
+                  ? "bg-gray-100 dark:bg-gray-800"
                   : ""
               )}
               onClick={(e) => handleRowClick(item.id, e)}
               data-cart-selected={isSelected}
             >
-              <TableCell 
+              <TableCell
                 className="font-medium max-w-[140px] break-words whitespace-normal py-3 px-4"
                 onClick={(e) => handleCellClick(item.id, e)}
               >
                 {item.product.barcode || "N/A"}
               </TableCell>
-              
-              <TableCell 
+
+              <TableCell
                 className="min-w-0 max-w-[320px] break-words whitespace-normal py-3 px-4"
                 onClick={(e) => handleCellClick(item.id, e)}
               >
@@ -145,6 +145,8 @@ export default function CartTable({
                   type="number"
                   min={0}
                   step="0.01"
+                  // allow keyboard shortcuts to target this input
+                  data-cart-price-input={item.id}
                   value={String(item.product.price)}
                   className="w-20 h-8 text-sm"
                   onFocus={() => selectRow(item.id)}
@@ -154,6 +156,16 @@ export default function CartTable({
                     const price = Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
                     updateCartItemPrice(item.id, price);
                   }}
+                  onBlur={() => {
+                    // finished price edit -> refocus scanner
+                    refocusScanner();
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      (e.target as HTMLInputElement).blur();
+                      refocusScanner();
+                    }
+                  }}
                   disabled={disabled}
                 />
               </TableCell>
@@ -162,12 +174,24 @@ export default function CartTable({
                 <Input
                   type="number"
                   min={1}
+                  // allow keyboard shortcuts to target this input
+                  data-cart-qty-input={item.id}
                   value={item.quantity}
                   className="w-16 h-8 text-sm"
                   onFocus={() => selectRow(item.id)}
                   onChange={(e) => {
                     const qty = Math.max(1, Number(e.target.value));
                     updateCartItemQuantity(item.id, qty);
+                  }}
+                  onBlur={() => {
+                    // finished quantity edit -> refocus scanner
+                    refocusScanner();
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      (e.target as HTMLInputElement).blur();
+                      refocusScanner();
+                    }
                   }}
                   disabled={disabled}
                 />
@@ -180,6 +204,8 @@ export default function CartTable({
                   onClick={(e) => {
                     e.stopPropagation();
                     deleteCartItem(item.id);
+                    // ensure scanner regains focus after a delete (keyboard flow)
+                    refocusScanner();
                   }}
                   disabled={disabled}
                 >

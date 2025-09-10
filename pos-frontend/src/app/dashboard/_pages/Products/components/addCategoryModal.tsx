@@ -31,46 +31,62 @@ export default function AddCategoryModal() {
   const { data: categories = [] } = useSWR(CATEGORIES_KEY);
   const [clientError, setClientError] = useState<string | null>(null);
   const [showValidation, setShowValidation] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!isOpen("addCategory")) {
       setName("");
       setShowValidation(false);
+      setClientError(null);
     }
   }, [isOpen]);
 
-  useEffect(() => {
-    const trimmed = name.trim();
-    if (!trimmed) {
-      setClientError("Name is required");
-      return;
-    }
-    const exists = (categories as any[]).some(
-      (c) => String(c?.name ?? "").toLowerCase() === trimmed.toLowerCase()
-    );
-    setClientError(exists ? "Category with this name already exists" : null);
-  }, [name, categories]);
-  const handleSubmit = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault();
-      setShowValidation(true);
-      const trimmed = name.trim();
-      if (!trimmed) {
-        setClientError("Category name is required");
-        return;
-      }
-
+  // Validation helper (pure)
+  const validateName = useCallback(
+    (raw: string): string | null => {
+      const trimmed = (raw || "").trim();
+      if (!trimmed) return "Name is required";
+      if (trimmed.length < 2) return "Name is too short";
+      // duplicate check against current categories
       const exists = (categories as any[]).some(
         (c) => String(c?.name ?? "").toLowerCase() === trimmed.toLowerCase()
       );
-      if (exists) {
-        setClientError("Category with this name already exists");
+      if (exists) return "Category with this name already exists";
+      return null;
+    },
+    [categories]
+  );
+
+  // Called on every input change — only update error state when it actually changes
+  const handleNameChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const v = e.target.value;
+      setName(v);
+      setShowValidation(false); // reset visible validation while typing
+      const err = validateName(v);
+      setClientError((prev) => (prev === err ? prev : err));
+    },
+    [validateName]
+  );
+
+  // Submit handler runs validation again (shows errors) and only proceeds when valid
+  const handleSubmit = useCallback(
+    async (e?: React.FormEvent) => {
+      e?.preventDefault();
+
+      // show validation UI
+      setShowValidation(true);
+      const err = validateName(name);
+      if (err) {
+        setClientError((prev) => (prev === err ? prev : err));
         return;
       }
 
+      setClientError(null);
+      setIsSubmitting(true);
       try {
         await addCategory(
-          { name: trimmed },
+          { name: name.trim() },
           {
             onSuccess: (createdRaw) => {
               const created = createdRaw?.data ?? createdRaw;
@@ -103,9 +119,11 @@ export default function AddCategoryModal() {
         );
       } catch (err: any) {
         showErrorToast("Failed to add category", err?.message ?? "An error occurred.");
+      } finally {
+        setIsSubmitting(false);
       }
     },
-    [name, addCategory, setCategoryId, setCategoryName, closeModal]
+    [name, addCategory, setCategoryId, setCategoryName, closeModal, validateName]
   );
 
   return (
@@ -124,7 +142,7 @@ export default function AddCategoryModal() {
               <Input
                 id="category-name"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={handleNameChange}
                 placeholder="Category name"
                 required
                 autoFocus
@@ -145,8 +163,8 @@ export default function AddCategoryModal() {
                 <Button variant="outline" type="button" onClick={() => closeModal("addCategory")}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={loading || !name.trim()}>
-                  {loading ? "Saving..." : "Save"}
+                <Button type="submit" disabled={loading || !name.trim() || isSubmitting}>
+                  {isSubmitting ? "Saving..." : "Save"}
                 </Button>
               </div>
             </div>
