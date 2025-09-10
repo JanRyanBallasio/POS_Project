@@ -17,11 +17,11 @@ const salesItemsRoutes = require('./src/routes/salesItemsRoutes');
 const customerRoutes = require('./src/routes/customerRoutes');
 const stockTransactionRoutes = require('./src/routes/stockTransactionRoutes');
 const receiptRoutes = require("./src/routes/receiptRoutes");
-// const authRoutes = require('./src/routes/auth.routes'); // TEMP disabled (auth routes causing startup error)
+const authRoutes = require('./src/routes/auth.routes'); // UNCOMMENTED: use central auth router
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-// FIXED: Bind to all interfaces (0.0.0.0) to allow external access
+// FIXED: Bind to all interfaces (0.0.0.0) to allow external access 
 const HOST = '0.0.0.0';
 
 // Middleware
@@ -37,11 +37,7 @@ app.use((req, res, next) => {
 });
 
 // Public Auth routes
-// app.use('/api/auth', authRoutes);
-// Temporary dev stub to avoid crash while auth is disabled
-app.use('/api/auth', (req, res) => {
-  res.status(200).json({ success: true, message: 'Auth disabled for development' });
-});
+app.use('/api/auth', authRoutes); // REPLACE dev-stub with real auth routes
 
 // Protect API routes (require valid access token)
 app.use('/api/users', auth, userRoutes);
@@ -53,7 +49,7 @@ app.use('/api/sales', auth, salesRoutes);
 app.use('/api/sales-items', auth, salesItemsRoutes);
 app.use('/api/stock-transactions', auth, stockTransactionRoutes);
 app.use('/api', auth, receiptRoutes);
-
+app.use('/api/auth', authRoutes);
 // 404 fallback (optional)
 app.use((req, res, next) => {
   res.status(404).json({ success: false, message: 'Not found' });
