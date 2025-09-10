@@ -46,17 +46,23 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
     lastAddedItemId,
   } = useCart();
 
-  const { barcodeInput, inputRef, handleBarcodeChange, handleKeyPress, refocusScanner: hookRefocus } =
-    useBarcodeScan(handleScanAndAddToCart);
+  const {
+    barcodeInput,
+    inputRef,
+    handleBarcodeChange,
+    handleKeyPress,
+  } = useBarcodeScan(handleScanAndAddToCart);
 
   const { setOpen, setBarcode } = useProductModal();
   useCartKeyboard(selectedRowId);
 
+
   const handleSearchSelect = (product: any) => {
     addProductToCart(product);
     clearSearch();
-    hookRefocus();
+    refocusScanner(true);  
   };
+
 
   const {
     searchQuery,
@@ -64,10 +70,12 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
     showSearchResults,
     handleSearchChange,
     clearSearch,
-  } = useProductSearch(products, handleSearchSelect); // Pass the callback here
+  } = useProductSearch(products, handleSearchSelect);
 
   const [showRegisterDialog, setShowRegisterDialog] = useState(false);
-  const [unregisteredBarcode, setUnregisteredBarcode] = useState<string | null>(null);
+  const [unregisteredBarcode, setUnregisteredBarcode] = useState<string | null>(
+    null
+  );
   const productSearchInputRef = useRef<HTMLInputElement>(null!);
 
   useEffect(() => {
@@ -80,17 +88,14 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
     } else {
       // Re-focus when returning to step 1
       setTimeout(() => {
-        if (inputRef?.current) {
-          inputRef.current.focus();
-        }
+        inputRef?.current?.focus();
       }, 100);
     }
   }, [step]);
 
   useEffect(() => {
     const handleShortcut = (e: KeyboardEvent) => {
-      // Only trigger in POS step 1 and only for Numpad 8 or F2
-      if (step === 1 && (e.key === "F2")) {
+      if (step === 1 && e.key === "F2") {
         e.preventDefault();
         if (productSearchInputRef.current) {
           productSearchInputRef.current.focus();
@@ -101,7 +106,6 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
     window.addEventListener("keydown", handleShortcut);
     return () => window.removeEventListener("keydown", handleShortcut);
   }, [step]);
-
   // Listen for cart selection events triggered by global keyboard handler
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -214,13 +218,10 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
   }
 
   const handleRefocus = () => {
-    // Use both refocus functions to ensure compatibility
-    refocusScanner();
-    hookRefocus();
+    refocusScanner(true);
 
-    // Dispatch the global focus event
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new Event('focusBarcodeScanner'));
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("focusBarcodeScanner"));
     }
 
     setRefocused(true);
@@ -281,7 +282,7 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
             handleSearchChange={handleSearchChange}
             handleSearchSelect={handleSearchSelect}
             clearSearch={clearSearch}
-            refocusScanner={hookRefocus}
+            refocusScanner={refocusScanner}
             disabled={step === 2 || step === 3}
           />
           {/* Simplified container - no nested divs */}
@@ -293,7 +294,7 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
               updateCartItemQuantity={updateCartItemQuantity}
               updateCartItemPrice={updateCartItemPrice}
               deleteCartItem={deleteCartItem}
-              refocusScanner={hookRefocus}
+              refocusScanner={refocusScanner}
               disabled={step === 2 || step === 3}
             />
           </div>

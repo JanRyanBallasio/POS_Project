@@ -16,31 +16,27 @@ export default function BarcodeScannerInput({
   disabled = false,
 }: BarcodeScannerInputProps) {
   return (
-    <div className="mb-4">
-      <input
-        ref={inputRef}
-        id="barcode-scanner"
-        type="text"
-        value={barcodeInput}
-        onChange={handleBarcodeChange}
-        onKeyDown={handleKeyPress}
-        className="barcode-scanner-input opacity-0 absolute -z-10 pointer-events-none"
-        style={{
-          position: 'absolute',
-          top: '-9999px',
-          left: '-9999px',
-          width: '1px',
-          height: '1px',
-          outline: 'none',
-          border: 'none',
-        }}
-        placeholder="Scan or type barcode..."
-        data-barcode-scanner="true"
-        disabled={disabled}
-        autoComplete="off"
-        autoFocus
-        tabIndex={-1}
-      />
-    </div>
+    <input
+      ref={inputRef}
+      id="barcode-scanner"
+      type="text"
+      value={barcodeInput}
+      onChange={handleBarcodeChange}
+      onKeyDown={handleKeyPress}
+      placeholder="Scan barcode..."
+      data-barcode-scanner="true"
+      disabled={disabled}
+      autoComplete="off"
+      tabIndex={0} // ✅ allow natural focus
+      style={{
+        position: "absolute",
+        opacity: 0,
+        pointerEvents: "none",
+        height: 0,
+        width: 0,
+        outline: "none",
+        border: "none",
+      }}
+    />
   );
 }

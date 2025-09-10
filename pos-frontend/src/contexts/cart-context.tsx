@@ -179,22 +179,22 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const addOrIncrement = useCallback((product: Product) => {
     const now = Date.now();
     const productKey = product.barcode || product.id?.toString() || product.name;
-    
+
     console.log("🛒 addOrIncrement called:", {
       productName: product.name,
       productKey,
       currentTime: now
     });
-    
+
     // Check for recent addition of the same product (within 1 second)
     const lastTime = lastScanTime.get(productKey);
     if (lastTime && (now - lastTime) < 1000) {
       console.log("⏰ Duplicate prevention triggered, ignoring:", productKey);
       return;
     }
-    
+
     setLastScanTime(prev => new Map(prev).set(productKey, now));
-    
+
     setCart((prevCart) => {
       const existing = prevCart.find((item) => productEqual(item.product, product));
       if (existing) {
@@ -266,6 +266,19 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           addOrIncrement(product);
           setScanError(null);
         } else {
+          // ⚡ Optimistic placeholder insert
+          const placeholder: Product = {
+            id: `pending-${cleanedBarcode}`,
+            name: "Loading product...",
+            barcode: cleanedBarcode,
+            price: 0,
+            quantity: 0,         // ✅ default
+            category_id: 0,      // ✅ default (use 0 or -1 for "unassigned")
+            __placeholder: true, // 👈 mark so you can detect it later
+          };
+          addOrIncrement(placeholder);
+
+          // Then trigger product register modal
           try {
             if (typeof setContextBarcode === "function") {
               setContextBarcode(cleanedBarcode);
@@ -281,7 +294,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : "Error scanning barcode";
         setScanError(errorMessage);
-        console.warn('[scanAndAddToCart] Error:', error);
+        console.warn("[scanAndAddToCart] Error:", error);
       } finally {
         setPendingScans(prev => {
           const next = new Set(prev);
@@ -289,11 +302,14 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           return next;
         });
         setIsScanning(false);
-        refocusScanner();
+
+        // ⚡ Always refocus via rAF
+        requestAnimationFrame(() => refocusScanner(true));
       }
     },
     [pendingScans, openModal, setProductModalOpen, setContextBarcode, refocusScanner, addOrIncrement]
   );
+
 
   useEffect(() => {
     const onProductAdded = (e: Event) => {
@@ -415,10 +431,10 @@ export const useCartKeyboard = (selectedRowId: string | null) => {
         e.stopPropagation();
         try {
           window.dispatchEvent(new CustomEvent("customer:add"));
-        } catch {}
+        } catch { }
         return;
       }
-      
+
       // Quick add-customer shortcut: Ctrl+Shift+C (unchanged)
       // if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "c") {
       //   e.preventDefault();
@@ -426,7 +442,7 @@ export const useCartKeyboard = (selectedRowId: string | null) => {
       //   window.dispatchEvent(new CustomEvent("customer:add"));
       //   return;
       // }
-      
+
       // STEP-2 ONLY SHORTCUTS (mirror pattern used for STEP-1)
       if (currentStep === 2) {
         // Ctrl+C -> focus customer input (select text). Do not interfere with Shift or other combos.
@@ -446,11 +462,11 @@ export const useCartKeyboard = (selectedRowId: string | null) => {
               const onBlur = () => {
                 try {
                   (window as any).customerSearchActive = false;
-                } catch {}
+                } catch { }
                 customerInput.removeEventListener("blur", onBlur);
               };
               customerInput.addEventListener("blur", onBlur);
-            } catch {}
+            } catch { }
           }
           return;
         }
@@ -484,9 +500,9 @@ export const useCartKeyboard = (selectedRowId: string | null) => {
           // otherwise let the focused element handle Enter (e.g. multiline inputs)
           return;
         }
- 
-         // keep Step 2-specific shortcuts here if you want more (e.g. Ctrl+D delete in step2), then return
-       } // end STEP-2 block
+
+        // keep Step 2-specific shortcuts here if you want more (e.g. Ctrl+D delete in step2), then return
+      } // end STEP-2 block
 
       // STEP-3: Enter -> complete/close transaction (unless typing in a textarea/contentEditable)
       if (currentStep === 3 && e.key === "Enter" && !e.ctrlKey) {
@@ -501,7 +517,7 @@ export const useCartKeyboard = (selectedRowId: string | null) => {
         e.stopPropagation();
         try {
           window.dispatchEvent(new CustomEvent("pos:step-3-complete"));
-        } catch {}
+        } catch { }
         return;
       }
 
@@ -515,16 +531,16 @@ export const useCartKeyboard = (selectedRowId: string | null) => {
 
         // Arrow navigation: move selection up/down in cart
         // Allow when not typing in a regular input OR when the scanner input is focused
-        if (( !isInput || isScanner ) && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
-           e.preventDefault();
-           e.stopPropagation();
-           if (e.key === "ArrowDown") {
-             window.dispatchEvent(new CustomEvent("cart:select-next"));
-           } else {
-             window.dispatchEvent(new CustomEvent("cart:select-prev"));
-           }
-           return;
-         }
+        if ((!isInput || isScanner) && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
+          e.preventDefault();
+          e.stopPropagation();
+          if (e.key === "ArrowDown") {
+            window.dispatchEvent(new CustomEvent("cart:select-next"));
+          } else {
+            window.dispatchEvent(new CustomEvent("cart:select-prev"));
+          }
+          return;
+        }
 
         // Ctrl+Shift+P -> focus selected row price input
         if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'p') {
@@ -584,7 +600,7 @@ export const useCartKeyboard = (selectedRowId: string | null) => {
           if (activeIsPriceInput) {
             e.preventDefault();
             e.stopPropagation();
-            try { (activeEl as HTMLInputElement).blur(); } catch {}
+            try { (activeEl as HTMLInputElement).blur(); } catch { }
             refocusScanner();
             return;
           }
@@ -705,4 +721,4 @@ export const useCartKeyboard = (selectedRowId: string | null) => {
     document.addEventListener("keydown", handleKeyDown, { capture: true, passive: false });
     return () => document.removeEventListener("keydown", handleKeyDown, { capture: true });
   }, [selectedRowId, cart, updateCartItemQuantity, refocusScanner]);
- };
+};

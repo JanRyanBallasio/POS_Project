@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ScanLine, CheckIcon } from "lucide-react";
+import { ScanLine, CheckIcon, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import React, { useState, useEffect, useRef } from "react";
 import { Product } from "@/hooks/products/useProductApi";
@@ -27,7 +27,7 @@ interface CartTableProps {
   updateCartItemQuantity: (id: string, qty: number) => void;
   updateCartItemPrice: (id: string, price: number) => void;
   deleteCartItem: (id: string) => void;
-  refocusScanner: () => void;
+  refocusScanner: (force?: boolean) => void;
   disabled?: boolean;
 }
 
@@ -65,24 +65,17 @@ export default function CartTable({
   }, [cart, lastAddedItemId]);
 
   const handleRowClick = (itemId: string, e: React.MouseEvent) => {
-    // Prevent the click from bubbling up to parent elements
     e.stopPropagation();
-
-    // Blur the scanner input to remove the red border
-    const scannerInput = document.getElementById('barcode-scanner') as HTMLInputElement;
-    if (scannerInput) {
-      scannerInput.blur();
-    }
-
-    // Select the row
     selectRow(itemId);
+
+    // ✅ always refocus after row select
+    setTimeout(() => refocusScanner(), 0);
   };
 
   // Add click handler for table cells that should select the row
   const handleCellClick = (itemId: string, e: React.MouseEvent) => {
-    // Only handle clicks on non-interactive elements
     const target = e.target as HTMLElement;
-    if (target.tagName !== 'INPUT' && target.tagName !== 'BUTTON' && !target.closest('button')) {
+    if (target.tagName !== "INPUT" && target.tagName !== "BUTTON" && !target.closest("button")) {
       handleRowClick(itemId, e);
     }
   };
@@ -137,7 +130,14 @@ export default function CartTable({
                 className="min-w-0 max-w-[320px] break-words whitespace-normal py-3 px-4"
                 onClick={(e) => handleCellClick(item.id, e)}
               >
-                {item.product.name}
+                {item.product.__placeholder ? (
+                  <div className="flex items-center gap-2 text-gray-500">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Fetching product…</span>
+                  </div>
+                ) : (
+                  item.product.name
+                )}
               </TableCell>
 
               <TableCell className="py-3 px-4">
@@ -145,7 +145,6 @@ export default function CartTable({
                   type="number"
                   min={0}
                   step="0.01"
-                  // allow keyboard shortcuts to target this input
                   data-cart-price-input={item.id}
                   value={String(item.product.price)}
                   className="w-20 h-8 text-sm"
@@ -156,14 +155,11 @@ export default function CartTable({
                     const price = Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
                     updateCartItemPrice(item.id, price);
                   }}
-                  onBlur={() => {
-                    // finished price edit -> refocus scanner
-                    refocusScanner();
-                  }}
+                  onBlur={() => refocusScanner()}   // ✅ after editing price
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       (e.target as HTMLInputElement).blur();
-                      refocusScanner();
+                      refocusScanner();             // ✅ confirm + refocus
                     }
                   }}
                   disabled={disabled}
@@ -174,7 +170,6 @@ export default function CartTable({
                 <Input
                   type="number"
                   min={1}
-                  // allow keyboard shortcuts to target this input
                   data-cart-qty-input={item.id}
                   value={item.quantity}
                   className="w-16 h-8 text-sm"
@@ -183,14 +178,11 @@ export default function CartTable({
                     const qty = Math.max(1, Number(e.target.value));
                     updateCartItemQuantity(item.id, qty);
                   }}
-                  onBlur={() => {
-                    // finished quantity edit -> refocus scanner
-                    refocusScanner();
-                  }}
+                  onBlur={() => refocusScanner()}   // ✅ after editing qty
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       (e.target as HTMLInputElement).blur();
-                      refocusScanner();
+                      refocusScanner();             // ✅ confirm + refocus
                     }
                   }}
                   disabled={disabled}
@@ -204,8 +196,9 @@ export default function CartTable({
                   onClick={(e) => {
                     e.stopPropagation();
                     deleteCartItem(item.id);
-                    // ensure scanner regains focus after a delete (keyboard flow)
-                    refocusScanner();
+
+                    // ✅ force scanner refocus immediately after delete
+                    setTimeout(() => refocusScanner(true), 0);
                   }}
                   disabled={disabled}
                 >
