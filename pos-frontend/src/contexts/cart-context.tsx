@@ -7,6 +7,7 @@ import React, {
   RefObject,
   useEffect,
   useCallback,
+  useRef,
 } from "react";
 import { productApi, Product } from "@/hooks/products/useProductApi";
 import { useProductModal } from "@/contexts/productRegister-context";
@@ -53,7 +54,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [scannerInputRef, setScannerInputRef] =
     useState<RefObject<HTMLInputElement> | null>(null);
   const [pendingScans, setPendingScans] = useState<Set<string>>(new Set());
-  const [lastScanTime, setLastScanTime] = useState<Map<string, number>>(new Map());
+  // Use a ref for immediate reads/writes to prevent race conditions when two rapid add calls occur
+  const lastScanTimeRef = useRef<Map<string, number>>(new Map());
 
   const { setBarcode: setContextBarcode, openModal, setOpen: setProductModalOpen } =
     useProductModal();
@@ -61,7 +63,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const clearCart = useCallback(() => {
     setCart([]);
     setLastAddedItemId(null);
-    setLastScanTime(new Map());
+    lastScanTimeRef.current = new Map();
   }, []);
 
   const setScannerRef = useCallback((ref: RefObject<HTMLInputElement>) => {
@@ -176,33 +178,22 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     );
   }, []);
 
+  // Use a ref for last-scan timestamps to make duplicate-checks immediate and race-free
   const addOrIncrement = useCallback((product: Product) => {
     const now = Date.now();
     const productKey = product.barcode || product.id?.toString() || product.name;
 
-    console.log("🛒 addOrIncrement called:", {
-      productName: product.name,
-      productKey,
-      currentTime: now
-    });
-
-    // Check for recent addition of the same product (within 1 second)
-    const lastTime = lastScanTime.get(productKey);
-    if (lastTime && (now - lastTime) < 1000) {
-      console.log("⏰ Duplicate prevention triggered, ignoring:", productKey);
+    // Immediate check/update using the ref to avoid races between back-to-back calls
+    const lastTime = lastScanTimeRef.current.get(productKey);
+    if (lastTime && now - lastTime < 1000) {
+      // Duplicate within 1s, ignore
       return;
     }
-
-    setLastScanTime(prev => new Map(prev).set(productKey, now));
+    lastScanTimeRef.current.set(productKey, now);
 
     setCart((prevCart) => {
       const existing = prevCart.find((item) => productEqual(item.product, product));
       if (existing) {
-        console.log("📈 Incrementing existing item:", {
-          itemId: existing.id,
-          productName: product.name,
-          newQuantity: existing.quantity + 1
-        });
         setLastAddedItemId(existing.id);
         return prevCart.map((item) =>
           productEqual(item.product, product) ? { ...item, quantity: item.quantity + 1 } : item
@@ -213,18 +204,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         quantity: 1,
         id: genId(),
       };
-      console.log("➕ Adding new item to cart:", {
-        itemId: cartItem.id,
-        productName: product.name,
-        quantity: 1
-      });
       setLastAddedItemId(cartItem.id);
-      console.log("🎯 Set lastAddedItemId to:", cartItem.id);
-
       // PREPEND new item so latest products show first
       return [cartItem, ...prevCart];
     });
-  }, [lastScanTime]);
+  }, []);
 
   const addProductToCart = useCallback((product: Product) => {
     addOrIncrement(product);
