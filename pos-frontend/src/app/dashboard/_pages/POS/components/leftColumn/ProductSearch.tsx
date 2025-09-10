@@ -44,16 +44,21 @@ export default function ProductSearch({
 
       if (e.key === "ArrowDown") {
         e.preventDefault();
+        e.stopPropagation(); // <-- prevent global handler
         setHighlightedIndex((prev) => Math.min(prev + 1, searchResults.length - 1));
         scrollToHighlighted();
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
+        e.stopPropagation(); // <-- prevent global handler
         setHighlightedIndex((prev) => Math.max(prev - 1, 0));
         scrollToHighlighted();
       } else if (e.key === "Enter" && highlightedIndex >= 0) {
         e.preventDefault();
+        e.stopPropagation(); // <-- prevent global handler from advancing step
         handleSearchSelect(searchResults[highlightedIndex]);
         setHighlightedIndex(-1);
+        // after selecting from keyboard, ensure scanner regains focus
+        refocusScanner();
       }
     };
 
@@ -84,7 +89,10 @@ export default function ProductSearch({
           value={searchQuery}
           onChange={(e) => handleSearchChange(e.target.value)}
           onClick={(e) => e.stopPropagation()}
-          onBlur={refocusScanner}
+          onBlur={() => {
+            // when search input loses focus, refocus scanner (do not steal if user is typing elsewhere)
+            refocusScanner();
+          }}
           disabled={disabled}
         />
         {isAutoSelecting && (

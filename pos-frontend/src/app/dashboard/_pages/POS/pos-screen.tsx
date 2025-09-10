@@ -7,6 +7,19 @@ import POSleft from "./components/leftColumn/index";
 export default function MainDashboard() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
+  // Sync React step into a global so the existing document-level keyboard handler
+  // (useCartKeyboard) can detect the current POS step. Cleared on unmount.
+  useEffect(() => {
+    try {
+      (window as any).posStep = step;
+    } catch { }
+    return () => {
+      try {
+        delete (window as any).posStep;
+      } catch { }
+    };
+  }, [step]);
+
   // ensure scanner input in POS immediately receives focus when this page mounts
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -28,6 +41,23 @@ export default function MainDashboard() {
       clearTimeout(t);
       window.removeEventListener("focus", focusScanner);
     };
+  }, []);
+
+  // NEW: listen for Ctrl+Enter and dispatch a focus event for the cash input
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleCtrlEnter = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === "Enter") {
+        // Only act while on the POS page (this component is only mounted on the POS page)
+        e.preventDefault();
+        e.stopPropagation();
+        window.dispatchEvent(new Event("focusCashInput"));
+      }
+    };
+
+    window.addEventListener("keydown", handleCtrlEnter);
+    return () => window.removeEventListener("keydown", handleCtrlEnter);
   }, []);
 
   return (
