@@ -190,7 +190,7 @@ export default function ProductTable({
                 false
             );
 
-            await productApi.update(editProduct.id, updatedData);
+            await productApi.update(Number(editProduct.id), updatedData);
 
             showSuccessToast("Product updated", `${editForm.name} has been updated.`);
 
