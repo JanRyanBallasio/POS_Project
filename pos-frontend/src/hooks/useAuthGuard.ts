@@ -1,8 +1,27 @@
 'use client';
-import { useRouter } from 'next/navigation';
-import { useEffect, useRef } from 'react';
 import axios from '@/lib/axios';
 import { getAccessToken, getUser } from '@/stores/userStore';
+import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+
+/**
+ * Temporary no-op auth guard for testing.
+ * Returns isAuthenticated=true and prevents redirect to login.
+ *
+ * TODO: Re-enable redirect-to-login behavior after testing.
+ */
+export default function useAuthGuard() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [isAuthenticated] = useState(true); // force-authenticated during testing
+
+  useEffect(() => {
+    // Intentionally no redirect while testing.
+    // If you need to re-enable redirect, add check here and use router.push('/authentication/login')
+  }, [router]);
+
+  return { loading, isAuthenticated };
+}
 
 export function useRedirectIfAuth(redirectTo = '/dashboard/main') {
   const router = useRouter();

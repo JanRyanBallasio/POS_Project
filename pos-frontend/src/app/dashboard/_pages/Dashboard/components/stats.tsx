@@ -1,52 +1,36 @@
+// Stats.tsx
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DollarSign, Package, ShoppingCart } from 'lucide-react';
+import { DollarSign, Package, ShoppingCart } from "lucide-react";
 import { useSaleItems } from "@/hooks/global/fetching/useSaleItems";
 import { useProducts } from "@/hooks/global/fetching/useProducts";
-import { useSales } from "@/hooks/global/fetching/useSales"; // Make sure you have this hook
+import { useSales } from "@/hooks/global/fetching/useSales";
+function getCalendarDayRange() {
+    const now = new Date();
+
+    const start = new Date(now);
+    start.setHours(0, 0, 0, 0); // 12:00 AM
+
+    const end = new Date(now);
+    end.setHours(23, 59, 59, 999); // 11:59 PM
+
+    return { from: start.toISOString(), to: end.toISOString() };
+}
 
 export default function Stats() {
-    // default hook values to empty arrays to avoid runtime errors if backend shape changes
-    // keep full-range aggregated data (if needed) and also fetch today's aggregated data separately
-    const { saleItems: allAggregated = [], loading: saleItemsLoading } = useSaleItems();
     const { products = [], loading: productsLoading } = useProducts();
-    const { sales = [], loading: salesLoading } = useSales();
-    
-    // Get today's date in UTC (YYYY-MM-DD)
-    const getUTCDateString = (date: Date | string) => {
-        const d = typeof date === "string" ? new Date(date) : date;
-        return d.toISOString().slice(0, 10);
-    };
-    const todayUTC = getUTCDateString(new Date());
 
-    // Filter sales for today (UTC)
-    const todaysSalesList = (sales || []).filter(sale => {
-        return getUTCDateString(sale.created_at) === todayUTC;
-    });
+    const { from, to } = getCalendarDayRange();
 
-    // Today's Sales (sum total_purchase for today's sales)
-    const todaysSales = todaysSalesList.reduce((sum, sale) => sum + sale.total_purchase, 0);
+    const { sales = [], loading: salesLoading } = useSales({ from, to });
+    const { saleItems: todaysSaleItems = [], loading: saleItemsLoading } =
+        useSaleItems({ from, to });
 
-    // Today's Transactions (count of sales today)
-    const todaysTransactions = todaysSalesList.length;
-
-    // Total Products
-    const totalProducts = (products || []).length;
-
-    // Build today's ISO range and ask the backend for aggregated counts for today
-    const startOfToday = new Date()
-    startOfToday.setHours(0, 0, 0, 0)
-    const endOfToday = new Date()
-    endOfToday.setHours(23, 59, 59, 999)
-    const todayFromIso = startOfToday.toISOString()
-    const todayToIso = endOfToday.toISOString()
-
-    const { saleItems: todaysSaleItems = [], loading: todaysSaleItemsLoading } = useSaleItems({
-      from: todayFromIso,
-      to: todayToIso
-    })
-
-    // Items Sold Today (sum quantities from aggregated server response)
-    const itemsSoldToday = (todaysSaleItems || []).reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+    const todaysSales = sales.reduce((sum, sale) => sum + sale.total_purchase, 0);
+    const todaysTransactions = sales.length;
+    const itemsSoldToday = todaysSaleItems.reduce(
+        (sum, item) => sum + (Number(item.quantity) || 0),
+        0
+    );
 
     const statsData = [
         {
@@ -71,7 +55,9 @@ export default function Stats() {
             {statsData.map((stat, idx) => (
                 <Card key={idx} className="gap-0 flex justify-center">
                     <CardHeader className="mb-4 flex flex-row justify-between items-center">
-                        <CardTitle className="text-md font-semibold">{stat.title}</CardTitle>
+                        <CardTitle className="text-md font-semibold">
+                            {stat.title}
+                        </CardTitle>
                         <div className="opacity-60">{stat.icon}</div>
                     </CardHeader>
                     <CardContent>

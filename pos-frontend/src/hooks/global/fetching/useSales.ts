@@ -8,7 +8,12 @@ export interface Sale {
   created_at: string;
 }
 
-export const useSales = () => {
+interface UseSalesParams {
+  from?: string;
+  to?: string;
+}
+
+export const useSales = (params?: UseSalesParams) => {
   const [sales, setSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -17,8 +22,15 @@ export const useSales = () => {
     try {
       setLoading(true);
       setError(null);
-      const res = await axios.get("/sales");
-    setSales(res.data.data);
+
+      const res = await axios.get("/sales", {
+        params: {
+          from: params?.from,
+          to: params?.to,
+        },
+      });
+
+      setSales(res.data.data || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
@@ -28,7 +40,7 @@ export const useSales = () => {
 
   useEffect(() => {
     fetchSales();
-  }, []);
+  }, [params?.from, params?.to]);
 
   return { sales, loading, error, refetch: fetchSales };
 };
