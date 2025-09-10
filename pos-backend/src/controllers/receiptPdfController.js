@@ -90,6 +90,104 @@ function fmt(n) {
   return "₱" + Number(n || 0).toFixed(2);
 }
 
+// function renderHtml({ customer, cartTotal, amount, change, items, points }) {
+//   const dateStr = new Date().toLocaleDateString("en-US", {
+//     year: "numeric",
+//     month: "long",
+//     day: "2-digit",
+//   });
+
+//   return `<!doctype html>
+//   <html>
+//   <head>
+//     <meta charset="utf-8"/>
+//     <meta name="viewport" content="width=device-width,initial-scale=1"/>
+//     <style>
+//       @page { size: 80mm auto; margin: 0; }
+//       html,body { margin:0; padding:0; -webkit-print-color-adjust: exact; }
+//       body {
+//         font-family: 'Courier New', Courier, monospace;
+//         color:#111;
+//         font-size:13px;
+//         -webkit-font-smoothing:antialiased;
+//       }
+//       .paper {
+//         box-sizing: border-box;
+//         width: 80mm;
+//         padding: 10px 10px 12px 10px;
+//       }
+//       .center { text-align:center; }
+//       .store-name { font-weight:bold; font-size:16px; margin-bottom:2px; letter-spacing:1px;}
+//       .store-sub { font-size:11px; color:#444; margin-bottom:8px; }
+//       .divider { border-bottom: 1px dashed #444; margin:8px 0; }
+//       .row { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; }
+//       .label { width:90px; font-weight:bold; color:#111; font-size:13px; }
+//       .value { flex:1; text-align:right; color:#111; font-size:13px; word-break:break-word; }
+//       .table-header { display:flex; font-weight:bold; font-size:13px; margin-bottom:2px; letter-spacing:1px;}
+//       .col-desc { flex:2.5; text-align:left; }
+//       .col-qty { flex:0.7; text-align:right; }
+//       .col-prc { flex:1; text-align:right; }
+//       .col-amt { flex:1; text-align:right; }
+//       .item-row { display:flex; font-size:13px; margin-bottom:8px; }
+//       .total-row { display:flex; justify-content:flex-end; margin-top:8px; font-weight:bold; font-size:14px; }
+//       .footer { text-align:center; margin-top:10px; font-size:12px; font-weight:bold; color:#111; }
+//       .points-row { margin-top:8px; font-size:13px; font-weight:bold; text-align:center; }
+//       .customer-copy { text-align:center; margin-top:12px; font-size:13px; font-weight:bold; color:#222; letter-spacing:2px;}
+//     </style>
+//   </head>
+//   <body>
+//     <div class="paper" id="receipt">
+//       <div class="center">
+//         <div class="store-name">YZY Stores</div>
+//         <div class="store-sub">Eastern Slide, Tuding</div>
+//       </div>
+//       <div class="divider"></div>
+//       <div class="row">
+//         <div class="label">Customer:</div>
+//         <div class="value">${escapeHtml(customer?.name || "N/A")}</div>
+//       </div>
+//       <div class="row">
+//         <div class="label">Date:</div>
+//         <div class="value">${escapeHtml(dateStr)}</div>
+//       </div>
+//       <div class="divider"></div>
+//       <div class="table-header">
+//         <div class="col-desc">Item</div>
+//         <div class="col-qty">QTY</div>
+//         <div class="col-prc">Price</div>
+//         <div class="col-amt">Amount</div>
+//       </div>
+//       ${(items || []).map(it => `
+//         <div class="item-row">
+//           <div class="col-desc">${escapeHtml(it.desc)}</div>
+//           <div class="col-qty">${escapeHtml(String(it.qty || 0))}</div>
+//           <div class="col-prc">${Number(it.price || it.amount/(it.qty||1)||0).toFixed(2)}</div>
+//           <div class="col-amt">${Number(it.amount || 0).toFixed(2)}</div>
+//         </div>
+//       `).join("")}
+//       <div class="divider"></div>
+//       <div class="total-row">
+//         <div style="padding-right:12px; font-weight:normal">Total:</div>
+//         <div style="width:70px; text-align:right;">${fmt(cartTotal)}</div>
+//       </div>
+//       <div style="display:flex;justify-content:space-between;margin-top:8px">
+//         <div class="label" style="font-size:12px;">Amount:</div>
+//         <div style="text-align:right;font-size:12px;">${fmt(amount)}</div>
+//       </div>
+//       <div style="display:flex;justify-content:space-between;margin-top:6px">
+//         <div class="label" style="font-size:12px;">Change:</div>
+//         <div style="text-align:right;font-size:12px;">${fmt(change)}</div>
+//       </div>
+//       <div class="points-row">
+//         Customer Points: ${typeof points === "number" ? points : "0"}
+//       </div>
+//       <div class="divider"></div>
+//       <div class="footer">THANK YOU — GATANG KA MANEN!</div>
+//       <div class="customer-copy">CUSTOMER COPY</div>
+//     </div>
+//   </body>
+//   </html>`;
+// }
 function renderHtml({ customer, cartTotal, amount, change, items, points }) {
   const dateStr = new Date().toLocaleDateString("en-US", {
     year: "numeric",
@@ -114,10 +212,10 @@ function renderHtml({ customer, cartTotal, amount, change, items, points }) {
       .paper {
         box-sizing: border-box;
         width: 80mm;
-        padding: 10px 10px 12px 10px;
+        padding: 0 10px 20px 10px; /* top padding removed, bottom added for feed */
       }
       .center { text-align:center; }
-      .store-name { font-weight:bold; font-size:16px; margin-bottom:2px; letter-spacing:1px;}
+      .logo { margin: 0 auto 5px auto; display:block; max-width:50px; }
       .store-sub { font-size:11px; color:#444; margin-bottom:8px; }
       .divider { border-bottom: 1px dashed #444; margin:8px 0; }
       .row { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; }
@@ -133,12 +231,13 @@ function renderHtml({ customer, cartTotal, amount, change, items, points }) {
       .footer { text-align:center; margin-top:10px; font-size:12px; font-weight:bold; color:#111; }
       .points-row { margin-top:8px; font-size:13px; font-weight:bold; text-align:center; }
       .customer-copy { text-align:center; margin-top:12px; font-size:13px; font-weight:bold; color:#222; letter-spacing:2px;}
+      .bottom-space { height:50px; } /* Extra feed space */
     </style>
   </head>
   <body>
     <div class="paper" id="receipt">
       <div class="center">
-        <div class="store-name">YZY Stores</div>
+        <img src="http://localhost:3000/img/logo1.png" class="logo" />
         <div class="store-sub">Eastern Slide, Tuding</div>
       </div>
       <div class="divider"></div>
@@ -184,6 +283,7 @@ function renderHtml({ customer, cartTotal, amount, change, items, points }) {
       <div class="divider"></div>
       <div class="footer">THANK YOU — GATANG KA MANEN!</div>
       <div class="customer-copy">CUSTOMER COPY</div>
+      <div class="bottom-space"></div>
     </div>
   </body>
   </html>`;

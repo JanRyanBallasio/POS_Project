@@ -5,48 +5,137 @@ const cleanInput = (v) =>
 
 const productController = {
   // Get all products (supports ?barcode= and ?name= filters)
+  // Get all products (supports ?barcode=, ?name= filters, and pagination with ?page=&limit=)
   getAllProducts: async (req, res) => {
     try {
       const { barcode, name } = req.query || {};
 
+      // Support limit=all to return every row
+      const rawLimit = typeof req.query?.limit === "undefined" ? undefined : String(req.query.limit);
+      const isAll = rawLimit?.toLowerCase() === "all";
+
+      // parse pagination params when not asking for all
+      let page = 1;
+      let limit = 50;
+      if (!isAll) {
+        page = parseInt(String(req.query?.page ?? "1"), 10) || 1;
+        limit = parseInt(String(req.query?.limit ?? "50"), 10) || 50;
+      }
+
+      const from = (page - 1) * limit;
+      const to = from + limit - 1;
+
+      // fast path: single barcode lookup (returns single item)
       if (barcode) {
         const b = cleanInput(barcode);
         const { data, error } = await supabase
           .from('Products')
           .select('*')
           .eq('barcode', b)
-          .neq('is_deleted', true); // Add this filter
+          .neq('is_deleted', true)
+          .maybeSingle();
 
         if (error) throw error;
-        return res.json({ success: true, data: data, count: data.length });
+        return res.json({
+          success: true,
+          data: data ? [data] : [],
+          count: data ? 1 : 0,
+          page: 1,
+          totalPages: data ? 1 : 0
+        });
       }
 
+      // helper to fetch all rows in batches of up to 1000
+      const fetchAllInBatches = async (baseQueryBuilder, total) => {
+        const BATCH_SIZE = 1000; // Supabase/PostgREST limit per range request
+        const all = [];
+        for (let offset = 0; offset < total; offset += BATCH_SIZE) {
+          const start = offset;
+          const end = Math.min(offset + BATCH_SIZE - 1, total - 1);
+          const { data: chunk, error: chunkErr } = await baseQueryBuilder.range(start, end);
+          if (chunkErr) throw chunkErr;
+          if (Array.isArray(chunk) && chunk.length > 0) {
+            all.push(...chunk);
+          }
+          // if chunk is empty early-exit (defensive)
+          if (!chunk || chunk.length === 0) break;
+        }
+        return all;
+      };
+
+      // filtered by name
       if (name) {
         const n = cleanInput(name);
-        const { data, error } = await supabase
+
+        // get exact count for filtered set
+        const head = await supabase
+          .from('Products')
+          .select('id', { count: 'exact', head: true })
+          .ilike('name', `%${n}%`)
+          .neq('is_deleted', true);
+
+        if (head.error) throw head.error;
+        const total = head.count ?? 0;
+        if (total === 0) return res.json({ success: true, data: [], count: 0 });
+
+        const baseQry = supabase
           .from('Products')
           .select('*')
           .ilike('name', `%${n}%`)
-          .neq('is_deleted', true) // Add this filter
+          .neq('is_deleted', true)
           .order('created_at', { ascending: false });
 
-        if (error) throw error;
-        return res.json({ success: true, data: data, count: data.length });
+        let data;
+        if (isAll) {
+          data = await fetchAllInBatches(baseQry, total);
+        } else {
+          const { data: pageData, error } = await baseQry.range(from, to);
+          if (error) throw error;
+          data = pageData ?? [];
+        }
+
+        const totalPages = isAll ? 1 : Math.max(1, Math.ceil(total / limit));
+        return res.json({ success: true, data: data, count: total, page: isAll ? 1 : page, totalPages });
       }
 
-      const { data, error } = await supabase
+      // no filter: count then fetch (all or page)
+      const head = await supabase
+        .from('Products')
+        .select('id', { count: 'exact', head: true })
+        .neq('is_deleted', true);
+
+      if (head.error) throw head.error;
+      const total = head.count ?? 0;
+      if (total === 0) return res.json({ success: true, data: [], count: 0 });
+
+      const baseQry = supabase
         .from('Products')
         .select('*')
-        .neq('is_deleted', true) // Add this filter
+        .neq('is_deleted', true)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return res.json({ success: true, data: data, count: data.length });
+      let data;
+      if (isAll) {
+        data = await fetchAllInBatches(baseQry, total);
+      } else {
+        // If requested range starts beyond total, return empty page
+        if (from >= total) {
+          const totalPages = Math.max(1, Math.ceil(total / limit));
+          return res.json({ success: true, data: [], count: total, page, totalPages });
+        }
+        const { data: pageData, error } = await baseQry.range(from, to);
+        if (error) throw error;
+        data = pageData ?? [];
+      }
+
+      const totalPages = isAll ? 1 : Math.max(1, Math.ceil(total / limit));
+      return res.json({ success: true, data: data, count: total, page: isAll ? 1 : page, totalPages });
     } catch (error) {
       console.error("getAllProducts error:", error);
       res.status(500).json({ success: false, error: error.message || "Internal server error" });
     }
   },
+
 
   // Create product (normalizes barcode) - DUPLICATE NAMES NOW ALLOWED
   createProduct: async (req, res) => {
@@ -89,10 +178,10 @@ const productController = {
 
         if (existingBarcode && existingBarcode.length > 0) {
           console.log("Duplicate barcode found:", existingBarcode[0]);
-          return res.status(400).json({ 
-            success: false, 
-            field: "barcode", 
-            message: "A product with this barcode already exists" 
+          return res.status(400).json({
+            success: false,
+            field: "barcode",
+            message: "A product with this barcode already exists"
           });
         }
       } catch (barcodeError) {
@@ -137,42 +226,42 @@ const productController = {
 
         if (error) {
           console.error("Supabase insert error:", error);
-          
+
           // Handle database constraint errors
           if (error.code === '23505') { // PostgreSQL unique constraint violation
             if (error.message.includes('barcode')) {
-              return res.status(400).json({ 
-                success: false, 
-                field: "barcode", 
-                message: "A product with this barcode already exists" 
+              return res.status(400).json({
+                success: false,
+                field: "barcode",
+                message: "A product with this barcode already exists"
               });
             }
             // Note: No longer checking for name uniqueness constraint
           }
-          
+
           // Generic database error
-          return res.status(500).json({ 
-            success: false, 
-            message: "Database error while creating product" 
+          return res.status(500).json({
+            success: false,
+            message: "Database error while creating product"
           });
         }
 
         console.log("Product created successfully:", data);
         res.json({ success: true, data: data });
-        
+
       } catch (insertError) {
         console.error("Product creation error:", insertError);
-        return res.status(500).json({ 
-          success: false, 
-          message: "Failed to create product in database" 
+        return res.status(500).json({
+          success: false,
+          message: "Failed to create product in database"
         });
       }
 
     } catch (error) {
       console.error("createProduct general error:", error);
-      res.status(500).json({ 
-        success: false, 
-        message: "Internal server error while creating product" 
+      res.status(500).json({
+        success: false,
+        message: "Internal server error while creating product"
       });
     }
   },
@@ -249,7 +338,7 @@ const productController = {
       if ((stockRefs && stockRefs.length > 0) || (saleRefs && saleRefs.length > 0)) {
         const { error: updateError } = await supabase
           .from('Products')
-          .update({ 
+          .update({
             quantity: 0, // Set quantity to 0
             is_deleted: true,
             deleted_at: new Date().toISOString()
@@ -258,8 +347,8 @@ const productController = {
 
         if (updateError) throw updateError;
 
-        return res.json({ 
-          success: true, 
+        return res.json({
+          success: true,
           message: `Product "${existingProduct.name}" has been marked as deleted due to existing sales/stock history`,
           soft_deleted: true
         });
@@ -272,18 +361,18 @@ const productController = {
         .eq('id', id);
 
       if (error) throw error;
-      
-      res.json({ 
-        success: true, 
+
+      res.json({
+        success: true,
         message: `Product "${existingProduct.name}" has been permanently deleted`,
         hard_deleted: true
       });
-      
+
     } catch (error) {
       console.error("deleteProduct error:", error);
-      res.status(500).json({ 
-        success: false, 
-        error: error.message || "Internal server error" 
+      res.status(500).json({
+        success: false,
+        error: error.message || "Internal server error"
       });
     }
   },
@@ -314,7 +403,7 @@ const productController = {
     try {
       const rawBarcode = req.params?.barcode;
       console.log("🔍 Backend: Raw barcode received:", rawBarcode);
-      
+
       const barcode = cleanInput(rawBarcode);
       console.log("🧹 Backend: Cleaned barcode:", barcode);
 
@@ -346,7 +435,7 @@ const productController = {
       // Try normalized match (remove leading zeros)
       const normalizedBarcode = barcode.replace(/^0+/, '') || '0';
       console.log("🔢 Backend: Trying normalized barcode:", normalizedBarcode);
-      
+
       if (normalizedBarcode !== barcode) {
         const { data: normalizedData, error: normalizedError } = await supabase
           .from('Products')

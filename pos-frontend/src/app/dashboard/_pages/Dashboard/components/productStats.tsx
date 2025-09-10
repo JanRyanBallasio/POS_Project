@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import useSWR from 'swr'
-import { CalendarIcon, ChevronDown, ChevronUp, List } from 'lucide-react'
+import { CalendarIcon, ChevronDown, ChevronUp, History } from 'lucide-react'
 import type { DateRange } from 'react-day-picker'
 import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts'
 import axios from "@/lib/axios";
@@ -22,26 +22,12 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 
 type SaleItem = {
-  product_id: number
-  quantity: number
-  created_at: string
-}
-
-type Product = {
-  id: number
-  name: string
-  category_id: number
-}
-
-type Category = {
-  id: number
-  name: string
-}
-
-type ChartData = {
   category: string
   quantity: number
+  last_purchase: string // from backend
 }
+
+type ChartData = SaleItem
 
 const chartConfig: ChartConfig = {
   quantity: {
@@ -49,97 +35,94 @@ const chartConfig: ChartConfig = {
     color: 'var(--color-primary)'
   }
 }
+
 const fetcher = async (url: string) => {
-  const response = await axios.get(url);
-  return response.data.data;
-};
+  const response = await axios.get(url)
+  const payload = response.data
+
+  if (!payload) return []
+  if (Array.isArray(payload)) return payload
+  if (Array.isArray(payload.data)) return payload.data
+
+  return payload
+}
 
 export default function ProductStats() {
-  const { data: saleItems = [], error: saleItemsError, isLoading: saleItemsLoading } = useSWR<SaleItem[]>(
-    '/sales-items',
-    fetcher
-  )
-  const { data: products = [], error: productsError, isLoading: productsLoading } = useSWR<Product[]>(
-    '/products',
-    fetcher
-  )
-  const { data: categories = [], error: categoriesError, isLoading: categoriesLoading } = useSWR<Category[]>(
-    '/categories',
-    fetcher
-  )
-
   const today = new Date()
   const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+
   const [range, setRange] = useState<DateRange | undefined>({
     from: startOfMonth,
     to: today
   })
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | 'normal'>('normal')
 
-  // Map product_id to category_id
-  const productCategoryMap = useMemo(() => {
-    const map: Record<number, number> = {}
-    products.forEach(p => {
-      map[p.id] = p.category_id
-    })
-    return map
-  }, [products])
+  // ✅ include "recent" in the type
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | 'recent'>('recent')
 
-  // Map category_id to category name
-  const categoryNameMap = useMemo(() => {
-    const map: Record<number, string> = {}
-    categories.forEach(c => {
-      map[c.id] = c.name
-    })
-    return map
-  }, [categories])
+  // build URL for sale-items including from/to if present
+  const saleItemsUrl = useMemo(() => {
+    const params = new URLSearchParams()
+    params.set('limit', 'all')
+    if (range?.from) params.set('from', (range.from as Date).toISOString())
+    if (range?.to) params.set('to', (range.to as Date).toISOString())
+    return `/sales-items?${params.toString()}`
+  }, [range])
 
-  const isSameOrAfter = (a: Date, b: Date) =>
-    a.setHours(0, 0, 0, 0) >= b.setHours(0, 0, 0, 0)
-  const isSameOrBefore = (a: Date, b: Date) =>
-    a.setHours(0, 0, 0, 0) <= b.setHours(0, 0, 0, 0)
+  const {
+    data: saleItems = [],
+    error: saleItemsError,
+    isLoading: saleItemsLoading,
+    isValidating
+  } = useSWR<SaleItem[]>(saleItemsUrl, fetcher, {
+    keepPreviousData: true,
+  })
 
-  // Group by category_id and show category name
-  const chartData = useMemo(() => {
-    const grouped: { [category_id: string]: number } = {}
-    saleItems.forEach(item => {
-      const date = new Date(item.created_at)
-      if (
-        (!range?.from || isSameOrAfter(date, range.from)) &&
-        (!range?.to || isSameOrBefore(date, range.to))
-      ) {
-        const category_id = productCategoryMap[item.product_id]
-        if (category_id !== undefined) {
-          grouped[category_id] = (grouped[category_id] || 0) + item.quantity
-        }
-      }
-    })
-    let arr = Object.entries(grouped)
-      .map(([category_id, quantity]) => ({
-        category: categoryNameMap[Number(category_id)] || `Category ${category_id}`,
-        quantity
+  // Transform + sort chart data
+  const chartData = useMemo<ChartData[]>(() => {
+    const arr = Array.isArray(saleItems)
+      ? saleItems.map(si => ({
+        category: si.category,
+        quantity: Number(si.quantity) || 0,
+        last_purchase: si.last_purchase,
       }))
-    if (sortOrder === 'asc') {
-      arr = arr.sort((a, b) => a.quantity - b.quantity)
-    } else if (sortOrder === 'desc') {
-      arr = arr.sort((a, b) => b.quantity - a.quantity)
+      : []
+
+    switch (sortOrder) {
+      case 'asc':
+        return [...arr].sort((a, b) => a.quantity - b.quantity)
+      case 'desc':
+        return [...arr].sort((a, b) => b.quantity - a.quantity)
+      case 'recent':
+        return [...arr].sort(
+          (a, b) =>
+            new Date(b.last_purchase).getTime() -
+            new Date(a.last_purchase).getTime()
+        )
+      default:
+        return arr
     }
-    return arr
-  }, [saleItems, range, productCategoryMap, categoryNameMap, sortOrder])
+  }, [saleItems, sortOrder])
 
   const total = useMemo(
     () => chartData.reduce((acc, curr) => acc + curr.quantity, 0),
     [chartData]
   )
 
-  if (saleItemsLoading || productsLoading || categoriesLoading) return <div>Loading...</div>
-  if (saleItemsError || productsError || categoriesError) return <div>Error loading product stats.</div>
+  if (saleItemsLoading && !isValidating) return <div>Loading...</div>
+  if (saleItemsError) return <div>Error loading product stats.</div>
 
   return (
-    <Card className='@container/card w-full'>
+    <Card className='@container/card w-full relative'>
+      {isValidating && (
+        <div className="absolute inset-0 bg-white/60 flex items-center justify-center z-10">
+          <span className="text-sm text-gray-600">Updating…</span>
+        </div>
+      )}
       <CardHeader className='flex flex-col border-b @md/card:grid'>
         <CardTitle>Product Analytics</CardTitle>
-        <CardDescription>Showing most sold categories for this month.</CardDescription>
+        <CardDescription>
+          Showing most sold categories for this month.
+        </CardDescription>
         <CardAction className='mt-2 @md/card:mt-0'>
           <div className="flex gap-2 items-center mt-2">
             <Button
@@ -151,12 +134,12 @@ export default function ProductStats() {
               <ChevronDown size={16} />
             </Button>
             <Button
-              variant={sortOrder === 'normal' ? 'default' : 'outline'}
+              variant={sortOrder === 'recent' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setSortOrder('normal')}
-              aria-label="Follow Order"
+              onClick={() => setSortOrder('recent')}
+              aria-label="Sort by Recent"
             >
-              <List size={16} />
+              <History size={16} />
             </Button>
             <Button
               variant={sortOrder === 'asc' ? 'default' : 'outline'}
@@ -184,9 +167,7 @@ export default function ProductStats() {
                   onSelect={setRange}
                   fixedWeeks
                   showOutsideDays
-                  disabled={{
-                    after: today
-                  }}
+                  disabled={{ after: today }}
                 />
               </PopoverContent>
             </Popover>
@@ -198,10 +179,7 @@ export default function ProductStats() {
           <BarChart
             accessibilityLayer
             data={chartData}
-            margin={{
-              left: 12,
-              right: 12
-            }}
+            margin={{ left: 12, right: 12 }}
           >
             <CartesianGrid vertical={false} />
             <XAxis
@@ -226,7 +204,8 @@ export default function ProductStats() {
       </CardContent>
       <CardFooter className='border-t'>
         <div className='text-sm'>
-          Total sold: <span className='font-semibold'>{total.toLocaleString()}</span>
+          Total sold:{' '}
+          <span className='font-semibold'>{total.toLocaleString()}</span>
         </div>
       </CardFooter>
     </Card>

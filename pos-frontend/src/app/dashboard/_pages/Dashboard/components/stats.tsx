@@ -5,10 +5,12 @@ import { useProducts } from "@/hooks/global/fetching/useProducts";
 import { useSales } from "@/hooks/global/fetching/useSales"; // Make sure you have this hook
 
 export default function Stats() {
-    const { saleItems, loading: saleItemsLoading } = useSaleItems();
-    const { products, loading: productsLoading } = useProducts();
-    const { sales, loading: salesLoading } = useSales();
-
+    // default hook values to empty arrays to avoid runtime errors if backend shape changes
+    // keep full-range aggregated data (if needed) and also fetch today's aggregated data separately
+    const { saleItems: allAggregated = [], loading: saleItemsLoading } = useSaleItems();
+    const { products = [], loading: productsLoading } = useProducts();
+    const { sales = [], loading: salesLoading } = useSales();
+    
     // Get today's date in UTC (YYYY-MM-DD)
     const getUTCDateString = (date: Date | string) => {
         const d = typeof date === "string" ? new Date(date) : date;
@@ -17,7 +19,7 @@ export default function Stats() {
     const todayUTC = getUTCDateString(new Date());
 
     // Filter sales for today (UTC)
-    const todaysSalesList = sales.filter(sale => {
+    const todaysSalesList = (sales || []).filter(sale => {
         return getUTCDateString(sale.created_at) === todayUTC;
     });
 
@@ -28,11 +30,23 @@ export default function Stats() {
     const todaysTransactions = todaysSalesList.length;
 
     // Total Products
-    const totalProducts = products.length;
+    const totalProducts = (products || []).length;
 
-    // Items Sold Today (sum quantity from saleItems for today)
-    const todaysSaleItems = saleItems.filter(item => getUTCDateString(item.created_at) === todayUTC);
-    const itemsSoldToday = todaysSaleItems.reduce((sum, item) => sum + item.quantity, 0);
+    // Build today's ISO range and ask the backend for aggregated counts for today
+    const startOfToday = new Date()
+    startOfToday.setHours(0, 0, 0, 0)
+    const endOfToday = new Date()
+    endOfToday.setHours(23, 59, 59, 999)
+    const todayFromIso = startOfToday.toISOString()
+    const todayToIso = endOfToday.toISOString()
+
+    const { saleItems: todaysSaleItems = [], loading: todaysSaleItemsLoading } = useSaleItems({
+      from: todayFromIso,
+      to: todayToIso
+    })
+
+    // Items Sold Today (sum quantities from aggregated server response)
+    const itemsSoldToday = (todaysSaleItems || []).reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
 
     const statsData = [
         {
