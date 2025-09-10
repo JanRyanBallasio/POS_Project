@@ -4,7 +4,7 @@ import { isAxiosError } from 'axios';
 
 export const PRODUCTS_KEY = "products:list";
 export interface Product {
-  id: number;
+  id: number | string;
   name: string;
   barcode?: string | null;
   price: number;
@@ -111,11 +111,11 @@ function cacheDeleteByBarcode(barcode: string | number): void {
   } catch { /* ignore */ }
 }
 
-function cacheDeleteById(id: number): void {
+function cacheDeleteById(id: number | string): void {
   try {
     let removed = false;
     for (const [k, v] of Array.from(BARCODE_CACHE.entries())) {
-      if (v?.product?.id === id) {
+      if (String(v?.product?.id) === String(id)) { // compare as string
         BARCODE_CACHE.delete(k);
         removed = true;
       }
