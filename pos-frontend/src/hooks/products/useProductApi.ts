@@ -171,7 +171,8 @@ function removeProductFromList(old: ProductsListShape | undefined | null, id: nu
 export const productApi = {
   async getAll(): Promise<Product[]> {
     try {
-      const response = await axios.get('/products');
+      // request all rows from backend
+      const response = await axios.get('/products?limit=all');
       if (response.status >= 400) {
         return [];
       }
