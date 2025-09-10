@@ -25,11 +25,23 @@ export interface LoginResponse {
 export const loginUser = async (credentials: LoginCredentials): Promise<LoginResponse> => {
   try {
     const response = await axios.post('/auth/login', credentials);
-    return response.data;
+    const raw = response.data;
+
+    // Require backend to provide accessToken and data
+    if (!raw || !raw.accessToken || !raw.data) {
+      throw new Error(raw?.message || 'Invalid server response: missing accessToken or user data');
+    }
+
+    return {
+      success: raw.success ?? true,
+      accessToken: raw.accessToken, // require accessToken explicitly
+      data: raw.data,
+    };
   } catch (error: any) {
-    throw new Error(error.response?.data?.message || 'Login failed');
+    throw new Error(error.response?.data?.message || error.message || 'Login failed');
   }
 };
+
 
 export const registerUser = async (data: RegisterData): Promise<void> => {
   try {

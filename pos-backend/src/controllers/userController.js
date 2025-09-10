@@ -129,7 +129,11 @@ const userController = {
       // don't leak password
       delete user.password;
 
-      res.json({ success: true, token, data: user });
+      res.json({
+        success: true,
+        accessToken: token, // renamed for frontend
+        data: user
+      });
     } catch (error) {
       res.status(500).json({ success: false, error: error.message });
     }
