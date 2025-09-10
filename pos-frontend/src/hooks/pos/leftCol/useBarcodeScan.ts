@@ -134,6 +134,7 @@ export function useBarcodeScan(onScan: (barcode: string) => void | Promise<void>
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
+      e.stopPropagation(); // <-- prevent global handler
       const val = barcodeInput.trim();
       if (val) {
         void runScan(val);

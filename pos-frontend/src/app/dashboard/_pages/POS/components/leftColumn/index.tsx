@@ -89,8 +89,8 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
 
   useEffect(() => {
     const handleShortcut = (e: KeyboardEvent) => {
-      // Only trigger in POS step 1 and only for Numpad 8
-      if (step === 1 && e.code === "Numpad8") {
+      // Only trigger in POS step 1 and only for Numpad 8 or F2
+      if (step === 1 && (e.key === "F2")) {
         e.preventDefault();
         if (productSearchInputRef.current) {
           productSearchInputRef.current.focus();
@@ -101,6 +101,59 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
     window.addEventListener("keydown", handleShortcut);
     return () => window.removeEventListener("keydown", handleShortcut);
   }, [step]);
+
+  // Listen for cart selection events triggered by global keyboard handler
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const selectNext = () => {
+      if (!cart || cart.length === 0) return;
+      const idx = cart.findIndex((c) => c.id === selectedRowId);
+      const nextIdx = idx < 0 ? 0 : Math.min(cart.length - 1, idx + 1);
+      const id = cart[nextIdx]?.id;
+      if (id) {
+        selectRow(id);
+      }
+    };
+
+    const selectPrev = () => {
+      if (!cart || cart.length === 0) return;
+      const idx = cart.findIndex((c) => c.id === selectedRowId);
+      const prevIdx = idx <= 0 ? 0 : idx - 1;
+      const id = cart[prevIdx]?.id;
+      if (id) {
+        selectRow(id);
+      }
+    };
+
+    window.addEventListener("cart:select-next", selectNext);
+    window.addEventListener("cart:select-prev", selectPrev);
+
+    // When an item is deleted, the cart-context will emit nextSelectedId.
+    const onItemDeleted = (e: Event) => {
+      const detail = (e as CustomEvent)?.detail || {};
+      const nextId: string | null = detail.nextSelectedId ?? null;
+
+      if (nextId) {
+        selectRow(nextId);
+        return;
+      }
+
+      // Fallback: if cart still has items, select the current first row; otherwise clear selection
+      if (cart && cart.length > 0) {
+        selectRow(cart[0].id);
+      } else {
+        selectRow("");
+      }
+    };
+    window.addEventListener("cart:item-deleted", onItemDeleted);
+
+    return () => {
+      window.removeEventListener("cart:select-next", selectNext);
+      window.removeEventListener("cart:select-prev", selectPrev);
+      window.removeEventListener("cart:item-deleted", onItemDeleted);
+    };
+  }, [cart, selectedRowId, selectRow, inputRef]);
 
   async function handleScanAndAddToCart(barcode: string) {
     const clean = (v: string | null | undefined) => (v == null ? "" : String(v).replace(/[\u0000-\u001F\u007F-\u009F]/g, "").trim());
