@@ -136,6 +136,34 @@ const productController = {
     }
   },
 
+  getProductsByCategory: async (req, res) => {
+    try {
+      const { category, from, to } = req.query;
+      if (!category) {
+        return res.status(400).json({ success: false, message: "Category required" });
+      }
+
+      // If from/to not provided, default to whole range
+      const from_date = from && from !== '' ? from : '1970-01-01T00:00:00Z';
+      const to_date = to && to !== '' ? to : new Date().toISOString();
+
+      console.log("RPC Params:", { from_date, to_date, category });
+
+      const { data, error } = await supabase.rpc('get_products_by_category', {
+        from_date,
+        to_date,
+        category_name: category
+      });
+
+      if (error) throw error;
+
+      return res.json({ success: true, data: data || [] });
+    } catch (err) {
+      console.error("getProductsByCategory error:", err);
+      return res.status(500).json({ success: false, error: err.message || "Internal server error" });
+    }
+  },
+
 
   // Create product (normalizes barcode) - DUPLICATE NAMES NOW ALLOWED
   createProduct: async (req, res) => {
