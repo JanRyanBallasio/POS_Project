@@ -17,7 +17,7 @@ const salesItemsRoutes = require('./src/routes/salesItemsRoutes');
 const customerRoutes = require('./src/routes/customerRoutes');
 const stockTransactionRoutes = require('./src/routes/stockTransactionRoutes');
 const receiptRoutes = require("./src/routes/receiptRoutes");
-const authRoutes = require('./src/routes/auth.routes');
+// const authRoutes = require('./src/routes/auth.routes'); // TEMP disabled (auth routes causing startup error)
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -37,7 +37,11 @@ app.use((req, res, next) => {
 });
 
 // Public Auth routes
-app.use('/api/auth', authRoutes);
+// app.use('/api/auth', authRoutes);
+// Temporary dev stub to avoid crash while auth is disabled
+app.use('/api/auth', (req, res) => {
+  res.status(200).json({ success: true, message: 'Auth disabled for development' });
+});
 
 // Protect API routes (require valid access token)
 app.use('/api/users', auth, userRoutes);

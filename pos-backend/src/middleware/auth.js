@@ -61,4 +61,11 @@ const auth = (req, res, next) => {
   }
 };
 
+// DEVELOPMENT: authentication disabled so the POS can be accessed directly.
+// REVERT THIS BEFORE DEPLOYING TO PRODUCTION.
+// module.exports = (req, res, next) => {
+//   return next();
+// };
+
+// At the end of the file, export the real auth handler instead of the global bypass:
 module.exports = auth;
