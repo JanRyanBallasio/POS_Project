@@ -21,6 +21,7 @@ import {
 import type { ChartConfig } from '@/components/ui/chart'
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Skeleton } from '@/components/ui/skeleton'
 
 type Sale = {
   created_at: string
@@ -39,18 +40,74 @@ const chartConfig: ChartConfig = {
   }
 }
 
-// Replace the fetcher
 const fetcher = async (url: string) => {
   const response = await axios.get(url);
-  return response.data.data;
-};
+  return response.data?.data || []
+}
 
-export default function ProductStats() {
-  // Remove the API_URL line and use relative path
-  const { data: sales = [], error, isLoading } = useSWR<Sale[]>(
-    '/sales', // Use relative path
-    fetcher
-  )
+// Manila offset in ms
+const MANILA_OFFSET_MS = 8 * 60 * 60 * 1000
+
+// Return UTC ISO that corresponds to Manila 00:00:00.000 for the provided date (inclusive start).
+// Caller should pass a Date representing the selected local day (from calendar).
+function manilaDayStartUTCiso(d: Date) {
+  const manilaLocal = new Date(d.getTime() + MANILA_OFFSET_MS)
+  const y = manilaLocal.getUTCFullYear()
+  const m = manilaLocal.getUTCMonth()
+  const day = manilaLocal.getUTCDate()
+  const manilaMidnightUTCms = Date.UTC(y, m, day, 0, 0, 0) - MANILA_OFFSET_MS
+  return new Date(manilaMidnightUTCms).toISOString() // inclusive start
+}
+
+// Return UTC ISO for Manila next-day 00:00:00.000 (exclusive end).
+// Use this as `to` so backend can use created_at < to and include the whole last Manila day.
+function manilaNextDayStartUTCiso(d: Date) {
+  const manilaLocal = new Date(d.getTime() + MANILA_OFFSET_MS)
+  const y = manilaLocal.getUTCFullYear()
+  const m = manilaLocal.getUTCMonth()
+  const day = manilaLocal.getUTCDate()
+  const manilaMidnightUTCms = Date.UTC(y, m, day, 0, 0, 0) - MANILA_OFFSET_MS
+  const nextMidnight = manilaMidnightUTCms + 24 * 60 * 60 * 1000
+  return new Date(nextMidnight).toISOString() // exclusive end
+}
+
+// Convert an ISO created_at (UTC) to a Manila YYYY-MM-DD string
+function createdAtToManilaYmd(iso: string) {
+  const d = new Date(iso) // UTC time
+  const manila = new Date(d.getTime() + MANILA_OFFSET_MS)
+  const y = manila.getUTCFullYear()
+  const m = String(manila.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(manila.getUTCDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+// iterate dates inclusive (local dates)
+function eachDayInclusive(from: Date, to: Date) {
+  const arr: Date[] = []
+  const cur = new Date(from.getFullYear(), from.getMonth(), from.getDate())
+  const end = new Date(to.getFullYear(), to.getMonth(), to.getDate())
+  while (cur <= end) {
+    arr.push(new Date(cur))
+    cur.setDate(cur.getDate() + 1)
+  }
+  return arr
+}
+
+// format YYYY-MM-DD from local Date
+function ymd(date: Date) {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+// parse YYYY-MM-DD into a local Date (avoid timezone shifts)
+function parseYmdToLocalDate(ymdStr: string) {
+  const [y, m, d] = ymdStr.split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+
+export default function SalesStats() {
   const today = new Date()
   const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
   const [range, setRange] = React.useState<DateRange | undefined>({
@@ -59,48 +116,96 @@ export default function ProductStats() {
   })
   const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc' | 'normal'>('normal')
 
-  const isSameOrAfter = (a: Date, b: Date) =>
-    a.setHours(0, 0, 0, 0) >= b.setHours(0, 0, 0, 0)
-  const isSameOrBefore = (a: Date, b: Date) =>
-    a.setHours(0, 0, 0, 0) <= b.setHours(0, 0, 0, 0)
+  // build URL with from/to when range selected (convert to Manila day boundaries -> UTC ISO)
+  // pass from = Manila 00:00 (inclusive), to = next Manila 00:00 (exclusive) so backend can use gte / lt
+  const salesUrl = React.useMemo(() => {
+    if (!range?.from || !range?.to) return '/sales'
+    const fromIso = manilaDayStartUTCiso(range.from)
+    const toIso = manilaNextDayStartUTCiso(range.to) // exclusive end: includes the whole `range.to` Manila day
+    return `/sales?from=${encodeURIComponent(fromIso)}&to=${encodeURIComponent(toIso)}`
+  }, [range?.from?.getTime(), range?.to?.getTime()])
 
-  const chartData = React.useMemo(() => {
-    const grouped: { [date: string]: number } = {}
+  // Keep previous data during revalidation to avoid flicker
+  const { data: sales = [], error, isLoading, isValidating } = useSWR<Sale[]>(
+    salesUrl,
+    fetcher,
+    { keepPreviousData: true, revalidateOnFocus: false }
+  )
+
+  // Group by Manila date (YYYY-MM-DD)
+  const groupedByDateMap = React.useMemo(() => {
+    const map = new Map<string, number>()
     sales.forEach(sale => {
-      const date = sale.created_at.slice(0, 10)
-      grouped[date] = (grouped[date] || 0) + (sale.total_purchase ?? 0)
+      const key = createdAtToManilaYmd(sale.created_at)
+      map.set(key, (map.get(key) || 0) + (sale.total_purchase || 0))
     })
-    return Object.entries(grouped).map(([date, total]) => ({
-      date,
-      customer: total
-    }))
+    return map
   }, [sales])
 
-  const filteredData = React.useMemo(() => {
-    if (!range?.from && !range?.to) return chartData
-    return chartData.filter(item => {
-      const date = new Date(item.date)
-      return (
-        (!range.from || isSameOrAfter(date, range.from)) &&
-        (!range.to || isSameOrBefore(date, range.to))
-      )
-    })
-  }, [range, chartData])
+  // Build full date series based on selected range (or fallback to data date span)
+  const chartSeries = React.useMemo(() => {
+    let fromDate: Date
+    let toDate: Date
+    if (range?.from && range?.to) {
+      fromDate = new Date(range.from.getFullYear(), range.from.getMonth(), range.from.getDate())
+      toDate = new Date(range.to.getFullYear(), range.to.getMonth(), range.to.getDate())
+    } else if (sales.length > 0) {
+      const keys = Array.from(groupedByDateMap.keys()).sort()
+      const min = parseYmdToLocalDate(keys[0])
+      const max = parseYmdToLocalDate(keys[keys.length - 1])
+      fromDate = new Date(min.getFullYear(), min.getMonth(), min.getDate())
+      toDate = new Date(max.getFullYear(), max.getMonth(), max.getDate())
+    } else {
+      fromDate = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+      toDate = fromDate
+    }
 
-  const sortedData = React.useMemo(() => {
-    let arr = [...filteredData]
+    const days = eachDayInclusive(fromDate, toDate)
+    return days.map(d => {
+      const key = ymd(d) // YYYY-MM-DD (Manila/local day keys)
+      return {
+        date: key,
+        customer: groupedByDateMap.get(key) || 0
+      }
+    })
+  }, [range?.from?.getTime(), range?.to?.getTime(), sales, groupedByDateMap, today])
+
+  // --- NEW: compute chartDisplayData based on sortOrder ---
+  const chartDisplayData = React.useMemo(() => {
+    if (sortOrder === 'normal') return chartSeries
+    const arr = [...chartSeries]
+    if (sortOrder === 'asc') {
+      arr.sort((a, b) => a.customer - b.customer)
+    } else if (sortOrder === 'desc') {
+      arr.sort((a, b) => b.customer - a.customer)
+    }
+    return arr
+  }, [chartSeries, sortOrder])
+  // -------------------------------------------------------
+
+  // sortedDataForTable (affects table/summaries only)
+  const sortedDataForTable = React.useMemo(() => {
+    let arr = [...chartSeries]
     if (sortOrder === 'asc') arr.sort((a, b) => a.customer - b.customer)
     else if (sortOrder === 'desc') arr.sort((a, b) => b.customer - a.customer)
     return arr
-  }, [filteredData, sortOrder])
+  }, [chartSeries, sortOrder])
 
+  // total sums the filtered chartSeries values
   const total = React.useMemo(
-    () => sortedData.reduce((acc, curr) => acc + curr.customer, 0),
-    [sortedData]
+    () => chartSeries.reduce((acc, curr) => acc + curr.customer, 0),
+    [chartSeries]
   )
 
-  if (isLoading) return <div>Loading...</div>
-  if (error) return <div>Error loading sales data.</div>
+  // Detect "empty" period: all points are zero
+  const isEmptyPeriod = React.useMemo(() => {
+    return chartSeries.length > 0 && chartSeries.every(pt => (pt.customer ?? 0) === 0)
+  }, [chartSeries])
+
+  const initialLoadingNoData = isLoading && sales.length === 0
+  const isUpdating = isValidating && sales.length > 0
+
+  if (error && !sales.length) return <div>Error loading sales data.</div>
 
   return (
     <Card className='@container/card w-full'>
@@ -160,50 +265,113 @@ export default function ProductStats() {
           </div>
         </CardAction>
       </CardHeader>
+
       <CardContent className='px-4'>
-        <ChartContainer config={chartConfig} className='aspect-auto h-89 w-full'>
-          <LineChart
-            accessibilityLayer
-            data={sortedData}
-            margin={{ left: 12, right: 12 }}
-          >
-            <CartesianGrid vertical={false} />
-            <XAxis
-              dataKey='date'
-              tickLine={false}
-              axisLine={false}
-              tickMargin={8}
-              minTickGap={20}
-              tickFormatter={value => {
-                const date = new Date(value)
-                return date.toLocaleDateString('en-US', { day: 'numeric' })
-              }}
-            />
-            <ChartTooltip
-              content={
-                <ChartTooltipContent
-                  className='w-[150px]'
-                  nameKey='customer'
-                  labelFormatter={value =>
-                    new Date(value).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric'
-                    })
-                  }
-                />
-              }
-            />
-            <Line
-              dataKey="customer"
-              type="monotone"
-              stroke={`var(--color-customer)`}
-              strokeWidth={2}
-              dot={false}
-            />
-          </LineChart>
-        </ChartContainer>
+        {/* Chart area: keep size fixed h-89 */}
+        <div className="relative h-89 w-full">
+          {/* Initial full-screen skeleton when first load and no previous data */}
+          {initialLoadingNoData && (
+            <div className="absolute inset-0 flex items-end px-4">
+              <div className="flex w-full h-full items-end gap-3">
+                {Array.from({ length: Math.max(6, chartSeries.length || 6) }).map((_, i) => {
+                  const heights = [28, 44, 60, 36, 52, 40]
+                  const pct = heights[i % heights.length]
+                  return (
+                    <div key={i} className="flex-1 flex items-end justify-center">
+                      <div className="w-3/4">
+                        <Skeleton className="rounded-t-md animate-pulse" style={{ height: `${pct}%` }} />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* If selected period has no sales (all zeros), show centered muted message */}
+          {!initialLoadingNoData && isEmptyPeriod && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center text-sm text-gray-500">
+                No sales found for the selected period
+              </div>
+            </div>
+          )}
+
+          {/* Chart (render when not initial-loading and not empty-period). Keeps previous data during revalidation. */}
+          {!initialLoadingNoData && !isEmptyPeriod && (
+            <div className="absolute inset-0 w-full h-full">
+              <ChartContainer config={chartConfig} className='aspect-auto h-89 w-full'>
+                <LineChart
+                  accessibilityLayer
+                  data={chartDisplayData} // <-- use sorted/normal display data
+                  margin={{ left: 12, right: 12 }}
+                >
+                  <CartesianGrid vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                    minTickGap={20}
+                    tickFormatter={value => {
+                      const date = parseYmdToLocalDate(String(value))
+                      return date.toLocaleDateString(undefined, {
+                        month: 'short', // or 'long' if you want full month
+                        day: 'numeric'
+                      })
+                    }}
+                  />
+                  <ChartTooltip
+                    content={
+                      <ChartTooltipContent
+                        className='w-[200px]'
+                        nameKey='customer'
+                        labelFormatter={value =>
+                          parseYmdToLocalDate(String(value)).toLocaleDateString(undefined, {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
+                          })
+                        }
+                      />
+                    }
+                  />
+                  <Line
+                    dataKey="customer"
+                    type="monotone"
+                    stroke={`var(--color-customer)`}
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                </LineChart>
+              </ChartContainer>
+            </div>
+          )}
+
+          {/* Overlay skeleton when revalidating (keeps previous chart visible underneath) */}
+          {!initialLoadingNoData && isUpdating && !isEmptyPeriod && (
+            <div
+              aria-hidden
+              className="absolute inset-0 flex items-end px-4 pointer-events-none transition-opacity duration-300 ease-in-out z-20"
+            >
+              <div className="flex w-full h-full items-end gap-3">
+                {Array.from({ length: Math.max(6, chartSeries.length || 6) }).map((_, i) => {
+                  const heights = [28, 44, 60, 36, 52, 40]
+                  const pct = heights[i % heights.length]
+                  return (
+                    <div key={i} className="flex-1 flex items-end justify-center">
+                      <div className="w-3/4">
+                        <Skeleton className="rounded-t-md animate-pulse" style={{ height: `${pct}%` }} />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+        </div>
       </CardContent>
+
       <CardFooter className='border-t'>
         <div className='text-sm'>
           You had <span className='font-semibold'>₱ {total.toLocaleString()}</span> total sales for the selected period.
