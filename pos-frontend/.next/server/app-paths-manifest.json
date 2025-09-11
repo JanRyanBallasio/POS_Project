@@ -1,7 +1,8 @@
 {
-  "/(authentication)/login/page": "app/(authentication)/login/page.js",
-  "/_not-found/page": "app/_not-found/page.js",
-  "/dashboard/[site]/page": "app/dashboard/[site]/page.js",
   "/favicon.ico/route": "app/favicon.ico/route.js",
-  "/page": "app/page.js"
+  "/_not-found/page": "app/_not-found/page.js",
+  "/(authentication)/login/page": "app/(authentication)/login/page.js",
+  "/(authentication)/register/page": "app/(authentication)/register/page.js",
+  "/page": "app/page.js",
+  "/dashboard/[site]/page": "app/dashboard/[site]/page.js"
 }
