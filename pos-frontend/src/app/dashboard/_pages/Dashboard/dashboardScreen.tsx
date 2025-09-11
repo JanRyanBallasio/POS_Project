@@ -11,8 +11,8 @@ export default function DashboardScreen() {
             </div>
             <div className="flex-[20%]"><Stats /></div>
             <div className="flex-[78%] flex gap-3 flex-col">
+                <div className="flex-[50%] mb-4"><SalesStats /></div>
                 <div className="flex-[50%] mb-2"><ProductStats /></div>
-                <div className="flex-[50%]"><SalesStats /></div>
             </div>
         </div>
     );
