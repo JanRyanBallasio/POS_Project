@@ -13,6 +13,16 @@ export function useCustomerTagging(onAutoSelect?: (customer: Customer) => void) 
   const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
+  // expose stable selectCustomer so effects can call it without hoisting/stale-closure issues
+  const selectCustomer = useCallback((customer: Customer) => {
+    setSelectedCustomer(customer);
+    setCustomerQuery(customer.name);
+    // Clear global active flag shortly after selection
+    setTimeout(() => {
+      (window as any).customerSearchActive = false;
+    }, 100);
+  }, []);
+
   const fetchCustomers = useCallback(async () => {
     try {
       const resp = await axios.get("/customers"); // -> /api/customers (axios base)
@@ -26,7 +36,7 @@ export function useCustomerTagging(onAutoSelect?: (customer: Customer) => void) 
       setAllCustomers([]);
     }
   }, []);
-
+  
   // Fetch customers once on mount
   useEffect(() => {
     fetchCustomers();
@@ -46,35 +56,19 @@ export function useCustomerTagging(onAutoSelect?: (customer: Customer) => void) 
     if (filteredCustomers.length === 1 && customerQuery.trim().length >= 2 && onAutoSelect && !selectedCustomer) {
       const autoSelectTimer = setTimeout(() => {
         const customer = filteredCustomers[0];
-        
-        console.log("🎯 useCustomerTagging: About to auto-select customer:", customer.name);
-        
-        // CRITICAL FIX: Set a longer delay before clearing the flag to prevent race conditions
         onAutoSelect(customer);
         selectCustomer(customer);
         setCustomerQuery(customer.name);
-        
-        // CRITICAL FIX: Use a longer delay to ensure all events are properly handled
-        setTimeout(() => {
-          console.log("🎯 useCustomerTagging: Clearing global flag after auto-selection");
-          (window as any).customerSearchActive = false;
-        }, 200); // Longer delay to prevent race condition
-        
-      }, 800); // Increased delay to 800ms to prevent premature auto-selection
 
+        setTimeout(() => {
+          (window as any).customerSearchActive = false;
+        }, 200);
+      }, 800);
       return () => clearTimeout(autoSelectTimer);
     }
-  }, [filteredCustomers, customerQuery, onAutoSelect, selectedCustomer]);
-
-  const selectCustomer = (customer: Customer) => {
-    setSelectedCustomer(customer);
-    setCustomerQuery(customer.name);
-    // ADDED: Clear global flag when manually selecting customer too - with delay
-    setTimeout(() => {
-      (window as any).customerSearchActive = false;
-    }, 100);
-  };
-
+  // include selectCustomer in deps so the effect uses the stable callback and lint is satisfied
+  }, [filteredCustomers, customerQuery, onAutoSelect, selectedCustomer, selectCustomer]);
+  
   // UPDATED: Clear both selected customer AND query - AGGRESSIVE CLEAR
   const clearCustomer = () => {
     console.log("🧹 useCustomerTagging: Clearing customer data");

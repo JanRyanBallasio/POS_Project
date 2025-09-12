@@ -32,7 +32,7 @@ interface POSLeftColProps {
 
 export default function POSLeftCol({ step }: POSLeftColProps) {
   const [refocused, setRefocused] = useState<boolean>(false);
-  const { selectedRowId, selectRow } = useCartSelection<string>();
+  const { selectedRowId, selectRow, clearSelection } = useCartSelection<string>();
   const { products } = useProducts();
   const {
     cart,
@@ -58,9 +58,18 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
 
 
   const handleSearchSelect = (product: any) => {
-    addProductToCart(product);
-    clearSearch();
-    refocusScanner(true);  
+    try {
+      const addedId = addProductToCart(product);
+      clearSearch();
+      if (addedId) {
+        selectRow(addedId);
+      }
+      // guarantee scanner focus after adding via search
+      refocusScanner(true);
+    } catch (err) {
+      clearSearch();
+      refocusScanner(true);
+    }
   };
 
 
@@ -147,7 +156,7 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
       if (cart && cart.length > 0) {
         selectRow(cart[0].id);
       } else {
-        selectRow("");
+        clearSelection();
       }
     };
     window.addEventListener("cart:item-deleted", onItemDeleted);
@@ -238,33 +247,6 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
 
   return (
     <div className="relative w-full h-full">
-      {/* Refocus button and Scanner status positioned at top-right */}
-      <div className="absolute top-2 right-2 z-20 flex items-center gap-2">
-        {/* Scanner Active Status */}
-        {!(step === 2 || step === 3) && (
-          <div className="bg-green-500 text-white px-2 py-1 rounded-md text-xs opacity-70">
-            Scanner Active
-          </div>
-        )}
-
-        {/* Refocus Button */}
-        <Button
-          variant="outline"
-          size="sm"
-          className="relative disabled:opacity-100"
-          onClick={handleRefocus}
-          disabled={(step === 2 || step === 3) || refocused}
-        >
-          <span className={cn('transition-all', refocused ? 'scale-100 opacity-100' : 'scale-0 opacity-0')}>
-            <CheckIcon className='stroke-green-600 dark:stroke-green-400' />
-          </span>
-          <span className={cn('absolute start-4 transition-all', refocused ? 'scale-0 opacity-0' : 'scale-100 opacity-100')}>
-            <ScanLine />
-          </span>
-          {refocused ? 'Focused!' : 'Refocus Scanner'}
-        </Button>
-      </div>
-
       <Card className="w-full h-full flex flex-col">
         <CardContent className="p-6 flex-1 flex flex-col min-h-0" onClick={handleEmptyAreaClick}>
           <BarcodeScannerInput

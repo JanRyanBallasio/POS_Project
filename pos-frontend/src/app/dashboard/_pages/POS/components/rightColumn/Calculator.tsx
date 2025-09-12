@@ -1,5 +1,4 @@
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import React, { useEffect, useRef } from "react";
 
@@ -7,8 +6,7 @@ interface CalculatorProps {
   amount: string;
   setAmount: (val: string) => void;
   cartTotal: number;
-  refocusScanner: () => void;
-  onNext: () => void;
+  refocusScanner: (force?: boolean) => void;
   cartIsEmpty?: boolean; 
 }
 
@@ -17,7 +15,6 @@ export default function Calculator({
   setAmount,
   cartTotal,
   refocusScanner,
-  onNext,
   cartIsEmpty = false,
 }: CalculatorProps) {
   const cashInputRef = useRef<HTMLInputElement>(null);
@@ -46,12 +43,13 @@ export default function Calculator({
       if (value === "." && amount.includes(".")) return;
       setAmount(amount + value);
     }
-    refocusScanner();
+    // Force refocus after calculator button clicks
+    refocusScanner(true);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setAmount(e.target.value);
-    setTimeout(refocusScanner, 3000);
+    setTimeout(() => refocusScanner(true), 3000);
   };
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -93,63 +91,10 @@ export default function Calculator({
         onKeyDown={handleInputKeyDown}
         onClick={handleInputClick}
         placeholder="0.00"
-        onBlur={refocusScanner}
+        onBlur={() => refocusScanner(true)}
         disabled={cartIsEmpty}
       />
-      <div className="flex-1 grid grid-cols-3 gap-2 bg-gray-50 p-3 rounded-lg">
-        {[7, 8, 9, 4, 5, 6, 1, 2, 3].map((num) => (
-          <Button
-            key={num}
-            onClick={() => handleCalcButtonClick(num.toString())}
-            variant="outline"
-            className="h-16 text-2xl font-medium"
-            disabled={cartIsEmpty}
-          >
-            {num}
-          </Button>
-        ))}
-        <Button
-          onClick={() => handleCalcButtonClick(".")}
-          variant="outline"
-          className="h-16 text-2xl font-medium"
-          disabled={cartIsEmpty}
-        >
-          .
-        </Button>
-        <Button
-          onClick={() => handleCalcButtonClick("0")}
-          variant="outline"
-          className="h-16 text-2xl font-medium"
-          disabled={cartIsEmpty}
-        >
-          0
-        </Button>
-        <Button
-          onClick={() => handleCalcButtonClick("⌫")}
-          variant="outline"
-          className="h-16 text-2xl font-medium"
-          disabled={cartIsEmpty}
-        >
-          ⌫
-        </Button>
-        <Button
-          onClick={() => handleCalcButtonClick("C")}
-          variant="outline"
-          className="h-16 text-2xl font-medium col-span-3"
-          disabled={cartIsEmpty}
-        >
-          Clear
-        </Button>
-      </div>
-      <div className="px-4 pb-4 pt-4">
-        <Button
-          className="w-full h-14 text-xl font-medium"
-          onClick={onNext}
-          disabled={cartIsEmpty || !amount || parseFloat(amount) < cartTotal}
-        >
-          Next <span className="ml-2 text-sm opacity-75">(Ctrl+Enter)</span>
-        </Button>
-      </div>
+      {/* Calculator now only handles the numeric input; navigation buttons live in parent */}
     </>
   );
 }
