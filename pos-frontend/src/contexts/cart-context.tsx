@@ -25,7 +25,9 @@ interface CartContextType {
   isScanning: boolean;
   lastAddedItemId: string | null;
   scanAndAddToCart: (barcode: string, preValidatedProduct?: Product | null) => Promise<void>;
-  addProductToCart: (product: Product) => void;
+  // returns the cartItem.id (existing or newly created) so callers can immediately select the row
+  addProductToCart: (product: Product) => string;
+  // unified signature: optional force flag
   refocusScanner: (force?: boolean) => void;
   setScannerRef: (ref: RefObject<HTMLInputElement>) => void;
   updateCartItemQuantity: (id: string, quantity: number) => void;
@@ -154,9 +156,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           detail: { deletedId: id, nextSelectedId },
         })
       );
-    } catch (err) {
-      // ignore in environments without window
-    }
+    } catch (err) { /* ignore */ }
 
     // Ensure scanner regains focus after DOM update (force true)
     refocusScanner(true);
@@ -167,7 +167,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     setCart((prev) =>
       prev.map((item) => (item.id === id ? { ...item, quantity: Math.max(1, Number(quantity) || 1) } : item))
     );
-  }, []);
+    // NOTE: do NOT force refocus here — that steals focus while user types.
+  }, [/* no refocusScanner dependency intentionally */]);
 
   // Update price for an item
   const updateCartItemPrice = useCallback((id: string, price: number) => {
@@ -176,24 +177,43 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         item.id === id ? { ...item, product: { ...item.product, price: Number(isFinite(Number(price)) ? price : 0) } } : item
       )
     );
+    // NOTE: do NOT force refocus here — CartTable will refocus on blur/Enter instead.
   }, []);
 
   // Use a ref for last-scan timestamps to make duplicate-checks immediate and race-free
-  const addOrIncrement = useCallback((product: Product) => {
-    const now = Date.now();
-    const productKey = product.barcode || product.id?.toString() || product.name;
-
-    // Immediate check/update using the ref to avoid races between back-to-back calls
-    const lastTime = lastScanTimeRef.current.get(productKey);
-    if (lastTime && now - lastTime < 1000) {
-      // Duplicate within 1s, ignore
-      return;
-    }
-    lastScanTimeRef.current.set(productKey, now);
-
+  const addOrIncrement = useCallback((product: Product): string => {
+     const now = Date.now();
+     const productKey = product.barcode || product.id?.toString() || product.name;
+ 
+     // Immediate check/update using the ref to avoid races between back-to-back calls
+     const lastTime = lastScanTimeRef.current.get(productKey);
+     if (lastTime && now - lastTime < 1000) {
+       // Duplicate within 1s, do not increment quantity, but still update lastAddedItemId
+       // so UI (CartTable) can highlight the last-added row even for search-added products.
+      let existingId = "";
+      setCart((prevCart) => {
+        const existing = prevCart.find((item) => productEqual(item.product, product));
+        if (existing) {
+          existingId = existing.id;
+          setLastAddedItemId(existing.id);
+        }
+        return prevCart;
+      });
+      // Refresh timestamp to keep duplicate protection consistent
+      lastScanTimeRef.current.set(productKey, now);
+      // ensure scanner focus after duplicate increment/marking
+      requestAnimationFrame(() => {
+        try { refocusScanner(true); } catch { /* ignore */ }
+      });
+      return existingId;
+     }
+     lastScanTimeRef.current.set(productKey, now);
+ 
+    let returnedId = "";
     setCart((prevCart) => {
       const existing = prevCart.find((item) => productEqual(item.product, product));
       if (existing) {
+        returnedId = existing.id;
         setLastAddedItemId(existing.id);
         return prevCart.map((item) =>
           productEqual(item.product, product) ? { ...item, quantity: item.quantity + 1 } : item
@@ -204,14 +224,21 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         quantity: 1,
         id: genId(),
       };
+      returnedId = cartItem.id;
       setLastAddedItemId(cartItem.id);
       // PREPEND new item so latest products show first
       return [cartItem, ...prevCart];
     });
-  }, []);
 
-  const addProductToCart = useCallback((product: Product) => {
-    addOrIncrement(product);
+    // Ensure scanner regains focus after cart update (defer so DOM updates finish)
+    requestAnimationFrame(() => {
+      try { refocusScanner(true); } catch { /* ignore */ }
+    });
+    return returnedId;
+   }, [refocusScanner]);
+
+  const addProductToCart = useCallback((product: Product): string => {
+    return addOrIncrement(product);
   }, [addOrIncrement]);
 
   const scanAndAddToCart = useCallback(
@@ -323,6 +350,10 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           el.dispatchEvent(new Event("input", { bubbles: true }));
           try { el.focus(); } catch { }
         }
+        // also ensure our shared refocus helper runs (covers other environments)
+        requestAnimationFrame(() => {
+          try { refocusScanner(true); } catch { /* ignore */ }
+        });
       } catch { }
     };
 
@@ -330,7 +361,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       window.addEventListener("product:added", onProductAdded as EventListener);
       return () => window.removeEventListener("product:added", onProductAdded as EventListener);
     }
-  }, [scannerInputRef, addOrIncrement]);
+  }, [scannerInputRef, addOrIncrement, refocusScanner]);
 
   const cartTotal = useMemo(() => {
     return cart.reduce((total, item) => total + Number(item.product.price || 0) * item.quantity, 0);
@@ -545,10 +576,8 @@ export const useCartKeyboard = (selectedRowId: string | null) => {
           e.preventDefault();
           e.stopPropagation();
           if (selectedRowId) {
-            try {
-              deleteCartItem(selectedRowId);
-            } catch (err) { /* ignore */ }
-            refocusScanner();
+            deleteCartItem(selectedRowId);
+            refocusScanner(true);
           }
           return;
         }
@@ -573,8 +602,8 @@ export const useCartKeyboard = (selectedRowId: string | null) => {
           } else if (item.quantity > 1) {
             updateCartItemQuantity(item.id, item.quantity - 1);
           }
-          // Always refocus scanner after quantity change
-          refocusScanner();
+          // Always FORCE refocus scanner after quantity change
+          refocusScanner(true);
           return;
         }
 
@@ -665,7 +694,7 @@ export const useCartKeyboard = (selectedRowId: string | null) => {
         if (!isInput || isScanner) {
           e.preventDefault();
           e.stopPropagation();
-          refocusScanner();
+          refocusScanner(true);
           window.dispatchEvent(new Event('focusBarcodeScanner'));
         }
         return;
@@ -673,7 +702,7 @@ export const useCartKeyboard = (selectedRowId: string | null) => {
 
       if (!selectedRowId) {
         if (!isInput && !isBody) {
-          refocusScanner();
+          refocusScanner(true);
         }
         return;
       }
@@ -700,9 +729,7 @@ export const useCartKeyboard = (selectedRowId: string | null) => {
       }
     };
 
-    // Use capture:true so this global handler runs before element-level handlers.
-    // This ensures Enter in step 2 is caught even when focus is inside inputs.
     document.addEventListener("keydown", handleKeyDown, { capture: true, passive: false });
     return () => document.removeEventListener("keydown", handleKeyDown, { capture: true });
-  }, [selectedRowId, cart, updateCartItemQuantity, refocusScanner]);
+  }, [selectedRowId, cart, updateCartItemQuantity, refocusScanner, deleteCartItem]);
 };
