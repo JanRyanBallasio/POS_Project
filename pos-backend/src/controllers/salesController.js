@@ -121,8 +121,13 @@ const salesController = {
       if (customer_id && total_purchase > 0) {
         console.log("🎯 Awarding customer points...");
         
-        const pointsToAward = Math.floor(total_purchase / 100); // 1000 pesos = 10 points
-        
+        // 1000 = 10 points → 1 point = 100.
+        // Allow decimals: points = total_purchase / 100
+        const pointsToAwardRaw = Number(parseFloat(total_purchase));
+        const pointsToAward = Number.isFinite(pointsToAwardRaw) ? pointsToAwardRaw / 100 : 0;
+        // Keep a reasonable number of decimals (optional) — store raw float to DB
+        console.log(`ℹ️ Points to award (raw): ${pointsToAward}`);
+
         // Get current customer points
         const { data: currentCustomer, error: customerFetchError } = await supabase
           .from("Customer")
