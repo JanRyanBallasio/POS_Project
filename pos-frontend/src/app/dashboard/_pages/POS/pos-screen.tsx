@@ -64,10 +64,10 @@ export default function MainDashboard() {
     <CartProvider>
       <div className="flex flex-col w-full h-full py-4 px-4">
         <div className="flex gap-2 h-full">
-          <div className="flex-[70%]">
+          <div className="basis-[70%]">
             <POSleft step={step} />
           </div>
-          <div className="flex flex-col flex-[30%] gap-2">
+          <div className="flex flex-col basis-[30%] gap-2">
             <POSright step={step} setStep={setStep} />
           </div>
         </div>

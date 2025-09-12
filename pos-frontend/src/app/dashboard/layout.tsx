@@ -22,12 +22,14 @@ export default function DashboardLayout({
         <AppSidebar />
         <main className="w-full h-screen flex flex-col">
           <ProductRegisterModal />
-          <div className="flex-[5%]">
+          <header className="h-16">
             <Navbar />
-          </div>
-          <div className="flex-[95%]">
+          </header>
+
+          {/* content: fills the remaining height */}
+          <section className="flex-1 min-h-0 overflow-auto">
             {children}
-          </div>
+          </section>
         </main>
       </SidebarProvider>
     </ProductModalProvider>
