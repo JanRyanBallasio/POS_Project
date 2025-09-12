@@ -11,14 +11,16 @@ export default function PaymentSummary({
   cartTotal,
   change,
 }: PaymentSummaryProps) {
+  // Safely parse amount -> treat empty/invalid as 0
+  let paid = parseFloat(String(amount || "0"));
+  if (!Number.isFinite(paid) || isNaN(paid)) paid = 0;
+
   return (
     <>
       <div className="py-5 border-t border-b">
         <div className="flex justify-between text-xl mb-3">
           <span>Amount Paid:</span>
-          <span className="font-medium">
-            ₱ {parseFloat(amount).toFixed(2)}
-          </span>
+          <span className="font-medium">₱ {paid.toFixed(2)}</span>
         </div>
         <div className="flex justify-between text-xl mb-3">
           <span>Total:</span>

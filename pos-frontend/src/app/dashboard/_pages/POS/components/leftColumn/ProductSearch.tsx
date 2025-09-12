@@ -10,7 +10,8 @@ interface ProductSearchProps {
   handleSearchChange: (val: string) => void;
   handleSearchSelect: (product: Product) => void;
   clearSearch: () => void;
-  refocusScanner: () => void;
+  // Accept optional force flag so callers can call refocusScanner(true)
+  refocusScanner: (force?: boolean) => void;
   disabled?: boolean;
   inputRef?: React.RefObject<HTMLInputElement>;
 }
@@ -44,27 +45,27 @@ export default function ProductSearch({
 
       if (e.key === "ArrowDown") {
         e.preventDefault();
-        e.stopPropagation(); // <-- prevent global handler
+        e.stopPropagation();
         setHighlightedIndex((prev) => Math.min(prev + 1, searchResults.length - 1));
         scrollToHighlighted();
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
-        e.stopPropagation(); // <-- prevent global handler
+        e.stopPropagation();
         setHighlightedIndex((prev) => Math.max(prev - 1, 0));
         scrollToHighlighted();
       } else if (e.key === "Enter" && highlightedIndex >= 0) {
         e.preventDefault();
-        e.stopPropagation(); // <-- prevent global handler from advancing step
+        e.stopPropagation();
         handleSearchSelect(searchResults[highlightedIndex]);
         setHighlightedIndex(-1);
-        // after selecting from keyboard, ensure scanner regains focus
-        refocusScanner();
+        // after selecting from keyboard, ensure scanner regains focus (force)
+        refocusScanner(true);
       }
     };
 
     inputEl.addEventListener("keydown", handleKeyDown);
     return () => inputEl.removeEventListener("keydown", handleKeyDown);
-  }, [searchResults, showSearchResults, highlightedIndex, handleSearchSelect, inputRef]);
+  }, [searchResults, showSearchResults, highlightedIndex, handleSearchSelect, inputRef, refocusScanner]);
 
   // Scroll highlighted item into view
   const scrollToHighlighted = () => {
@@ -91,7 +92,7 @@ export default function ProductSearch({
           onClick={(e) => e.stopPropagation()}
           onBlur={() => {
             // when search input loses focus, refocus scanner (do not steal if user is typing elsewhere)
-            refocusScanner();
+            refocusScanner(true);
           }}
           disabled={disabled}
         />
