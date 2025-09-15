@@ -17,7 +17,7 @@ interface POSRightColProps {
 }
 
 export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: (s: 1 | 2 | 3) => void }) {
-  const { cart, cartTotal, refocusScanner, clearCart } = useCart();
+  const { cart, cartTotal, clearCart } = useCart();
   const [amount, setAmount] = useState("");
   const [change, setChange] = useState(0);
   const [addCustomerOpen, setAddCustomerOpen] = useState(false);
@@ -37,7 +37,7 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
     clearCustomer,
     allCustomers,
     setAllCustomers,
-  } = useCustomerTagging(); // no external callback — hook already selects
+  } = useCustomerTagging();
 
   // Calculator
   const handleNext = useCallback(() => {
@@ -79,20 +79,15 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
         console.warn('Failed to refresh customer data:', err);
       }
 
-      // CRITICAL FIX: Reset ALL state - including customer data - IMMEDIATELY
-      clearCustomer(); // Clear customer FIRST
+      // Reset ALL state - including customer data - IMMEDIATELY
+      clearCustomer();
       setStep(1);
       setAmount("");
       setChange(0);
       clearCart();
 
-      // CRITICAL FIX: Clear global flags immediately
+      // Clear global flags immediately
       (window as any).customerSearchActive = false;
-
-      // Delay refocus slightly to ensure all state is reset
-      setTimeout(() => {
-        refocusScanner(true);
-      }, 100);
 
     } catch (err: any) {
       const errorMessage = err.response?.data?.error || err.message || "Unknown error";
@@ -100,7 +95,7 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
     } finally {
       setIsProcessingSale(false);
     }
-  }, [cart, selectedCustomer, cartTotal, clearCustomer, clearCart, refocusScanner, isProcessingSale, setAllCustomers]);
+  }, [cart, selectedCustomer, cartTotal, clearCustomer, clearCart, setAllCustomers]);
 
   // NEW: finalizeSale - POST /sales, refresh customers, select updated customer, then show receipt (Step 3)
   const finalizeSale = useCallback(async () => {
@@ -189,11 +184,10 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
       setChange(0);
       clearCart();
       (window as any).customerSearchActive = false;
-      setTimeout(() => refocusScanner(true), 100);
     } catch (err) {
       console.warn("completeTransaction error:", err);
     }
-  }, [clearCustomer, setStep, setAmount, setChange, clearCart, refocusScanner]);
+  }, [clearCustomer, setStep, setAmount, setChange, clearCart]);
 
   // Print Receipt (server-generated PDF via /receipt) — old behavior
   const handlePrintReceipt = useCallback(async () => {
@@ -281,46 +275,30 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
     [setAllCustomers, selectCustomer]
   );
 
-  // Card click handler - useful to refocus scanner and clear transient state
+  // Card click handler
   const handleCardClick = useCallback(() => {
-    try {
-      refocusScanner();
-    } catch (err) {
-      console.warn("handleCardClick error:", err);
-    }
-  }, [refocusScanner]);
+    // Card click functionality can be added here if needed
+  }, []);
 
   // NEW: centralized step-advance handler used by keyboard listeners
   const handlePosNext = useCallback(() => {
-    console.log("🔥 RightColumn handlePosNext triggered:", {
-      step,
-      isProcessingSale,
-      customerSearchActive: (window as any).customerSearchActive,
-      activeElement: document.activeElement,
-      activeElementTag: document.activeElement?.tagName,
-    });
-
     if (isProcessingSale) {
-      console.log("❌ RightColumn: Processing sale, ignoring");
       return;
     }
 
     if (step === 2) {
-      console.log("✅ RightColumn: Step 2 -> Finalize sale (awarding points now)");
       // Immediately finalize the transaction (will POST /sales, update customer points, then show receipt)
       void finalizeSale();
       return;
     }
 
     if (step === 3) {
-      console.log("✅ RightColumn: Step 3 -> Close receipt (no re-submit)");
       // Do not re-submit the sale here — finalizeSale already submitted on Step 2.
       completeTransaction();
       return;
     }
 
     if ((window as any).customerSearchActive) {
-      console.log("❌ RightColumn: Customer search globally active, ignoring");
       return;
     }
 
@@ -332,7 +310,6 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
     );
 
     if (isCustomerSearch) {
-      console.log("❌ RightColumn: Customer search active, ignoring");
       return;
     }
 
@@ -343,7 +320,6 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
     }
 
     if (step === 3) {
-      console.log("✅ RightColumn: Step 3 -> Close receipt (no re-submit)");
       // Do not re-submit the sale here — finalizeSale already submitted on Step 2.
       completeTransaction();
       return;
@@ -354,10 +330,8 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    console.log("🎯 RightColumn: Adding pos:next-step listener for step", step);
     window.addEventListener('pos:next-step', handlePosNext);
     return () => {
-      console.log("🗑️ RightColumn: Removing pos:next-step listener for step", step);
       window.removeEventListener('pos:next-step', handlePosNext);
     };
   }, [handlePosNext, step]);
@@ -429,6 +403,46 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
     };
   }, [step, handlePosNext, completeTransaction]);
 
+  // Handle Enter key for finishing transaction in Steps 2 and 3
+  useEffect(() => {
+    const handleEnterKey = (e: KeyboardEvent) => {
+      // Only handle Enter in Steps 2 and 3
+      if (step !== 2 && step !== 3) return;
+      
+      // Don't handle Enter if customer search is active
+      if ((window as any).customerSearchActive) return;
+      
+      // Don't handle Enter if we're processing
+      if (isProcessingSale) return;
+      
+      // Only handle Enter if no modifier keys are pressed
+      if (e.ctrlKey || e.shiftKey || e.altKey) return;
+      
+      // Check if we're focused on an input field
+      const activeElement = document.activeElement as HTMLElement;
+      if (activeElement && (
+        activeElement.tagName === 'INPUT' || 
+        activeElement.tagName === 'TEXTAREA' ||
+        activeElement.contentEditable === 'true'
+      )) {
+        return;
+      }
+      
+      e.preventDefault();
+      
+      if (step === 2) {
+        // In Step 2, finish the transaction (finalize sale)
+        void finalizeSale();
+      } else if (step === 3) {
+        // In Step 3, close the transaction (complete transaction)
+        completeTransaction();
+      }
+    };
+
+    document.addEventListener('keydown', handleEnterKey);
+    return () => document.removeEventListener('keydown', handleEnterKey);
+  }, [step, isProcessingSale, finalizeSale, completeTransaction]);
+
   return (
     <Card className="h-full flex flex-col" onClick={handleCardClick}>
       <CardContent className="flex-1 flex flex-col p-4 pb-0">
@@ -446,7 +460,6 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
                 amount={amount}
                 setAmount={setAmount}
                 cartTotal={cartTotal}
-                refocusScanner={refocusScanner}
                 cartIsEmpty={cart.length === 0}
               />
               <div className="flex-1" />
@@ -473,6 +486,12 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
                 selectCustomer={selectCustomer}
                 clearCustomer={clearCustomer}
                 onAddCustomer={() => setAddCustomerOpen(true)}
+                onCustomerSelected={() => {
+                  // When customer is selected and Enter is pressed, finish transaction
+                  if (selectedCustomer) {
+                    void finalizeSale();
+                  }
+                }}
               />
               <AddCustomerModal
                 open={addCustomerOpen}
