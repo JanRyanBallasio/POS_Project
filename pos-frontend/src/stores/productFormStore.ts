@@ -7,12 +7,14 @@ type ProductFormState = {
   category_name: string;
   price: string;
   quantity: string;
+  unit: string;
   setName: (v: string) => void;
   setBarcode: (v: string) => void;
   setCategoryId: (v: string) => void;
   setCategoryName: (v: string) => void;
   setPrice: (v: string) => void;
   setQuantity: (v: string) => void;
+  setUnit: (v: string) => void;
   reset: () => void;
 };
 
@@ -23,12 +25,14 @@ export const useProductFormStore = create<ProductFormState>((set) => ({
   category_name: "",
   price: "",
   quantity: "",
+  unit: "pcs", // Default to pcs
   setName: (v) => set({ name: v }),
   setBarcode: (v) => set({ barcode: v }),
   setCategoryId: (v) => set({ category_id: v }),
   setCategoryName: (v) => set({ category_name: v }),
   setPrice: (v) => set({ price: v }),
   setQuantity: (v) => set({ quantity: v }),
+  setUnit: (v) => set({ unit: v }),
   reset: () =>
     set({
       name: "",
@@ -37,5 +41,6 @@ export const useProductFormStore = create<ProductFormState>((set) => ({
       category_name: "",
       price: "",
       quantity: "",
+      unit: "pcs", // Reset to pcs
     }),
 }));

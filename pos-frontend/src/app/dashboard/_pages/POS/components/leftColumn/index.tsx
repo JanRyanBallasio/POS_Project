@@ -1,17 +1,12 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ScanLine, CheckIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useCart } from "@/contexts/cart-context";
 import { useCartSelection } from "@/hooks/pos/leftCol/useCartSelection";
 import { useProducts } from "@/hooks/global/fetching/useProducts";
-import { useBarcodeScan } from "@/hooks/pos/leftCol/useBarcodeScan";
 import { useProductSearch } from "@/hooks/pos/leftCol/useProductsSearch";
 import { useCartKeyboard } from "@/contexts/cart-context";
 import React, { useRef, useEffect, useState } from "react";
 import CartTable from "./CartTable";
 import ProductSearch from "./ProductSearch";
-import BarcodeScannerInput from "./BarcodeScannerInput";
 import { useProductModal } from "@/contexts/productRegister-context";
 import {
   AlertDialog,
@@ -22,7 +17,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
+} from "@/components/ui/alert-dialog";
 import ProductRegisterModal from "@/components/product/components/ProductRegisterModal";
 import { productApi } from "@/hooks/products/useProductApi";
 
@@ -31,7 +26,6 @@ interface POSLeftColProps {
 }
 
 export default function POSLeftCol({ step }: POSLeftColProps) {
-  const [refocused, setRefocused] = useState<boolean>(false);
   const { selectedRowId, selectRow, clearSelection } = useCartSelection<string>();
   const { products } = useProducts();
   const {
@@ -39,183 +33,181 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
     updateCartItemQuantity,
     scanAndAddToCart,
     addProductToCart,
-    setScannerRef,
-    refocusScanner,
     updateCartItemPrice,
     deleteCartItem,
-    lastAddedItemId,
   } = useCart();
 
-  const {
-    barcodeInput,
-    inputRef,
-    handleBarcodeChange,
-    handleKeyPress,
-  } = useBarcodeScan(handleScanAndAddToCart);
-
   const { setOpen, setBarcode } = useProductModal();
-  useCartKeyboard(selectedRowId);
 
-
-  const handleSearchSelect = (product: any) => {
-    try {
-      const addedId = addProductToCart(product);
-      clearSearch();
-      if (addedId) {
-        selectRow(addedId);
-      }
-      // guarantee scanner focus after adding via search
-      refocusScanner(true);
-    } catch (err) {
-      clearSearch();
-      refocusScanner(true);
-    }
+  // Add this function
+  const handleAddProduct = () => {
+    setBarcode(searchQuery); // Pre-fill with the search query
+    setOpen(true);
   };
 
+  useCartKeyboard(selectedRowId);
 
-  const {
-    searchQuery,
-    searchResults,
-    showSearchResults,
-    handleSearchChange,
-    clearSearch,
-  } = useProductSearch(products, handleSearchSelect);
-
-  const [showRegisterDialog, setShowRegisterDialog] = useState(false);
-  const [unregisteredBarcode, setUnregisteredBarcode] = useState<string | null>(
-    null
-  );
   const productSearchInputRef = useRef<HTMLInputElement>(null!);
 
-  useEffect(() => {
-    setScannerRef(inputRef as React.RefObject<HTMLInputElement>);
-  }, [setScannerRef, inputRef]);
+ const {
+  searchQuery,
+  searchResults,
+  showSearchResults,
+  handleSearchChange,
+  clearSearch,
+  isScannerInputRef,
+  isLoading,
+} = useProductSearch(handleSearchSelect, products, handleScanAndAddToCart); // Add the callback
 
+  const [showRegisterDialog, setShowRegisterDialog] = useState(false);
+  const [unregisteredBarcode, setUnregisteredBarcode] = useState<string | null>(null);
+
+  // Add effect to handle product added event
+  useEffect(() => {
+    const handleProductAdded = () => {
+      // Clear search and refocus search bar when product is added
+      clearSearch();
+      setTimeout(() => {
+        try {
+          productSearchInputRef.current?.focus();
+          productSearchInputRef.current?.select?.();
+        } catch {}
+      }, 100);
+    };
+
+    window.addEventListener("product:added", handleProductAdded);
+    return () => window.removeEventListener("product:added", handleProductAdded);
+  }, [clearSearch]);
+
+  // Flag to prevent focusing search when user triggers "edit price"
+  const priceEditRequestedRef = useRef(false);
+  useEffect(() => {
+    const onEditRequest = () => {
+      priceEditRequestedRef.current = true;
+      setTimeout(() => (priceEditRequestedRef.current = false), 600);
+    };
+    window.addEventListener("cart:edit-price", onEditRequest);
+    return () => window.removeEventListener("cart:edit-price", onEditRequest);
+  }, []);
+
+  // Focus search on step change
   useEffect(() => {
     if (step === 2 || step === 3) {
-      if (inputRef?.current) inputRef.current.blur();
-    } else {
-      // Re-focus when returning to step 1
-      setTimeout(() => {
-        inputRef?.current?.focus();
-      }, 100);
+      productSearchInputRef.current?.blur();
+      return;
     }
+    setTimeout(() => {
+      try {
+        productSearchInputRef.current?.focus();
+        productSearchInputRef.current?.select?.();
+      } catch {}
+    }, 100);
   }, [step]);
 
+  // F2 shortcut → refocus search
   useEffect(() => {
     const handleShortcut = (e: KeyboardEvent) => {
       if (step === 1 && e.key === "F2") {
         e.preventDefault();
-        if (productSearchInputRef.current) {
-          productSearchInputRef.current.focus();
-          productSearchInputRef.current.select();
-        }
+        productSearchInputRef.current?.focus();
+        productSearchInputRef.current?.select?.();
       }
     };
     window.addEventListener("keydown", handleShortcut);
     return () => window.removeEventListener("keydown", handleShortcut);
   }, [step]);
-  // Listen for cart selection events triggered by global keyboard handler
-  useEffect(() => {
-    if (typeof window === "undefined") return;
 
+  // Selection events
+  useEffect(() => {
     const selectNext = () => {
-      if (!cart || cart.length === 0) return;
+      if (!cart.length) return;
       const idx = cart.findIndex((c) => c.id === selectedRowId);
       const nextIdx = idx < 0 ? 0 : Math.min(cart.length - 1, idx + 1);
       const id = cart[nextIdx]?.id;
-      if (id) {
-        selectRow(id);
-      }
+      if (id) selectRow(id);
     };
 
     const selectPrev = () => {
-      if (!cart || cart.length === 0) return;
+      if (!cart.length) return;
       const idx = cart.findIndex((c) => c.id === selectedRowId);
       const prevIdx = idx <= 0 ? 0 : idx - 1;
       const id = cart[prevIdx]?.id;
-      if (id) {
-        selectRow(id);
-      }
+      if (id) selectRow(id);
     };
 
-    window.addEventListener("cart:select-next", selectNext);
-    window.addEventListener("cart:select-prev", selectPrev);
-
-    // When an item is deleted, the cart-context will emit nextSelectedId.
     const onItemDeleted = (e: Event) => {
-      const detail = (e as CustomEvent)?.detail || {};
+      const detail = (e as CustomEvent).detail || {};
       const nextId: string | null = detail.nextSelectedId ?? null;
-
       if (nextId) {
         selectRow(nextId);
-        return;
-      }
-
-      // Fallback: if cart still has items, select the current first row; otherwise clear selection
-      if (cart && cart.length > 0) {
+      } else if (cart.length > 0) {
         selectRow(cart[0].id);
       } else {
         clearSelection();
       }
     };
-    window.addEventListener("cart:item-deleted", onItemDeleted);
 
+    window.addEventListener("cart:select-next", selectNext);
+    window.addEventListener("cart:select-prev", selectPrev);
+    window.addEventListener("cart:item-deleted", onItemDeleted);
     return () => {
       window.removeEventListener("cart:select-next", selectNext);
       window.removeEventListener("cart:select-prev", selectPrev);
       window.removeEventListener("cart:item-deleted", onItemDeleted);
     };
-  }, [cart, selectedRowId, selectRow, inputRef]);
+  }, [cart, selectedRowId, selectRow]);
+
+  // Cash input focus shortcut
+  useEffect(() => {
+    const onFocusCash = () => {
+      const el =
+        document.querySelector<HTMLInputElement>('[data-pos-cash-input="true"]') ||
+        document.querySelector<HTMLInputElement>('input[placeholder="0.00"]');
+      el?.focus();
+      el?.select?.();
+    };
+    window.addEventListener("cart:focus-cash", onFocusCash);
+    return () => window.removeEventListener("cart:focus-cash", onFocusCash);
+  }, []);
 
   async function handleScanAndAddToCart(barcode: string) {
-    const clean = (v: string | null | undefined) => (v == null ? "" : String(v).replace(/[\u0000-\u001F\u007F-\u009F]/g, "").trim());
+    const clean = (v: string | null | undefined) =>
+      v == null ? "" : String(v).replace(/[\u0000-\u001F\u007F-\u009F]/g, "").trim();
+    const normalizeBarcode = (bc: string) => bc.replace(/^0+/, "") || "0";
     const cleaned = clean(barcode);
-
-    if (!cleaned || cleaned.length < 2) {
-      return;
-    }
-
-    const normalizeBarcode = (bc: string) => {
-      return bc.replace(/^0+/, '') || '0';
-    };
+    if (!cleaned || cleaned.length < 2) return;
 
     const cleanedNormalized = normalizeBarcode(cleaned);
+    
+    console.log('Scanning barcode:', cleaned); // Add debug log
 
-    // 1) Try local cache with multiple comparison strategies
     const foundProduct = products.find((p) => {
       const productBarcode = clean(p?.barcode);
-
       if (!productBarcode) return false;
-
-      if (productBarcode === cleaned) {
-        return true;
-      }
-
-      if (normalizeBarcode(productBarcode) === cleanedNormalized) {
-        return true;
-      }
-
-      return false;
+      return (
+        productBarcode === cleaned || normalizeBarcode(productBarcode) === cleanedNormalized
+      );
     });
 
     if (foundProduct) {
+      console.log('Product found locally:', foundProduct.name); // Add debug log
       await scanAndAddToCart(cleaned, foundProduct);
       return;
     }
 
-    // 2) Fallback to server lookup
     try {
+      console.log('Checking server for barcode:', cleaned); // Add debug log
       const serverProduct = await productApi.getByBarcode(cleaned);
       if (serverProduct) {
+        console.log('Product found on server:', serverProduct.name); // Add debug log
         await scanAndAddToCart(cleaned, serverProduct);
         return;
       }
     } catch (error) {
-      // Server lookup failed
+      console.log('Server check failed:', error); // Add debug log
     }
 
-    // 3) Product not found -> prompt to register
+    console.log('Product not found, showing register dialog for:', cleaned); // Add debug log
     setUnregisteredBarcode(cleaned);
     setShowRegisterDialog(true);
   }
@@ -226,48 +218,54 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
     setOpen(true);
   }
 
-  const handleRefocus = () => {
-    refocusScanner(true);
+  function handleSearchSelect(product: any) {
+    try {
+      const addedId = addProductToCart(product);
+      clearSearch();
+      if (addedId) selectRow(addedId);
 
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new Event("focusBarcodeScanner"));
+      setTimeout(() => {
+        if (priceEditRequestedRef.current && addedId) {
+          window.dispatchEvent(
+            new CustomEvent("cart:edit-price", { detail: { id: addedId } })
+          );
+          priceEditRequestedRef.current = false;
+          return;
+        }
+        productSearchInputRef.current?.focus();
+        productSearchInputRef.current?.select?.();
+      }, 50);
+    } catch {
+      clearSearch();
+      setTimeout(() => {
+        productSearchInputRef.current?.focus();
+        productSearchInputRef.current?.select?.();
+      }, 50);
     }
-
-    setRefocused(true);
-    setTimeout(() => setRefocused(false), 1000);
-  };
-
-  // Handle clicks on empty areas to refocus scanner
-  const handleEmptyAreaClick = (e: React.MouseEvent) => {
-    // Only refocus if clicking on the card content itself, not on child elements
-    if (e.target === e.currentTarget) {
-      handleRefocus();
-    }
-  };
+  }
 
   return (
     <div className="relative w-full h-full">
       <Card className="w-full h-full flex flex-col">
-        <CardContent className="p-6 flex-1 flex flex-col min-h-0" onClick={handleEmptyAreaClick}>
-          <BarcodeScannerInput
-            inputRef={inputRef}
-            barcodeInput={barcodeInput}
-            handleBarcodeChange={handleBarcodeChange}
-            handleKeyPress={handleKeyPress}
-            disabled={step === 2 || step === 3}
-          />
+        <CardContent className="p-6 flex-1 flex flex-col min-h-0">
           <ProductSearch
-            inputRef={productSearchInputRef} // <-- Pass the ref here
+            inputRef={productSearchInputRef}
             searchQuery={searchQuery}
             searchResults={searchResults}
             showSearchResults={showSearchResults}
             handleSearchChange={handleSearchChange}
             handleSearchSelect={handleSearchSelect}
             clearSearch={clearSearch}
-            refocusScanner={refocusScanner}
             disabled={step === 2 || step === 3}
+            isScannerInputRef={isScannerInputRef}
+            isLoading={isLoading}
+            onAddProduct={handleAddProduct}
           />
-          {/* Simplified container - no nested divs */}
+          {isLoading && (
+            <div className="absolute top-full left-0 right-0 bg-white border rounded-md shadow-lg z-10 p-3 text-center text-gray-500">
+              Searching...
+            </div>
+          )}
           <div className="rounded-md border flex-1 overflow-auto">
             <CartTable
               cart={cart}
@@ -276,7 +274,6 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
               updateCartItemQuantity={updateCartItemQuantity}
               updateCartItemPrice={updateCartItemPrice}
               deleteCartItem={deleteCartItem}
-              refocusScanner={refocusScanner}
               disabled={step === 2 || step === 3}
             />
           </div>
@@ -284,16 +281,35 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
       </Card>
       <ProductRegisterModal />
       <AlertDialog open={showRegisterDialog} onOpenChange={setShowRegisterDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle>Product Not Registered</AlertDialogTitle>
-            <AlertDialogDescription>
-              The scanned product (<span className="font-bold">{unregisteredBarcode}</span>) is not registered. Would you like to register it?
+            <AlertDialogTitle className="text-lg font-semibold text-red-600">
+              Product Not Found
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-base">
+              The scanned barcode <span className="font-bold">{unregisteredBarcode}</span> is not registered in the system.
+              <br /><br />
+              Would you like to register this product now?
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setShowRegisterDialog(false)}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => unregisteredBarcode && handleRegisterProduct(unregisteredBarcode)}>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel 
+              onClick={() => {
+                setShowRegisterDialog(false);
+                setUnregisteredBarcode(null);
+              }}
+              className="px-4 py-2"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (unregisteredBarcode) {
+                  handleRegisterProduct(unregisteredBarcode);
+                }
+              }}
+              className="px-4 py-2 "
+            >
               Register Product
             </AlertDialogAction>
           </AlertDialogFooter>

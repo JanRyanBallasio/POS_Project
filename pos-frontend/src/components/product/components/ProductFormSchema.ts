@@ -28,6 +28,12 @@ export const ProductFormSchema = z.object({
     .int("Quantity must be a whole number")
     .min(0, "Quantity must be 0 or greater")
     .max(999999, "Quantity is too high"),
+
+  unit: z.string()
+    .min(1, "Unit is required")
+    .refine((val) => ["pcs", "kg", "pck"].includes(val), {
+      message: "Unit must be pcs, kg, or pck"
+    }),
 });
 
 export type ProductFormValues = z.infer<typeof ProductFormSchema>;

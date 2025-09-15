@@ -7,8 +7,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { ScanLine, CheckIcon, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Product } from "@/hooks/products/useProductApi";
@@ -27,7 +26,6 @@ interface CartTableProps {
   updateCartItemQuantity: (id: string, qty: number) => void;
   updateCartItemPrice: (id: string, price: number) => void;
   deleteCartItem: (id: string) => void;
-  refocusScanner: (force?: boolean) => void;
   disabled?: boolean;
 }
 
@@ -38,19 +36,14 @@ export default function CartTable({
   updateCartItemQuantity,
   updateCartItemPrice,
   deleteCartItem,
-  refocusScanner,
   disabled = false,
 }: CartTableProps) {
-  const [refocused, setRefocused] = useState<boolean>(false);
   const { lastAddedItemId } = useCart();
   const lastAutoSelectedId = useRef<string | null>(null);
 
-  // Robustly auto-select the last added cart row.
-  // Some add flows (search -> add) may set lastAddedItemId before the cart
-  // update has propagated here, so retry for a few frames until the row exists.
+  // Auto-select last added cart row
   useEffect(() => {
-    if (!lastAddedItemId) return;
-    if (lastAutoSelectedId.current === lastAddedItemId) return;
+    if (!lastAddedItemId || lastAutoSelectedId.current === lastAddedItemId) return;
 
     let cancelled = false;
     let attempts = 0;
@@ -61,25 +54,22 @@ export default function CartTable({
       const exists = cart.some((it) => it.id === lastAddedItemId);
       if (exists) {
         lastAutoSelectedId.current = lastAddedItemId;
-        try { selectRow(lastAddedItemId); } catch { /* ignore */ }
-
-        // Ensure scanner refocus after selection (defer so the row actually exists in the DOM)
-        requestAnimationFrame(() => {
-          try { refocusScanner(true); } catch { /* ignore */ }
-        });
+        try {
+          selectRow(lastAddedItemId);
+        } catch {}
         return;
       }
       attempts++;
-      if (attempts < maxAttempts) {
-        requestAnimationFrame(trySelect);
-      }
+      if (attempts < maxAttempts) requestAnimationFrame(trySelect);
     };
 
     requestAnimationFrame(trySelect);
-    return () => { cancelled = true; };
-  }, [lastAddedItemId, cart, selectRow, refocusScanner]);
+    return () => {
+      cancelled = true;
+    };
+  }, [lastAddedItemId, cart, selectRow]);
 
-  // If the tracked lastAutoSelectedId is removed from the cart, reset tracking
+  // Reset tracking if row is removed
   useEffect(() => {
     if (lastAutoSelectedId.current && !cart.find((it) => it.id === lastAutoSelectedId.current)) {
       lastAutoSelectedId.current = null;
@@ -89,14 +79,8 @@ export default function CartTable({
   const handleRowClick = (itemId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     selectRow(itemId);
-
-    // Always force scanner focus after selecting a row; defer to next frame
-    requestAnimationFrame(() => {
-      try { refocusScanner(true); } catch { /* ignore */ }
-    });
   };
 
-  // Add click handler for table cells that should select the row
   const handleCellClick = (itemId: string, e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
     if (target.tagName !== "INPUT" && target.tagName !== "BUTTON" && !target.closest("button")) {
@@ -104,13 +88,79 @@ export default function CartTable({
     }
   };
 
-  // Local Price editor component: keeps editing text (allows "1." and partial decimals)
+  const priceInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
+  // Utility: focus search bar
+  const focusSearchBar = useCallback(() => {
+    requestAnimationFrame(() => {
+      const ps = document.querySelector<HTMLInputElement>('[data-product-search="true"]');
+      ps?.focus();
+      ps?.select?.();
+    });
+  }, []);
+
+  // --- Listen for custom cart events ---
+  useEffect(() => {
+    function handleIncrementQty(e: Event) {
+      const id = (e as CustomEvent).detail?.id;
+      const item = cart.find((it) => it.id === id);
+      if (item) {
+        updateCartItemQuantity(id, item.quantity + 1);
+        selectRow(id);
+      }
+    }
+    function handleDecrementQty(e: Event) {
+      const id = (e as CustomEvent).detail?.id;
+      const item = cart.find((it) => it.id === id);
+      if (item) {
+        updateCartItemQuantity(id, Math.max(1, item.quantity - 1));
+        selectRow(id);
+      }
+    }
+    function handleEditPrice(e: Event) {
+      const id = (e as CustomEvent).detail?.id;
+      if (!id) return;
+      selectRow(id);
+      setTimeout(() => {
+        const input = priceInputRefs.current[id];
+        input?.focus();
+        input?.select?.();
+      }, 0);
+    }
+    function handleDeleteItem(e: Event) {
+      const id = (e as CustomEvent).detail?.id;
+      if (id) {
+        deleteCartItem(id);
+        focusSearchBar();
+      }
+    }
+
+    window.addEventListener("cart:increment-qty", handleIncrementQty);
+    window.addEventListener("cart:decrement-qty", handleDecrementQty);
+    window.addEventListener("cart:edit-price", handleEditPrice);
+    window.addEventListener("cart:delete-item", handleDeleteItem);
+
+    return () => {
+      window.removeEventListener("cart:increment-qty", handleIncrementQty);
+      window.removeEventListener("cart:decrement-qty", handleDecrementQty);
+      window.removeEventListener("cart:edit-price", handleEditPrice);
+      window.removeEventListener("cart:delete-item", handleDeleteItem);
+    };
+  }, [cart, updateCartItemQuantity, selectRow, deleteCartItem, focusSearchBar]);
+
+  // --- PriceCell ---
   const PriceCell: React.FC<{ item: CartItem }> = ({ item }) => {
     const [editing, setEditing] = useState(false);
     const [value, setValue] = useState<string>(String(item.product.price ?? 0));
     const ref = useRef<HTMLInputElement | null>(null);
 
-    // keep value in sync when external product price changes (but not while editing)
+    useEffect(() => {
+      priceInputRefs.current[item.id] = ref.current;
+      return () => {
+        priceInputRefs.current[item.id] = null;
+      };
+    }, [item.id]);
+
     useEffect(() => {
       if (!editing) setValue(String(item.product.price ?? 0));
     }, [item.product.price, editing]);
@@ -120,11 +170,8 @@ export default function CartTable({
       const parsed = Number(String(value).replace(/,/g, ""));
       const price = Number.isFinite(parsed) ? parsed : 0;
       updateCartItemPrice(item.id, price);
-      // refocus scanner after finishing edit
-      requestAnimationFrame(() => {
-        try { refocusScanner(true); } catch { /* ignore */ }
-      });
-    }, [value, item.id, updateCartItemPrice, refocusScanner]);
+      focusSearchBar();
+    }, [value, item.id, updateCartItemPrice]);
 
     return (
       <Input
@@ -133,18 +180,19 @@ export default function CartTable({
         data-cart-price-input={item.id}
         value={value}
         className="w-20 h-8 text-sm"
-        onFocus={() => { selectRow(item.id); setEditing(true); }}
+        onFocus={() => {
+          selectRow(item.id);
+          setEditing(true);
+        }}
         onChange={(e) => setValue(e.target.value)}
-        onBlur={() => commit()}
+        onBlur={commit}
         onKeyDown={(e) => {
           if (e.key === "Enter") {
             (e.target as HTMLInputElement).blur();
           } else if (e.key === "Escape") {
             setEditing(false);
             setValue(String(item.product.price ?? 0));
-            requestAnimationFrame(() => {
-              try { refocusScanner(true); } catch { /* ignore */ }
-            });
+            focusSearchBar();
           }
         }}
         disabled={disabled}
@@ -156,9 +204,7 @@ export default function CartTable({
     return (
       <div className="flex-1 flex items-center justify-center w-full h-full">
         <div className="text-center space-y-4">
-          <span className="text-gray-500">
-            🛒 Scan items to add to cart
-          </span>
+          <span className="text-gray-500">🛒 Scan or search to add products</span>
         </div>
       </div>
     );
@@ -182,11 +228,10 @@ export default function CartTable({
           return (
             <TableRow
               key={item.id}
+              data-cart-id={item.id}
               className={cn(
                 "hover:bg-gray-50 cursor-pointer transition-all duration-200",
-                isSelected
-                  ? "bg-gray-100 dark:bg-gray-800"
-                  : ""
+                isSelected ? "bg-gray-100 dark:bg-gray-800" : ""
               )}
               onClick={(e) => handleRowClick(item.id, e)}
               data-cart-selected={isSelected}
@@ -217,28 +262,31 @@ export default function CartTable({
               </TableCell>
 
               <TableCell className="py-3 px-4">
-                <Input
-                  type="number"
-                  min={1}
-                  data-cart-qty-input={item.id}
-                  value={item.quantity}
-                  className="w-16 h-8 text-sm"
-                  onFocus={() => selectRow(item.id)}
-                  onChange={(e) => {
-                    const qty = Math.max(1, Number(e.target.value) || 1);
-                    updateCartItemQuantity(item.id, qty);
-                  }}
-                  onBlur={() => {
-                    try { refocusScanner(true); } catch { /* ignore */ }
-                  }}   // ✅ after editing qty
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      (e.target as HTMLInputElement).blur();
-                      try { refocusScanner(true); } catch { /* ignore */ } // ✅ confirm + refocus
-                    }
-                  }}
-                  disabled={disabled}
-                />
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min={1}
+                    data-cart-qty-input={item.id}
+                    value={item.quantity}
+                    className="w-16 h-8 text-sm"
+                    onFocus={() => selectRow(item.id)}
+                    onChange={(e) => {
+                      const qty = Math.max(1, Number(e.target.value) || 1);
+                      updateCartItemQuantity(item.id, qty);
+                    }}
+                    onBlur={focusSearchBar}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        (e.target as HTMLInputElement).blur();
+                        focusSearchBar();
+                      }
+                    }}
+                    disabled={disabled}
+                  />
+                  <span className="text-sm text-gray-600 font-medium">
+                    {item.product.unit || 'pcs'}
+                  </span>
+                </div>
               </TableCell>
 
               <TableCell className="py-3 px-4">
@@ -248,11 +296,7 @@ export default function CartTable({
                   onClick={(e) => {
                     e.stopPropagation();
                     deleteCartItem(item.id);
-
-                    // Force scanner refocus after delete (defer to next frame)
-                    requestAnimationFrame(() => {
-                      try { refocusScanner(true); } catch { /* ignore */ }
-                    });
+                    focusSearchBar();
                   }}
                   disabled={disabled}
                 >

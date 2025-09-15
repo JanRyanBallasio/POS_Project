@@ -1,4 +1,4 @@
-import { useId, useEffect, useRef } from "react";
+import { useId, useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ interface CustomerSearchProps {
   selectCustomer: (customer: Customer) => void;
   clearCustomer: () => void;
   onAddCustomer: () => void;
+  onCustomerSelected?: () => void; // Callback when customer is selected
 }
 
 export default function CustomerSearch({
@@ -29,10 +30,17 @@ export default function CustomerSearch({
   selectCustomer,
   clearCustomer,
   onAddCustomer,
+  onCustomerSelected,
 }: CustomerSearchProps) {
   const id = useId();
   const customerInputRef = useRef<HTMLInputElement>(null);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
   const isAutoSelecting = filteredCustomers.length === 1 && customerQuery.trim().length >= 2 && !selectedCustomer;
+
+  // Reset selected index when filtered customers change
+  useEffect(() => {
+    setSelectedIndex(-1);
+  }, [filteredCustomers]);
 
   // Handle Ctrl+C shortcut to focus customer input
   useEffect(() => {
@@ -77,22 +85,60 @@ export default function CustomerSearch({
       return;
     }
 
-    // Handle Enter key to select first customer (without Ctrl)
+    // Handle arrow key navigation
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (filteredCustomers.length > 0) {
+        setSelectedIndex(prev => 
+          prev < filteredCustomers.length - 1 ? prev + 1 : 0
+        );
+      }
+      return;
+    }
+
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (filteredCustomers.length > 0) {
+        setSelectedIndex(prev => 
+          prev > 0 ? prev - 1 : filteredCustomers.length - 1
+        );
+      }
+      return;
+    }
+
+    // Handle Enter key
     if (e.key === 'Enter') {
+      e.preventDefault();
+      
+      // If we have a selected index, select that customer
+      if (selectedIndex >= 0 && selectedIndex < filteredCustomers.length) {
+        handleCustomerSelect(filteredCustomers[selectedIndex]);
+        return;
+      }
+      
+      // If no index selected but we have customers, select the first one
       if (filteredCustomers.length > 0 && !selectedCustomer) {
-        e.preventDefault();
         handleCustomerSelect(filteredCustomers[0]);
         return;
       }
+      
+      // If customer is already selected, notify parent that Enter was pressed
       if (selectedCustomer) {
-        // If already selected, blur input
-        e.preventDefault();
-        if (customerInputRef.current) {
-          customerInputRef.current.blur();
+        if (onCustomerSelected) {
+          onCustomerSelected();
         }
-        (window as any).customerSearchActive = false;
         return;
       }
+    }
+
+    // Handle Escape key to clear selection
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      setSelectedIndex(-1);
+      if (customerInputRef.current) {
+        customerInputRef.current.blur();
+      }
+      return;
     }
   };
 
@@ -100,14 +146,19 @@ export default function CustomerSearch({
     (window as any).customerSearchActive = true;
     e.target.select();
   };
+  
   const handleInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    (window as any).customerSearchActive = false;
+    // Delay blur to allow clicking on dropdown items
+    setTimeout(() => {
+      (window as any).customerSearchActive = false;
+    }, 150);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     console.log("📝 CustomerSearch: Input changed to:", e.target.value);
     e.stopPropagation();
     setCustomerQuery(e.target.value);
+    setSelectedIndex(-1); // Reset selection when typing
     if (selectedCustomer) {
       clearCustomer(); // Clear selection if user edits input
     }
@@ -115,6 +166,7 @@ export default function CustomerSearch({
 
   const handleCustomerSelect = (customer: Customer) => {
     selectCustomer(customer);
+    setSelectedIndex(-1);
     (window as any).customerSearchActive = false;
     if (customerInputRef.current) {
       customerInputRef.current.blur();
@@ -158,11 +210,16 @@ export default function CustomerSearch({
                   No results
                 </div>
               )}
-              {filteredCustomers.map((customer) => (
+              {filteredCustomers.map((customer, index) => (
                 <div
                   key={customer.id}
-                  className={`p-2 hover:bg-gray-100 cursor-pointer flex justify-between ${isAutoSelecting ? 'bg-green-50 border-green-200' : ''
-                    }`}
+                  className={`p-2 hover:bg-gray-100 cursor-pointer flex justify-between ${
+                    selectedIndex === index 
+                      ? 'bg-blue-100 border-blue-200' 
+                      : isAutoSelecting 
+                        ? 'bg-green-50 border-green-200' 
+                        : ''
+                  }`}
                   onClick={() => handleCustomerSelect(customer)}
                 >
                   <span className="flex items-center gap-2">
@@ -170,6 +227,11 @@ export default function CustomerSearch({
                     {isAutoSelecting && (
                       <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
                         Auto-selecting...
+                      </span>
+                    )}
+                    {selectedIndex === index && (
+                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                        Selected
                       </span>
                     )}
                   </span>
