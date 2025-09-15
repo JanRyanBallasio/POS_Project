@@ -6,7 +6,6 @@ interface CalculatorProps {
   amount: string;
   setAmount: (val: string) => void;
   cartTotal: number;
-  refocusScanner: (force?: boolean) => void;
   cartIsEmpty?: boolean; 
 }
 
@@ -14,7 +13,6 @@ export default function Calculator({
   amount,
   setAmount,
   cartTotal,
-  refocusScanner,
   cartIsEmpty = false,
 }: CalculatorProps) {
   const cashInputRef = useRef<HTMLInputElement>(null);
@@ -43,13 +41,10 @@ export default function Calculator({
       if (value === "." && amount.includes(".")) return;
       setAmount(amount + value);
     }
-    // Force refocus after calculator button clicks
-    refocusScanner(true);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setAmount(e.target.value);
-    setTimeout(() => refocusScanner(true), 3000);
   };
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -91,10 +86,8 @@ export default function Calculator({
         onKeyDown={handleInputKeyDown}
         onClick={handleInputClick}
         placeholder="0.00"
-        onBlur={() => refocusScanner(true)}
         disabled={cartIsEmpty}
       />
-      {/* Calculator now only handles the numeric input; navigation buttons live in parent */}
     </>
   );
 }

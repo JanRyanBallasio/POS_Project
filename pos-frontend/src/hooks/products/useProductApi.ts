@@ -199,7 +199,19 @@ export const productApi = {
 
     return created;
   },
-
+  async search(query: string): Promise<Product[]> {
+    if (!query || query.trim().length < 2) return [];
+    try {
+      const response = await axios.get(`/products/search?q=${encodeURIComponent(query)}`);
+      if (response.status >= 400) {
+        return [];
+      }
+      const json = response.data as ApiResponse<Product[]>;
+      return json.data ?? [];
+    } catch {
+      return [];
+    }
+  },
   async update(id: number, product: Omit<Product, "id">): Promise<Product> {
     const response = await axios.put(`/products/${id}`, product);
     const json = response.data as ApiResponse<Product>;

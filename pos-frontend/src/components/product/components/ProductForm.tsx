@@ -32,12 +32,14 @@ export default function ProductForm({ contextBarcode, setContextBarcode, onClose
     const categoryNameFallback = useProductFormStore(s => s.category_name);
     const priceStore = useProductFormStore(s => s.price);
     const quantityStore = useProductFormStore(s => s.quantity);
+    const unitStore = useProductFormStore(s => s.unit);
     const setNameStore = useProductFormStore(s => s.setName);
     const setBarcodeStore = useProductFormStore(s => s.setBarcode);
     const setCategoryIdStore = useProductFormStore(s => s.setCategoryId);
     const setCategoryNameStore = useProductFormStore(s => s.setCategoryName);
     const setPriceStore = useProductFormStore(s => s.setPrice);
     const setQuantityStore = useProductFormStore(s => s.setQuantity);
+    const setUnitStore = useProductFormStore(s => s.setUnit);
     const resetFormStore = useProductFormStore(s => s.reset);
 
     // 🔧 FIXED: Use zodResolver instead of custom Valibot resolver
@@ -49,6 +51,7 @@ export default function ProductForm({ contextBarcode, setContextBarcode, onClose
             category_id: 0,
             price: 0,
             quantity: 0,
+            unit: "PC",
         },
         mode: "onChange"
     });
@@ -71,6 +74,7 @@ export default function ProductForm({ contextBarcode, setContextBarcode, onClose
             category_id: categoryIdStore && categoryIdStore !== "" ? Number(categoryIdStore) : 0,
             price: priceStore && priceStore !== "" ? Number(priceStore) : 0,
             quantity: quantityStore && quantityStore !== "" ? Number(quantityStore) : 0,
+            unit: unitStore || "PC",
         };
 
         resetForm(formData);
@@ -215,6 +219,7 @@ export default function ProductForm({ contextBarcode, setContextBarcode, onClose
             setCategoryIdStore(String(values.category_id));
             setPriceStore(String(values.price));
             setQuantityStore(String(values.quantity));
+            setUnitStore(values.unit);
 
             const result = await addProduct(values);
             if (result) {

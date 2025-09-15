@@ -10,10 +10,11 @@ interface ProductSearchProps {
   handleSearchChange: (val: string) => void;
   handleSearchSelect: (product: Product) => void;
   clearSearch: () => void;
-  // Accept optional force flag so callers can call refocusScanner(true)
-  refocusScanner: (force?: boolean) => void;
   disabled?: boolean;
   inputRef?: React.RefObject<HTMLInputElement>;
+  isScannerInputRef?: React.MutableRefObject<boolean>;
+  isLoading?: boolean;
+  onAddProduct?: () => void; // Add this prop
 }
 
 export default function ProductSearch({
@@ -22,9 +23,12 @@ export default function ProductSearch({
   showSearchResults,
   handleSearchChange,
   handleSearchSelect,
-  refocusScanner,
+  clearSearch,
   disabled = false,
   inputRef,
+  isScannerInputRef,
+  isLoading,
+  onAddProduct, // Add this parameter
 }: ProductSearchProps) {
   const isAutoSelecting = searchResults.length === 1 && searchQuery.trim().length >= 2;
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
@@ -41,37 +45,48 @@ export default function ProductSearch({
     if (!inputEl) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!showSearchResults || searchResults.length === 0) return;
-
       if (e.key === "ArrowDown") {
         e.preventDefault();
         e.stopPropagation();
-        setHighlightedIndex((prev) => Math.min(prev + 1, searchResults.length - 1));
+        setHighlightedIndex((prev) =>
+          prev < searchResults.length - 1 ? prev + 1 : 0
+        );
         scrollToHighlighted();
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
         e.stopPropagation();
-        setHighlightedIndex((prev) => Math.max(prev - 1, 0));
+        setHighlightedIndex((prev) =>
+          prev > 0 ? prev - 1 : searchResults.length - 1
+        );
         scrollToHighlighted();
-      } else if (e.key === "Enter" && highlightedIndex >= 0) {
+      } else if (e.key === "Enter") {
+        if (highlightedIndex >= 0 && highlightedIndex < searchResults.length) {
+          e.preventDefault();
+          e.stopPropagation();
+          handleSearchSelect(searchResults[highlightedIndex]);
+        }
+      } else if (e.key === "Escape") {
         e.preventDefault();
         e.stopPropagation();
-        handleSearchSelect(searchResults[highlightedIndex]);
-        setHighlightedIndex(-1);
-        // after selecting from keyboard, ensure scanner regains focus (force)
-        refocusScanner(true);
+        clearSearch();
+        requestAnimationFrame(() => {
+          inputEl.focus();
+          inputEl.select?.();
+        });
       }
     };
 
     inputEl.addEventListener("keydown", handleKeyDown);
     return () => inputEl.removeEventListener("keydown", handleKeyDown);
-  }, [searchResults, showSearchResults, highlightedIndex, handleSearchSelect, inputRef, refocusScanner]);
+  }, [searchResults, highlightedIndex, handleSearchSelect, clearSearch, inputRef]);
 
   // Scroll highlighted item into view
   const scrollToHighlighted = () => {
     setTimeout(() => {
       if (resultsContainerRef.current) {
-        const item = resultsContainerRef.current.querySelector(`[data-highlighted="true"]`);
+        const item = resultsContainerRef.current.querySelector(
+          `[data-highlighted="true"]`
+        );
         if (item) {
           (item as HTMLElement).scrollIntoView({ block: "nearest" });
         }
@@ -79,31 +94,45 @@ export default function ProductSearch({
     }, 0);
   };
 
+  // Skip rendering dropdown if scanner already auto-selected
+  const shouldShowDropdown =
+    showSearchResults &&
+    !isScannerInputRef?.current &&
+    searchResults.length > 0;
+
   return (
     <div className="relative mb-6">
       <div className="relative flex items-center">
-        <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+        <Search
+          className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400"
+          size={20}
+        />
         <Input
           ref={inputRef}
+          data-product-search="true"
+          data-search-open={showSearchResults ? "true" : "false"}
           className="pl-9 w-full"
           placeholder="Search by product name or barcode..."
           value={searchQuery}
           onChange={(e) => handleSearchChange(e.target.value)}
           onClick={(e) => e.stopPropagation()}
-          onBlur={() => {
-            // when search input loses focus, refocus scanner (do not steal if user is typing elsewhere)
-            refocusScanner(true);
-          }}
           disabled={disabled}
         />
-        {isAutoSelecting && (
+        {isAutoSelecting && !isScannerInputRef?.current && (
           <CheckCircle
             className="absolute right-2 top-1/2 transform -translate-y-1/2 text-green-500 animate-pulse"
             size={20}
           />
         )}
       </div>
-      {showSearchResults && searchResults.length > 0 && (
+
+      {isLoading && (
+        <div className="absolute top-full left-0 right-0 bg-white border rounded-md shadow-lg z-10 p-3 text-center text-gray-500">
+          Searching...
+        </div>
+      )}
+
+      {shouldShowDropdown && (
         <div
           ref={resultsContainerRef}
           className="absolute top-full left-0 right-0 bg-white border rounded-md shadow-lg z-10 max-h-[32rem] overflow-y-auto"
@@ -112,36 +141,57 @@ export default function ProductSearch({
             <div
               key={product.id}
               data-highlighted={highlightedIndex === idx}
-              className={`p-3 hover:bg-gray-50 cursor-pointer border-b last:border-b-0 ${
-                isAutoSelecting ? "bg-green-50 border-green-200" : ""
-              } ${highlightedIndex === idx ? "bg-blue-100" : ""}`}
+              className={`p-3 cursor-pointer border-b last:border-b-0 ${
+                highlightedIndex === idx
+                  ? "bg-blue-100"
+                  : "hover:bg-gray-50"
+              }`}
               onClick={() => handleSearchSelect(product)}
             >
               <div className="flex justify-between items-center">
                 <div className="min-w-0">
                   <div className="font-medium break-words whitespace-normal flex items-center gap-2">
                     {product.name}
-                    {isAutoSelecting && (
+                    {isAutoSelecting && !isScannerInputRef?.current && (
                       <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
                         Auto-selecting...
                       </span>
                     )}
                   </div>
-                  <div className="text-sm text-gray-500">Barcode: {product.barcode}</div>
+                  <div className="text-sm text-gray-500">
+                    Barcode: {product.barcode}
+                  </div>
                 </div>
                 <div className="text-right ml-4 flex-shrink-0">
-                  <div className="font-medium">₱ {product.price.toFixed(2)}</div>
+                  <div className="font-medium">
+                    ₱ {product.price.toFixed(2)}
+                  </div>
                 </div>
               </div>
             </div>
           ))}
         </div>
       )}
-      {showSearchResults && searchResults.length === 0 && searchQuery.length >= 2 && (
-        <div className="absolute top-full left-0 right-0 bg-white border rounded-md shadow-lg z-10 p-3 text-center text-gray-500">
-          No products found matching "{searchQuery}"
-        </div>
-      )}
+
+      {showSearchResults &&
+        !isScannerInputRef?.current &&
+        searchResults.length === 0 &&
+        searchQuery.length >= 2 &&
+        !isLoading && (
+          <div className="absolute top-full left-0 right-0 bg-white border rounded-md shadow-lg z-10 p-3 text-center text-gray-500">
+            <div className="mb-2">
+              No product found matching "{searchQuery}"
+            </div>
+            {onAddProduct && (
+              <button
+                onClick={onAddProduct}
+                className="text-blue-600 hover:text-blue-800 hover:underline text-sm font-medium"
+              >
+                Add new product
+              </button>
+            )}
+          </div>
+        )}
     </div>
   );
 }

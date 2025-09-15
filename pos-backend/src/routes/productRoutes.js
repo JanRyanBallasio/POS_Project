@@ -7,6 +7,7 @@ router.use(auth);
 
 // Order matters: specific routes before dynamic ones
 router.get('/by-category', productController.getProductsByCategory);
+router.get("/search", productController.searchProducts);
 router.get('/barcode/:barcode', productController.getProductByBarcode);
 router.get('/:id', productController.getProductById);
 router.get('/', productController.getAllProducts);

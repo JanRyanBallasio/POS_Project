@@ -1,7 +1,7 @@
 import Stats from './components/stats';
-import ProductStats from './components/productStats';
+import CategoryStats from './components/categoryStats';
 import SalesStats from './components/salesStats';
-
+import ProductStats from './components/productStats';
 export default function DashboardScreen() {
     return (
         <div className="flex flex-col p-6 h-full gap-3">
@@ -12,6 +12,7 @@ export default function DashboardScreen() {
             <div className="flex-[20%]"><Stats /></div>
             <div className="flex-[78%] flex gap-3 flex-col">
                 <div className="flex-[50%] mb-4"><SalesStats /></div>
+                <div className="flex-[50%] mb-2"><CategoryStats /></div>
                 <div className="flex-[50%] mb-2"><ProductStats /></div>
             </div>
         </div>
