@@ -62,14 +62,15 @@ export default function MainDashboard() {
 
   return (
     <CartProvider>
-      <div className="flex flex-col w-full h-full py-4 px-4">
-        <div className="flex gap-2 h-full">
-          <div className="basis-[70%]">
-            <POSleft step={step} />
-          </div>
-          <div className="flex flex-col basis-[30%] gap-2">
-            <POSright step={step} setStep={setStep} />
-          </div>
+      <div className="flex flex-col lg:flex-row w-full h-full py-4 px-4 gap-2">
+        {/* Left side */}
+        <div className="flex-1">
+          <POSleft step={step} />
+        </div>
+
+        {/* Right side (hidden on flex-col, shown only on lg+ when flex-row applies) */}
+        <div className="hidden lg:flex flex-col basis-[30%] gap-2">
+          <POSright step={step} setStep={setStep} />
         </div>
       </div>
     </CartProvider>

@@ -29,24 +29,29 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Skeleton } from '@/components/ui/skeleton'
 
-type SaleItem = {
-  category: string
+type ProductSaleItem = {
+  product_name: string
+  total_sales: number
   quantity: number
+  price: number
+  unit: string
   last_purchase: string
 }
 
-type Product = {
+type ProductDetail = {
   name: string
   qty: number
   price: number
   total: number
-  last_purchase: string | null 
+  unit: string
+  last_purchase: string
 }
-type ChartData = SaleItem
+
+type ChartData = ProductSaleItem
 
 const chartConfig: ChartConfig = {
-  quantity: {
-    label: 'Transactions',
+  total_sales: {
+    label: 'Total Sales',
     color: 'var(--color-primary)'
   }
 }
@@ -64,114 +69,217 @@ export default function ProductStats() {
     from: startOfMonth,
     to: today
   })
+  // Change the default sort order from 'desc' to 'recent':
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | 'recent'>('recent')
+  
+  // State declarations
+  const [open, setOpen] = useState(false)
+  const [selectedProduct, setSelectedProduct] = useState<string | null>(null)
+  const [productDetails, setProductDetails] = useState<ProductDetail[]>([])
+  const [loadingDetails, setLoadingDetails] = useState(false)
+  // Also change the table sort order default:
+  const [tableSortOrder, setTableSortOrder] = useState<'asc' | 'desc' | 'recent'>('recent')
+  const [productLimit, setProductLimit] = useState(15)
 
-  const saleItemsUrl = useMemo(() => {
+  // FIXED: Use a different approach - fetch from multiple categories
+  const productSalesUrl = useMemo(() => {
     const params = new URLSearchParams()
-    if (range?.from) params.set('from', range.from.toISOString())
-    if (range?.to) params.set('to', range.to.toISOString())
-    return `/sales-items?${params.toString()}`
+    if (range?.from) params.set('from_date', range.from.toISOString())
+    if (range?.to) params.set('to_date', range.to.toISOString())
+    // We'll fetch from a specific category first to test
+    params.set('category_name', 'Lane 3') // Start with one category
+    return `/sales-items/products-by-category?${params.toString()}`
   }, [range])
 
-  // Keep previous data during revalidation and avoid refetch on window focus
-  const { data: saleItems = [], error, isLoading, isValidating } = useSWR<SaleItem[]>(
-    saleItemsUrl,
+  // Fetch product sales data
+  const { data: productSales = [], error, isLoading, isValidating } = useSWR(
+    productSalesUrl,
     fetcher,
     { keepPreviousData: true, revalidateOnFocus: false }
   )
 
-  const chartData = useMemo(() => {
-    const arr = saleItems.map(si => ({
-      category: si.category,
-      quantity: Number(si.quantity) || 0,
-      last_purchase: si.last_purchase
-    }))
-    switch (sortOrder) {
-      case 'asc': return [...arr].sort((a, b) => a.quantity - b.quantity)
-      case 'desc': return [...arr].sort((a, b) => b.quantity - a.quantity)
-      case 'recent': return [...arr].sort((a, b) => new Date(b.last_purchase).getTime() - new Date(a.last_purchase).getTime())
-      default: return arr
-    }
-  }, [saleItems, sortOrder])
+  // Transform the data to match our expected format
+  const productSalesData = useMemo(() => {
+    if (productSales.length === 0) return []
+    
+    const productMap = new Map<string, ProductSaleItem>()
+    
+    productSales.forEach((item: any) => {
+      const productName = item.product_name || 'Unknown Product'
+      const existing = productMap.get(productName)
+      
+      if (existing) {
+        existing.total_sales += Number(item.total) || 0
+        existing.quantity += Number(item.qty) || 0
+        // Keep the most recent purchase date
+        if (new Date(item.last_purchase) > new Date(existing.last_purchase)) {
+          existing.last_purchase = item.last_purchase
+        }
+      } else {
+        productMap.set(productName, {
+          product_name: productName,
+          total_sales: Number(item.total) || 0,
+          quantity: Number(item.qty) || 0,
+          price: Number(item.price) || 0,
+          unit: item.unit || 'pcs',
+          last_purchase: item.last_purchase
+        })
+      }
+    })
+    
+    const result = Array.from(productMap.values())
+    console.log('Product sales data:', result)
+    return result
+  }, [productSales])
 
-  const total = useMemo(() => chartData.reduce((acc, curr) => acc + curr.quantity, 0), [chartData])
+  // Fetch products to get product names and units
+  const { data: allProducts = [] } = useSWR(
+    '/products?limit=all',
+    fetcher,
+    { keepPreviousData: true, revalidateOnFocus: false }
+  )
 
-  // Modal state
-  const [open, setOpen] = useState(false)
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
-  const [products, setProducts] = useState<Product[]>([])
-  const [loadingProducts, setLoadingProducts] = useState(false)
-  const [tableSortOrder, setTableSortOrder] = useState<'asc' | 'desc' | 'recent'>('recent')
+  // Create a map of product_id to product info
+  const productMap = useMemo(() => {
+    const map = new Map<number, any>()
+    allProducts.forEach((product: any) => {
+      map.set(product.id, product)
+    })
+    return map
+  }, [allProducts])
 
+  // Fix the handleBarClick function:
   const handleBarClick = async (data: any) => {
-    setSelectedCategory(data.category)
+    console.log('Clicked product:', data.product_name)
+    setSelectedProduct(data.product_name)
     setOpen(true)
+    setLoadingDetails(true)
 
-    const params = new URLSearchParams()
-    params.set('category', data.category)
-    if (range?.from) params.set('from', range.from.toISOString())
-    if (range?.to) params.set('to', range.to.toISOString())
-
-    // Don't clear existing products — show previous list until the new one arrives.
-    setLoadingProducts(true)
     try {
-      const res = await axios.get(`/products/by-category?${params.toString()}`)
-      // Normalize backend shape -> frontend shape used by the table
-      const normalized = (res.data?.data || []).map((item: any) => ({
-        // backend returns product_name; fall back to name if present
-        name: item.product_name ?? item.name ?? '',
-        qty: Number(item.qty ?? item.quantity ?? 0) || 0,
-        price: Number(item.price ?? 0) || 0,
-        total: Number(item.total ?? 0) || 0,
-        last_purchase: item.last_purchase ?? item.last_purchase_date ?? null
+      // Filter the productSales data for this specific product
+      const productSalesItems = productSales.filter((item: any) => 
+        item.product_name === data.product_name
+      )
+
+      console.log('Filtered product sales items:', productSalesItems)
+
+      const transformedDetails = productSalesItems.map((item: any) => ({
+        name: item.product_name,
+        qty: Number(item.qty) || 0,
+        price: Number(item.price) || 0,
+        total: Number(item.total) || 0,
+        unit: item.unit || 'pcs',
+        last_purchase: item.last_purchase
       }))
-      setProducts(normalized)
-    } catch (err) {
-      console.error('Failed to fetch products by category', err)
-      // keep existing products on error
+
+      console.log('Transformed product details:', transformedDetails)
+      setProductDetails(transformedDetails)
+    } catch (error: any) {
+      console.error('Error fetching product details:', error)
+      setProductDetails([])
     } finally {
-      setLoadingProducts(false)
+      setLoadingDetails(false)
     }
   }
+
   // Sort table data locally based on tableSortOrder
-  const sortedProducts = useMemo(() => {
+  const sortedProductDetails = useMemo(() => {
     switch (tableSortOrder) {
       case 'asc':
-        return [...products].sort((a, b) => a.total - b.total)
+        return [...productDetails].sort((a, b) => (a.total || 0) - (b.total || 0))
       case 'desc':
-        return [...products].sort((a, b) => b.total - a.total)
+        return [...productDetails].sort((a, b) => (b.total || 0) - (a.total || 0))
       case 'recent':
       default:
-        // newest first by last_purchase (robust to missing values)
-        return [...products].sort((a, b) => {
+        return [...productDetails].sort((a, b) => {
           const ta = a.last_purchase ? new Date(a.last_purchase).getTime() : 0
           const tb = b.last_purchase ? new Date(b.last_purchase).getTime() : 0
           return tb - ta
         })
     }
-  }, [products, tableSortOrder])
+  }, [productDetails, tableSortOrder])
 
-  // compute total of products currently shown in modal
-  const productsTotal = products.reduce((acc, p) => acc + (Number(p.total) || 0), 0)
+  // Compute total of product details currently shown in modal
+  const productDetailsTotal = productDetails.reduce((acc, p) => acc + (Number(p.total) || 0), 0)
 
-  // initial empty state: show skeleton full-chart if first load and no data
-  const initialLoadingNoData = isLoading && saleItems.length === 0
-  // updating overlay while revalidating (keep previous chart visible)
-  const isUpdating = isValidating && saleItems.length > 0
+  // Chart data with sorting
+  const chartData = useMemo(() => {
+    const arr = productSalesData.map(item => ({
+      product_name: item.product_name,
+      total_sales: item.total_sales,
+      quantity: item.quantity,
+      price: item.price,
+      unit: item.unit,
+      last_purchase: item.last_purchase
+    }))
 
-  // Note: do not return early on error — render error inside the chart area so header/footer remain visible.
+    // Debug log to see the actual data
+    console.log('Product chart data before sorting:', arr)
+    console.log('Total sales sum:', arr.reduce((acc, curr) => acc + curr.total_sales, 0))
+    
+    // Debug each product's total
+    arr.forEach(item => {
+      console.log(`Product: ${item.product_name}, Total Sales: ₱${item.total_sales.toLocaleString()}`)
+    })
+
+    // Sort first, then limit to the specified number of products
+    let sorted
+    switch (sortOrder) {
+      case 'asc': 
+        sorted = [...arr].sort((a, b) => a.total_sales - b.total_sales)
+        break
+      case 'desc': 
+        sorted = [...arr].sort((a, b) => b.total_sales - a.total_sales)
+        break
+      case 'recent': 
+        sorted = [...arr].sort((a, b) => new Date(b.last_purchase).getTime() - new Date(a.last_purchase).getTime())
+        break
+      default: 
+        sorted = [...arr].sort((a, b) => b.total_sales - a.total_sales)
+    }
+    
+    // Limit to the specified number of products
+    return sorted.slice(0, productLimit)
+  }, [productSalesData, sortOrder, productLimit]) // Add productLimit to dependencies
+
+  const total = useMemo(() => chartData.reduce((acc, curr) => acc + curr.total_sales, 0), [chartData])
+
+  // Initial empty state: show skeleton full-chart if first load and no data
+  const initialLoadingNoData = isLoading && productSalesData.length === 0
+  // Updating overlay while revalidating (keep previous chart visible)
+  const isUpdating = isValidating && productSalesData.length > 0
 
   return (
     <>
       <Card className='@container/card w-full relative'>
         <CardHeader className='flex flex-col border-b @md/card:grid'>
           <CardTitle>Product Analytics</CardTitle>
-          <CardDescription>Showing most sold categories for this month.</CardDescription>
+          <CardDescription>Showing highest selling products for this month.</CardDescription>
           <CardAction className='mt-2 @md/card:mt-0'>
             <div className="flex gap-2 items-center mt-2">
-              <Button onClick={() => setSortOrder('desc')} variant={sortOrder === 'desc' ? 'default' : 'outline'} size="sm"><ChevronDown size={16} /></Button>
-              <Button onClick={() => setSortOrder('recent')} variant={sortOrder === 'recent' ? 'default' : 'outline'} size="sm"><History size={16} /></Button>
-              <Button onClick={() => setSortOrder('asc')} variant={sortOrder === 'asc' ? 'default' : 'outline'} size="sm"><ChevronUp size={16} /></Button>
+              {/* Add the input field here */}
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium">Show:</label>
+                <input
+                  type="number"
+                  min="5"
+                  max="50"
+                  value={productLimit}
+                  onChange={(e) => setProductLimit(Number(e.target.value))}
+                  className="w-16 px-2 py-1 border rounded text-sm text-center"
+                />
+                <span className="text-sm text-gray-600">products</span>
+              </div>
+              
+              <Button onClick={() => setSortOrder('desc')} variant={sortOrder === 'desc' ? 'default' : 'outline'} size="sm">
+                <ChevronDown size={16} />
+              </Button>
+              <Button onClick={() => setSortOrder('recent')} variant={sortOrder === 'recent' ? 'default' : 'outline'} size="sm">
+                <History size={16} />
+              </Button>
+              <Button onClick={() => setSortOrder('asc')} variant={sortOrder === 'asc' ? 'default' : 'outline'} size="sm">
+                <ChevronUp size={16} />
+              </Button>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant='outline'>
@@ -189,48 +297,58 @@ export default function ProductStats() {
           </CardAction>
         </CardHeader>
 
-        {/* CardContent is always rendered so header/footer don't disappear */}
         <CardContent className='px-4'>
-          {/* Chart wrapper: relative so we can overlay the skeleton.
-              h-89 is preserved on the wrapper so size remains constant. */}
           <div className="relative h-89 w-full">
-            {/* Chart area (keeps previous data visible because SWR keepPreviousData is enabled).
-                We render either:
-                  - the chart (when there is chart data),
-                  - a "no data" / error message (when not loading & no data),
-                  - underlying empty area (chart hidden) while initial skeleton shows on top.
-            */}
             <div className="absolute inset-0 z-10 flex items-center justify-center">
               {chartData.length > 0 ? (
                 <div className="w-full h-full">
-                  {/* ChartContainer sized to fill the area */}
                   <ChartContainer config={chartConfig} className='aspect-auto h-89 w-full'>
                     <BarChart data={chartData} margin={{ left: 12, right: 12 }}>
                       <CartesianGrid vertical={false} />
-                      <XAxis dataKey='category' tickLine={false} axisLine={false} tickMargin={8} minTickGap={20} />
-                      <ChartTooltip content={<ChartTooltipContent className='w-[150px]' nameKey='quantity' labelFormatter={v => v} />} />
-                      <Bar dataKey='quantity' fill={`var(--color-quantity)`} radius={4} onClick={handleBarClick} />
+                      <XAxis 
+                        dataKey='product_name' 
+                        tickLine={false} 
+                        axisLine={false} 
+                        tickMargin={8} 
+                        minTickGap={20}
+                        angle={-45}
+                        textAnchor="end"
+                        height={100}
+                      />
+                      <ChartTooltip
+                        content={
+                          <ChartTooltipContent
+                            className='w-[200px]'
+                            nameKey='total_sales'
+                            labelFormatter={v => v}
+                            formatter={(value, name, props) => {
+                              console.log('Tooltip data:', { value, name, props })
+                              return [
+                                `₱ ${Number(value).toLocaleString()}`,
+                                ''
+                              ]
+                            }}
+                          />
+                        }
+                      />
+                      <Bar dataKey='total_sales' fill={`var(--color-total_sales)`} radius={4} onClick={handleBarClick} />
                     </BarChart>
                   </ChartContainer>
                 </div>
               ) : (
-                // show helpful messages when there is no chart data
                 <div className="w-full h-full flex items-center justify-center px-4">
                   {error ? (
                     <div className="text-sm text-red-600">Error loading product stats.</div>
-                  ) : (!isLoading && saleItems.length === 0) ? (
+                  ) : (!isLoading && productSalesData.length === 0) ? (
                     <div className="text-sm text-gray-600">No data for the selected range.</div>
                   ) : (
-                    // keep empty while initial skeleton (below) handles first-load UX
                     <div className="w-full h-full" />
                   )}
                 </div>
               )}
             </div>
 
-            {/* Skeleton overlay — used both for initial loading (no data) and for updates.
-                Overlay sits above chart (z-20), fades in/out using transition-opacity.
-                pointer-events-none ensures underlying chart remains interactive if needed. */}
+            {/* Skeleton overlay */}
             <div
               aria-hidden
               className={`absolute inset-0 z-20 flex items-end px-4 pointer-events-none transition-opacity duration-300 ease-in-out ${(isUpdating || initialLoadingNoData) ? 'opacity-100' : 'opacity-0'
@@ -238,7 +356,6 @@ export default function ProductStats() {
             >
               <div className="flex w-full h-full items-end gap-3">
                 {Array.from({ length: Math.max(6, chartData.length || 6) }).map((_, i) => {
-                  // create some height variety for a natural skeleton chart
                   const heights = [28, 44, 60, 36, 52, 40]
                   const pct = heights[i % heights.length]
                   return (
@@ -256,18 +373,23 @@ export default function ProductStats() {
 
         <CardFooter className='border-t'>
           <div className='text-sm'>
-            Total sold: <span className='font-semibold'>{total.toLocaleString()}</span>
+            Total sales: <span className='font-semibold'>₱ {total.toLocaleString()}</span>
           </div>
         </CardFooter>
       </Card>
 
-      {/* Modal with filter buttons + scroll area */}
+      {/* Modal with product details */}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="w-full max-w-5xl sm:max-w-4xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl">
           <DialogHeader className="flex flex-row items-center justify-between">
-            <DialogTitle className="text-lg font-semibold items-center">
-              {selectedCategory ? `${selectedCategory} — Total Amount: ₱ ${productsTotal.toLocaleString()}` : `₱ ${productsTotal.toLocaleString()}`}
-            </DialogTitle>
+            <div>
+              <DialogTitle className="text-lg font-semibold items-center">
+                {selectedProduct ? `${selectedProduct} — Total Amount: ₱ ${productDetailsTotal.toLocaleString()}` : `₱ ${productDetailsTotal.toLocaleString()}`}
+              </DialogTitle>
+              <div className="text-sm text-gray-600 mt-1">
+                Total Quantity Sold: {productDetails.reduce((acc, p) => acc + p.qty, 0).toLocaleString()} {productDetails[0]?.unit || 'units'}
+              </div>
+            </div>
             <div className="flex gap-2 pr-4">
               <Button
                 onClick={() => setTableSortOrder('desc')}
@@ -296,45 +418,42 @@ export default function ProductStats() {
             </div>
           </DialogHeader>
 
-          {/* Table area */}
           <ScrollArea className="h-80 mt-4 rounded-md border bg-white">
-            {/* If we're loading and have no previous products, show loading message */}
-            {loadingProducts && products.length === 0 && (
-              <div className="p-4 text-center text-gray-600">Loading products…</div>
+            {loadingDetails && productDetails.length === 0 && (
+              <div className="p-4 text-center text-gray-600">Loading product details…</div>
             )}
 
-            {/* Show existing / fetched table if we have products */}
-            {sortedProducts.length > 0 ? (
+            {sortedProductDetails.length > 0 ? (
               <>
-                {/* optional small loader banner while updating */}
-                {loadingProducts && (
-                  <div className="p-2 text-sm text-gray-600 border-b">Updating products…</div>
+                {loadingDetails && (
+                  <div className="p-2 text-sm text-gray-600 border-b">Updating details…</div>
                 )}
                 <table className="w-full text-sm border-collapse">
                   <thead className="bg-gray-100 sticky top-0">
                     <tr>
                       <th className="p-2 border text-left font-semibold">Product</th>
-                      <th className="p-2 border text-center font-semibold">Qty</th>
-                      <th className="p-2 border text-center font-semibold">Price</th>
+                      <th className="p-2 border text-center font-semibold">Quantity Sold</th>
+                      <th className="p-2 border text-center font-semibold">Unit Price</th>
                       <th className="p-2 border text-center font-semibold">Total</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {sortedProducts.map((p, idx) => (
+                    {sortedProductDetails.map((p, idx) => (
                       <tr key={idx} className="hover:bg-gray-50 transition">
-                        <td className="p-2 border">{p.name}</td>
-                        <td className="p-2 border text-center">{p.qty}</td>
-                        <td className="p-2 border text-left">₱ {p.price}</td>
-                        <td className="p-2 border text-left">₱ {p.total}</td>
+                        <td className="p-2 border font-medium">{p.name}</td>
+                        <td className="p-2 border text-center font-semibold text-blue-600">
+                          {p.qty.toLocaleString()} {p.unit}
+                        </td>
+                        <td className="p-2 border text-left">₱ {p.price.toLocaleString()}</td>
+                        <td className="p-2 border text-left font-semibold">₱ {p.total.toLocaleString()}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </>
             ) : (
-              // If not loading and no products, show empty state
-              !loadingProducts && (
-                <p className="p-4 text-center text-gray-500">No products found for this category.</p>
+              !loadingDetails && (
+                <p className="p-4 text-center text-gray-500">No details found for this product.</p>
               )
             )}
           </ScrollArea>

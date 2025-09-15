@@ -8,7 +8,7 @@ import Pagination from "./Pagination";
 import { productApi, Product } from "@/hooks/products/useProductApi";
 import { useCategories } from "@/hooks/global/fetching/useCategories";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, ChevronDown } from "lucide-react";
 import { showSuccessToast, showErrorToast } from "@/utils/toast";
 
 import {
@@ -94,6 +94,7 @@ export default function ProductTable({
         category_id: "",
         price: 0,
         quantity: 0,
+        unit: "pcs", // Change to lowercase
     });
 
     // Optimized filtering with useMemo
@@ -153,6 +154,7 @@ export default function ProductTable({
                 category_id: String(editProduct.category_id || ""),
                 price: editProduct.price || 0,
                 quantity: editProduct.quantity || 0,
+                unit: editProduct.unit || "pcs", // Change to lowercase
             });
         }
     }, [showEditDialog, editProduct]);
@@ -177,6 +179,7 @@ export default function ProductTable({
             category_id: Number(editForm.category_id),
             price: Number(editForm.price),
             quantity: Number(editForm.quantity),
+            unit: editForm.unit, // Add unit field
         };
 
         try {
@@ -386,6 +389,40 @@ export default function ProductTable({
                                             onChange={(e) => setEditForm(f => ({ ...f, quantity: Number(e.target.value) || 0 }))}
                                         />
                                     </div>
+                                </div>
+
+                                <div className="flex flex-col gap-2">
+                                    <Label htmlFor="edit-unit">Unit</Label>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button 
+                                                variant="outline" 
+                                                className="w-full justify-between"
+                                            >
+                                                {editForm.unit === "pcs" ? "pcs (pieces)" : 
+                                                 editForm.unit === "kg" ? "kg (kilogram)" : 
+                                                 editForm.unit === "pck" ? "pck (pack)" : "pcs (pieces)"}
+                                                <ChevronDown className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="start" className="w-full">
+                                            <DropdownMenuItem
+                                                onClick={() => setEditForm(f => ({ ...f, unit: "pcs" }))}
+                                            >
+                                                pcs (pieces)
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                                onClick={() => setEditForm(f => ({ ...f, unit: "kg" }))}
+                                            >
+                                                kg (kilogram)
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                                onClick={() => setEditForm(f => ({ ...f, unit: "pck" }))}
+                                            >
+                                                pck (pack)
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
                                 </div>
 
                                 <DialogFooter>
