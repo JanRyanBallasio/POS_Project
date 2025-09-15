@@ -168,7 +168,8 @@ const productController = {
   // Create product (normalizes barcode) - DUPLICATE NAMES NOW ALLOWED
   createProduct: async (req, res) => {
     try {
-      const { name, barcode, category_id, price, quantity } = req.body;
+      const { name, barcode, category_id, price, quantity, unit } = req.body;
+      const normalizedBarcode = cleanInput(barcode);
 
       console.log("Creating product:", { name, barcode, category_id, price, quantity });
 
@@ -186,7 +187,6 @@ const productController = {
         return res.status(400).json({ success: false, field: "barcode", message: "Barcode is required" });
       }
 
-      const normalizedBarcode = cleanInput(barcode);
       if (!normalizedBarcode) {
         return res.status(400).json({ success: false, field: "barcode", message: "Barcode is required" });
       }
@@ -246,11 +246,16 @@ const productController = {
       try {
         const { data, error } = await supabase
           .from('Products')
-          .insert([
-            { name: trimmedName, barcode: normalizedBarcode, category_id: catNum, price: priceNum, quantity: qtyNum }
-          ])
+          .insert({
+            name,
+            barcode: normalizedBarcode ?? null,
+            category_id,
+            price,
+            quantity,
+            unit: unit || 'pcs', // Change to lowercase
+          })
           .select()
-          .single();
+          .maybeSingle();
 
         if (error) {
           console.error("Supabase insert error:", error);
@@ -298,12 +303,19 @@ const productController = {
   updateProduct: async (req, res) => {
     try {
       const { id } = req.params;
-      const { name, barcode, category_id, price, quantity } = req.body;
+      const { name, barcode, category_id, price, quantity, unit } = req.body;
       const normalizedBarcode = cleanInput(barcode);
 
       const { data, error } = await supabase
         .from('Products')
-        .update({ name, barcode: normalizedBarcode ?? null, category_id, price, quantity })
+        .update({ 
+          name, 
+          barcode: normalizedBarcode ?? null, 
+          category_id, 
+          price, 
+          quantity,
+          unit: unit || 'pcs' // Change to lowercase
+        })
         .eq('id', id)
         .select()
         .maybeSingle();
@@ -485,7 +497,44 @@ const productController = {
       console.error("❌ Backend: getProductByBarcode error:", error);
       res.status(500).json({ success: false, error: error.message || "Internal server error" });
     }
-  }
+  },
+  searchProducts: async (req, res) => {
+    try {
+      const { q } = req.query || {};
+      if (!q || String(q).trim().length < 2) {
+        return res.json({ success: true, data: [] });
+      }
+
+      const term = cleanInput(q);
+
+      // First filter with ILIKE to narrow candidates
+      let query = supabase
+        .from("Products")
+        .select("id, name, barcode, price, quantity, category_id")
+        .or(`name.ilike.%${term}%,barcode.ilike.%${term}%`)
+        .neq("is_deleted", true)
+        .limit(20);
+
+      // Order by trigram similarity if pg_trgm is installed
+      query = query.order("name", {
+        ascending: false,
+        foreignTable: undefined, // direct Products table
+      });
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      res.json({ success: true, data: data || [] });
+    } catch (error) {
+      console.error("searchProducts error:", error);
+      res
+        .status(500)
+        .json({ success: false, error: error.message || "Internal server error" });
+    }
+  },
+
+
 };
 
 module.exports = productController;
