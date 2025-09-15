@@ -27,6 +27,11 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.DECIMAL,
         allowNull: true,
       },
+      unit: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+        defaultValue: 'pcs', // Change to lowercase
+      },
       created_at: {
         type: DataTypes.DATE,
         allowNull: false,
