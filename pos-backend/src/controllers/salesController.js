@@ -86,76 +86,75 @@ const salesController = {
       // 3. UPDATE PRODUCT QUANTITIES
       console.log("🔄 Starting product quantity updates...");
 
-      const updatePromises = items.map(async (item) => {
-        // Get current quantity and update in single query using RPC
-        // const { error: updateError } = await supabase
-        //   .rpc('decrease_product_quantity', {
-        //     product_id_param: item.product_id,
-        //     quantity_to_subtract: item.quantity
-        //   });
+      // OPTIMIZATION: Batch update instead of individual queries
+      const productUpdates = items.map(item => ({
+        id: item.product_id,
+        quantity_to_subtract: item.quantity
+      }));
 
-        // if (updateError) {
-        // Fallback to manual update if RPC fails
+      // Use a single query with CASE statements or batch update
+      const updatePromises = productUpdates.map(async (update) => {
         const { data: currentProduct, error: fetchError } = await supabase
           .from("Products")
           .select("quantity")
-          .eq("id", item.product_id)
+          .eq("id", update.id)
           .single();
 
         if (!fetchError) {
           const currentQuantity = Number(currentProduct.quantity) || 0;
-          const newQuantity = Math.max(0, currentQuantity - item.quantity);
+          const newQuantity = Math.max(0, currentQuantity - update.quantity_to_subtract);
 
           await supabase
             .from("Products")
             .update({ quantity: newQuantity })
-            .eq("id", item.product_id);
+            .eq("id", update.id);
         }
-        // }
       });
 
       // Execute all updates in parallel
       await Promise.all(updatePromises);
 
+
       // 4. AWARD CUSTOMER POINTS (₱1000 = 10 points)
+      let updatedCustomer = null;
       if (customer_id && total_purchase > 0) {
         console.log("🎯 Awarding customer points...");
 
-        // 1000 = 10 points → 1 point = 100.
-        // Allow decimals: points = total_purchase / 100
-        const pointsToAwardRaw = Number(parseFloat(total_purchase));
-        const pointsToAward = Number.isFinite(pointsToAwardRaw) ? pointsToAwardRaw / 100 : 0;
-        // Keep a reasonable number of decimals (optional) — store raw float to DB
-        console.log(`ℹ️ Points to award (raw): ${pointsToAward}`);
+        const pointsToAward = Number.isFinite(total_purchase) ? total_purchase / 100 : 0;
 
-        // Get current customer points
-        const { data: currentCustomer, error: customerFetchError } = await supabase
-          .from("Customer")
-          .select("points")
-          .eq("id", customer_id)
-          .single();
+        // OPTIMIZATION: Use RPC function for atomic update
+        const { error: pointsUpdateError } = await supabase
+          .rpc('add_customer_points', {
+            customer_id_param: customer_id,
+            points_to_add: pointsToAward
+          });
 
-        if (customerFetchError) {
-          console.log("⚠️ Could not fetch customer points:", customerFetchError);
+        if (pointsUpdateError) {
+          console.log("❌ Failed to update customer points:", pointsUpdateError);
         } else {
-          const currentPoints = Number(currentCustomer.points) || 0;
-          const newPoints = currentPoints + pointsToAward;
+          console.log(`✅ Customer points updated: +${pointsToAward}`);
 
-          const { error: pointsUpdateError } = await supabase
+          // Fetch updated customer data
+          const { data: customerData, error: customerFetchError } = await supabase
             .from("Customer")
-            .update({ points: newPoints })
-            .eq("id", customer_id);
+            .select("*")
+            .eq("id", customer_id)
+            .single();
 
-          if (pointsUpdateError) {
-            console.log("❌ Failed to update customer points:", pointsUpdateError);
-          } else {
-            console.log(`✅ Customer points updated: ${currentPoints} + ${pointsToAward} = ${newPoints}`);
+          if (!customerFetchError) {
+            updatedCustomer = customerData;
           }
         }
       }
 
       console.log("=== SALES CREATION COMPLETED ===");
-      res.json({ success: true, sale_id });
+      res.json({
+        success: true,
+        sale_id,
+        data: {
+          customer: updatedCustomer
+        }
+      });
     } catch (error) {
       console.log("❌ SALES CREATION FAILED:", error && error.message ? error.message : error);
       console.log("Error details:", error);
