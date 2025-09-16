@@ -162,11 +162,11 @@ export function useProductSearch(
               );
               
               if (partialMatches.length > 0) {
-                results = partialMatches.slice(0, 10);
+                results = partialMatches.slice(0, 50);
               } else {
                 // Use Fuse.js for fuzzy search as last resort
                 const fuseResults = fuse.search(cleanedQuery);
-                results = fuseResults.slice(0, 10).map(result => result.item);
+                results = fuseResults.slice(0, 50).map(result => result.item);
               }
             }
           }
@@ -176,8 +176,8 @@ export function useProductSearch(
           results = data?.data ?? [];
         }
 
-        // Limit results more aggressively for performance
-        results = results.slice(0, 8); // Reduce from 10 to 8
+        // Limit results to 50 for performance
+        results = results.slice(0, 50);
         
         // Cache results
         searchCache.current.set(cacheKey, results);

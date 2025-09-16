@@ -35,6 +35,19 @@ const productEqual = (a: Product, b: Product) => {
   return Boolean(a?.barcode && b?.barcode && a.barcode === b.barcode)
 }
 
+// Generate a unique tab ID for per-tab cart isolation
+const getTabId = (): string => {
+  // Use sessionStorage to maintain tab ID across page reloads
+  if (typeof window === 'undefined') return 'default-tab'
+  
+  let tabId = sessionStorage.getItem('pos-tab-id')
+  if (!tabId) {
+    tabId = `tab-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    sessionStorage.setItem('pos-tab-id', tabId)
+  }
+  return tabId
+}
+
 export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
@@ -76,7 +89,7 @@ export const useCartStore = create<CartState>()(
         set((state) => ({
           cart: state.cart.map((item) =>
             item.id === id 
-              ? { ...item, quantity: Math.max(1, Number(quantity) || 1) } 
+              ? { ...item, quantity: Math.max(0, Number(quantity) || 0) } 
               : item
           )
         }))
@@ -125,7 +138,7 @@ export const useCartStore = create<CartState>()(
       }
     }),
     {
-      name: 'pos-cart-storage', // unique name for localStorage key
+      name: `pos-cart-storage-${getTabId()}`, // unique name per tab for localStorage key
       partialize: (state) => ({ 
         cart: state.cart, 
         lastAddedItemId: state.lastAddedItemId 

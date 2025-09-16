@@ -29,7 +29,7 @@ module.exports = (sequelize, DataTypes) => {
         },
       },
       quantity: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.DECIMAL,
         allowNull: true,
       },
       price: {
