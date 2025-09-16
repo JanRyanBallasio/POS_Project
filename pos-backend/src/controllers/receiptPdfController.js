@@ -1,4 +1,6 @@
 const puppeteer = require("puppeteer");
+const fs = require("fs");
+
 
 let browserPromise = null;
 async function tryLaunchWithCandidates(candidates, baseOpts) {
@@ -237,7 +239,7 @@ function renderHtml({ customer, cartTotal, amount, change, items, points }) {
   <body>
     <div class="paper" id="receipt">
       <div class="center">
-        <img src="http://localhost:3000/img/logo1.png" class="logo" />
+        <div class="store-name" style="font-weight:bold; font-size:16px; margin-bottom:2px; letter-spacing:1px;">YZY Store</div>
         <div class="store-sub">Eastern Slide, Tuding</div>
       </div>
       <div class="divider"></div>
@@ -288,6 +290,7 @@ function renderHtml({ customer, cartTotal, amount, change, items, points }) {
   </body>
   </html>`;
 }
+
 
 exports.generate = async function (req, res) {
   try {
