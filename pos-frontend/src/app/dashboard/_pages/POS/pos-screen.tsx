@@ -1,11 +1,14 @@
 import { useState, useEffect } from "react";
 import { CartProvider } from "@/contexts/cart-context";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 import POSright from "./components/rightColumn/index";
 import POSleft from "./components/leftColumn/index";
 
 export default function MainDashboard() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [mobileStep, setMobileStep] = useState<'products' | 'payment'>('products');
+  const isMobile = useIsMobile();
 
   // Sync React step into a global so the existing document-level keyboard handler
   // (useCartKeyboard) can detect the current POS step. Cleared on unmount.
@@ -18,6 +21,13 @@ export default function MainDashboard() {
         delete (window as any).posStep;
       } catch { }
     };
+  }, [step]);
+
+  // Reset mobile step when step changes
+  useEffect(() => {
+    if (step === 1) {
+      setMobileStep('products');
+    }
   }, [step]);
 
   // ensure scanner input in POS immediately receives focus when this page mounts
@@ -81,18 +91,61 @@ export default function MainDashboard() {
     return () => window.removeEventListener("keydown", handleCtrlB, true);
   }, []);
 
+  // Handle mobile step navigation
+  const handleMobileNext = () => {
+    if (mobileStep === 'products') {
+      setMobileStep('payment');
+    }
+  };
+
+  const handleMobileBack = () => {
+    if (mobileStep === 'payment') {
+      setMobileStep('products');
+      // Reset step to 1 when going back to products on mobile
+      setStep(1);
+    }
+  };
+
   return (
     <CartProvider>
-      <div className="flex flex-col lg:flex-row w-full h-full py-4 px-4 gap-2">
-        {/* Left side */}
-        <div className="flex-1">
-          <POSleft step={step} />
-        </div>
+      <div className={`w-full h-full ${isMobile ? 'flex flex-col' : 'flex flex-col lg:flex-row'} py-4 px-4 gap-2`}>
+        {/* Mobile Layout */}
+        {isMobile ? (
+          <>
+            {mobileStep === 'products' && (
+              <div className="flex-1 w-full min-h-0">
+                <POSleft 
+                  step={step} 
+                  isMobile={true}
+                  onMobileNext={handleMobileNext}
+                />
+              </div>
+            )}
+            {mobileStep === 'payment' && (
+              <div className="flex-1 w-full min-h-0">
+                <POSright 
+                  step={step} 
+                  setStep={setStep}
+                  isMobile={true}
+                  onMobileBack={handleMobileBack}
+                />
+              </div>
+            )}
+          </>
+        ) : (
+          /* Desktop Layout */
+          <>
+            {/* Left side */}
+            <div className="flex-1">
+              <POSleft step={step} />
+            </div>
 
-        {/* Right side (hidden on flex-col, shown only on lg+ when flex-row applies) */}
-        <div className="hidden lg:flex flex-col basis-[30%] gap-2">
-          <POSright step={step} setStep={setStep} />
-        </div>
+            {/* Right side (hidden on flex-col, shown only on lg+ when flex-row applies) */}
+            <div className="hidden lg:flex flex-col basis-[30%] gap-2">
+              <POSright step={step} setStep={setStep} />
+            </div>
+          </>
+        )}
       </div>
     </CartProvider>
   );

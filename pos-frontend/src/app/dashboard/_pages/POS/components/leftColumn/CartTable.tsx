@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Product } from "@/hooks/products/useProductApi";
 import { useCart } from "@/contexts/cart-context";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface CartItem {
   id: string;
@@ -39,6 +40,7 @@ export default function CartTable({
   disabled = false,
 }: CartTableProps) {
   const { lastAddedItemId } = useCart();
+  const isMobile = useIsMobile();
   const lastAutoSelectedId = useRef<string | null>(null);
 
   // Auto-select last added cart row
@@ -179,7 +181,7 @@ export default function CartTable({
         type="text"
         data-cart-price-input={item.id}
         value={value}
-        className="w-20 h-8 text-sm"
+        className={`${isMobile ? 'w-16' : 'w-20'} h-8 text-sm`}
         onFocus={() => {
           selectRow(item.id);
           setEditing(true);
@@ -328,7 +330,7 @@ export default function CartTable({
         type="text"
         data-cart-qty-input={itemId}
         value={inputValue}
-        className="w-16 h-8 text-sm"
+        className={`${isMobile ? 'w-12' : 'w-16'} h-8 text-sm`}
         onFocus={handleFocus}
         onChange={handleChange}
         onBlur={handleBlur}
@@ -349,6 +351,91 @@ export default function CartTable({
     );
   }
 
+  // Mobile Card Layout
+  if (isMobile) {
+    return (
+      <div className="space-y-3 p-2">
+        {cart.map((item) => {
+          const isSelected = selectedRowId === item.id;
+
+          return (
+            <div
+              key={item.id}
+              className={cn(
+                "border rounded-lg p-3 bg-white transition-all duration-200",
+                isSelected ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:border-gray-300"
+              )}
+              onClick={(e) => handleRowClick(item.id, e)}
+            >
+              {/* Product Name */}
+              <div className="mb-2">
+                <h3 className="font-medium text-sm leading-tight">
+                  {item.product.__placeholder ? (
+                    <div className="flex items-center gap-2 text-gray-500">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      <span>Fetching product…</span>
+                    </div>
+                  ) : (
+                    item.product.name
+                  )}
+                </h3>
+                <p className="text-xs text-gray-500 mt-1">
+                  Barcode: {item.product.barcode || "N/A"}
+                </p>
+              </div>
+
+              {/* Price and Quantity Row */}
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-600">Price:</span>
+                  <PriceCell item={item} />
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-600">Qty:</span>
+                  <QuantityInput
+                    value={item.quantity}
+                    onChange={(qty) => updateCartItemQuantity(item.id, qty)}
+                    onFocus={() => selectRow(item.id)}
+                    onBlur={focusSearchBar}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        (e.target as HTMLInputElement).blur();
+                        focusSearchBar();
+                      }
+                    }}
+                    disabled={disabled}
+                    itemId={item.id}
+                  />
+                  <span className="text-xs text-gray-600">
+                    {item.product.unit || "pcs"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Delete Button */}
+              <div className="mt-2 flex justify-end">
+                <button
+                  type="button"
+                  className="text-xs text-red-600 hover:underline disabled:opacity-50"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteCartItem(item.id);
+                    focusSearchBar();
+                  }}
+                  disabled={disabled}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  // Desktop Table Layout
   return (
     <Table>
       <TableHeader>

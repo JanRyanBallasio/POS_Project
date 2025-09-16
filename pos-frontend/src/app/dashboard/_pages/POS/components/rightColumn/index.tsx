@@ -10,18 +10,23 @@ import Receipt from "./Receipt";
 import AddCustomerModal from "./AddCustomerModal";
 import type { Customer } from "@/hooks/pos/rightCol/useCustomerTagging";
 import axios from "@/lib/axios";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { ArrowLeft } from "lucide-react";
 
 interface POSRightColProps {
   step: 1 | 2 | 3;
   setStep: React.Dispatch<React.SetStateAction<1 | 2 | 3>>;
+  isMobile?: boolean;
+  onMobileBack?: () => void;
 }
 
-export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: (s: 1 | 2 | 3) => void }) {
+export default function POSRight({ step, setStep, isMobile = false, onMobileBack }: POSRightColProps) {
   const { cart, cartTotal, clearCart } = useCart();
   const [amount, setAmount] = useState("");
   const [change, setChange] = useState(0);
   const [addCustomerOpen, setAddCustomerOpen] = useState(false);
   const [isProcessingSale, setIsProcessingSale] = useState(false);
+  const isMobileDevice = useIsMobile();
 
   useEffect(() => {
     const amountValue = parseFloat(amount) || 0;
@@ -410,15 +415,28 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
 
   return (
     <Card className="h-full flex flex-col" onClick={handleCardClick}>
-      <CardContent className="flex-1 flex flex-col p-4 pb-0">
-        <h1 className="text-xl font-medium">Total</h1>
-        <div className="w-full py-3 mb-2">
-          <div className="flex justify-between text-5xl font-medium">
+      <CardContent className={`${isMobile ? 'p-3' : 'p-4'} flex-1 flex flex-col pb-0 `}>
+        {/* Mobile Back Button */}
+        {isMobile && step === 1 && (
+          <div className="mb-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onMobileBack}
+              className=" "
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+          </div>
+        )}
+        <h1 className={`${isMobile ? 'text-lg' : 'text-xl'} font-medium`}>Total</h1>
+        <div className={`w-full ${isMobile ? 'py-2' : 'py-3'} mb-2`}>
+          <div className={`flex justify-between ${isMobile ? 'text-3xl' : 'text-5xl'} font-medium`}>
             <h1>₱</h1>
             <h1>{cartTotal.toFixed(2)}</h1>
           </div>
         </div>
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-h-0">
           {step === 1 && (
             <>
               <Calculator
@@ -428,7 +446,7 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
                 cartIsEmpty={cart.length === 0}
               />
               <div className="flex-1" />
-              <CardFooter className="px-4 pb-4 pt-4 flex flex-col gap-3">
+              <CardFooter className="px-0 pb-4 pt-4 flex flex-col gap-3">
                 <Button
                   className="w-full h-14 text-xl font-medium"
                   onClick={handleNext}
@@ -463,15 +481,27 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
                 onOpenChange={setAddCustomerOpen}
                 onCustomerAdded={handleCustomerAdded}
               />
-              <CardFooter className="px-4 pb-4 pt-4 flex flex-col gap-3">
-                <Button
-                  className="w-full h-14 text-xl font-medium"
-                  variant="outline"
-                  onClick={() => setStep(1)}
-                  disabled={isProcessingSale}
-                >
-                  Back
-                </Button>
+              <CardFooter className="px-0 pb-4 pt-4 flex flex-col gap-3">
+                {isMobile ? (
+                  <Button
+                    className="w-full h-14 text-xl font-medium"
+                    variant="outline"
+                    onClick={onMobileBack}
+                    disabled={isProcessingSale}
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back
+                  </Button>
+                ) : (
+                  <Button
+                    className="w-full h-14 text-xl font-medium"
+                    variant="outline"
+                    onClick={() => setStep(1)}
+                    disabled={isProcessingSale}
+                  >
+                    Back
+                  </Button>
+                )}
                 <Button
                   className="w-full h-14 text-xl font-medium"
                   onClick={() => void finalizeSale()}
@@ -485,7 +515,7 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
           {step === 3 && (
             <>
               <Receipt selectedCustomer={selectedCustomer} cartTotal={cartTotal} />
-              <CardFooter className="px-4 pb-4 pt-4 flex flex-col gap-2">
+              <CardFooter className="px-0 pb-4 pt-4 flex flex-col gap-2">
                 <Button
                   className="w-full h-14 text-xl font-medium"
                   onClick={handlePrintReceipt}

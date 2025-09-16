@@ -67,7 +67,7 @@ export default function Calculator({
   };
 
   // Add click handler to focus input when user clicks on it
-  const handleInputClick = (e: React.MouseEvent<HTMLInputElement>) => {
+  const handleInputClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (cashInputRef.current) {
       cashInputRef.current.focus();
@@ -76,11 +76,11 @@ export default function Calculator({
 
   return (
     <>
-      <Label className="text-lg mb-2 font-medium">Cash</Label>
+      <Label className="text-base lg:text-lg mb-2 font-medium">Cash</Label>
       <Input
         ref={cashInputRef}
         data-pos-cash-input="true"
-        className="h-20 !text-5xl text-right font-medium mb-6 border-2 border-gray-300 shadow-sm placeholder:text-5xl placeholder:font-medium placeholder:text-gray-400"
+        className="h-12 lg:h-24 text-2xl lg:text-6xl text-right font-medium mb-6 border-2 border-gray-300 shadow-sm placeholder:text-2xl lg:placeholder:text-6xl placeholder:font-medium placeholder:text-gray-400"
         value={amount}
         onChange={handleInputChange}
         onKeyDown={handleInputKeyDown}
