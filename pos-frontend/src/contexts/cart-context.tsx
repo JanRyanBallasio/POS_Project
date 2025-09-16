@@ -286,8 +286,11 @@ export function useCartKeyboard(selectedRowId: string | null) {
           // Focus the quantity input for the selected item
           const qtyInput = document.querySelector<HTMLInputElement>(`[data-cart-qty-input="${id}"]`);
           if (qtyInput) {
-            qtyInput.focus();
-            qtyInput.select();
+            // Use requestAnimationFrame to ensure focus happens after any competing handlers
+            requestAnimationFrame(() => {
+              qtyInput.focus();
+              qtyInput.select();
+            });
           }
         }
       } else if (e.ctrlKey && key.toLowerCase() === "d") {

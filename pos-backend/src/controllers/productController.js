@@ -513,7 +513,7 @@ const productController = {
         .select("id, name, barcode, price, quantity, category_id")
         .or(`name.ilike.%${term}%,barcode.ilike.%${term}%`)
         .neq("is_deleted", true)
-        .limit(20);
+        .limit(50);
 
       // Order by trigram similarity if pg_trgm is installed
       query = query.order("name", {

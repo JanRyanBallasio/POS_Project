@@ -229,11 +229,6 @@ export default function CustomerSearch({
                         Auto-selecting...
                       </span>
                     )}
-                    {selectedIndex === index && (
-                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
-                        Selected
-                      </span>
-                    )}
                   </span>
                   <span className="text-xs text-gray-500 ml-2">
                     {customer.points} pts

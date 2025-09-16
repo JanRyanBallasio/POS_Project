@@ -152,11 +152,6 @@ export default function ProductSearch({
                 <div className="min-w-0">
                   <div className="font-medium break-words whitespace-normal flex items-center gap-2">
                     {product.name}
-                    {isAutoSelecting && !isScannerInputRef?.current && (
-                      <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
-                        Auto-selecting...
-                      </span>
-                    )}
                   </div>
                   <div className="text-sm text-gray-500">
                     Barcode: {product.barcode}
