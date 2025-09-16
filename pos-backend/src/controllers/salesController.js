@@ -33,7 +33,7 @@ const salesController = {
     try {
       console.log("=== SALES CREATION STARTED ===");
       console.log("Request body:", JSON.stringify(req.body, null, 2));
-      
+
       const { customer_id, total_purchase, items } = req.body;
 
       // Validate items array
@@ -57,7 +57,7 @@ const salesController = {
         console.log("❌ Sale creation error:", saleError);
         throw saleError;
       }
-      
+
       const sale_id = saleData.id;
       console.log("✅ Sale created with ID:", sale_id);
 
@@ -80,38 +80,38 @@ const salesController = {
         console.log("❌ Sale items creation error:", itemsError);
         throw itemsError;
       }
-      
+
       console.log("✅ Sale items created successfully");
 
       // 3. UPDATE PRODUCT QUANTITIES
       console.log("🔄 Starting product quantity updates...");
-      
+
       const updatePromises = items.map(async (item) => {
         // Get current quantity and update in single query using RPC
-        const { error: updateError } = await supabase
-          .rpc('decrease_product_quantity', {
-            product_id_param: item.product_id,
-            quantity_to_subtract: item.quantity
-          });
+        // const { error: updateError } = await supabase
+        //   .rpc('decrease_product_quantity', {
+        //     product_id_param: item.product_id,
+        //     quantity_to_subtract: item.quantity
+        //   });
 
-        if (updateError) {
-          // Fallback to manual update if RPC fails
-          const { data: currentProduct, error: fetchError } = await supabase
+        // if (updateError) {
+        // Fallback to manual update if RPC fails
+        const { data: currentProduct, error: fetchError } = await supabase
+          .from("Products")
+          .select("quantity")
+          .eq("id", item.product_id)
+          .single();
+
+        if (!fetchError) {
+          const currentQuantity = Number(currentProduct.quantity) || 0;
+          const newQuantity = Math.max(0, currentQuantity - item.quantity);
+
+          await supabase
             .from("Products")
-            .select("quantity")
-            .eq("id", item.product_id)
-            .single();
-
-          if (!fetchError) {
-            const currentQuantity = Number(currentProduct.quantity) || 0;
-            const newQuantity = Math.max(0, currentQuantity - item.quantity);
-            
-            await supabase
-              .from("Products")
-              .update({ quantity: newQuantity })
-              .eq("id", item.product_id);
-          }
+            .update({ quantity: newQuantity })
+            .eq("id", item.product_id);
         }
+        // }
       });
 
       // Execute all updates in parallel
@@ -120,7 +120,7 @@ const salesController = {
       // 4. AWARD CUSTOMER POINTS (₱1000 = 10 points)
       if (customer_id && total_purchase > 0) {
         console.log("🎯 Awarding customer points...");
-        
+
         // 1000 = 10 points → 1 point = 100.
         // Allow decimals: points = total_purchase / 100
         const pointsToAwardRaw = Number(parseFloat(total_purchase));
@@ -140,7 +140,7 @@ const salesController = {
         } else {
           const currentPoints = Number(currentCustomer.points) || 0;
           const newPoints = currentPoints + pointsToAward;
-          
+
           const { error: pointsUpdateError } = await supabase
             .from("Customer")
             .update({ points: newPoints })
