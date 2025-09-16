@@ -1,5 +1,4 @@
 const puppeteer = require("puppeteer");
-const fs = require("fs");
 
 let browserPromise = null;
 async function tryLaunchWithCandidates(candidates, baseOpts) {
@@ -216,7 +215,7 @@ function renderHtml({ customer, cartTotal, amount, change, items, points }) {
         padding: 0 10px 20px 10px; /* top padding removed, bottom added for feed */
       }
       .center { text-align:center; }
-      .store-name { font-weight:bold; font-size:16px; margin-bottom:2px; letter-spacing:1px;}
+      .logo { margin: 0 auto 5px auto; display:block; max-width:50px; }
       .store-sub { font-size:11px; color:#444; margin-bottom:8px; }
       .divider { border-bottom: 1px dashed #444; margin:8px 0; }
       .row { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; }
@@ -238,7 +237,7 @@ function renderHtml({ customer, cartTotal, amount, change, items, points }) {
   <body>
     <div class="paper" id="receipt">
       <div class="center">
-        <div class="store-name">YZY Store</div>
+        <img src="http://localhost:3000/img/logo1.png" class="logo" />
         <div class="store-sub">Eastern Slide, Tuding</div>
       </div>
       <div class="divider"></div>
@@ -261,7 +260,7 @@ function renderHtml({ customer, cartTotal, amount, change, items, points }) {
         <div class="item-row">
           <div class="col-desc">${escapeHtml(it.desc)}</div>
           <div class="col-qty">${escapeHtml(String(it.qty || 0))}</div>
-          <div class="col-prc">${Number(it.price || it.amount / (it.qty || 1) || 0).toFixed(2)}</div>
+          <div class="col-prc">${Number(it.price || it.amount/(it.qty||1)||0).toFixed(2)}</div>
           <div class="col-amt">${Number(it.amount || 0).toFixed(2)}</div>
         </div>
       `).join("")}
@@ -307,11 +306,11 @@ exports.generate = async function (req, res) {
       points: customerPoints,
       items: Array.isArray(raw.items)
         ? raw.items.map((it) => ({
-          desc: it && it.desc ? String(it.desc) : "",
-          qty: Number(it.qty || 0),
-          price: typeof it.price === "number" ? it.price : (Number(it.amount || 0) / Number(it.qty || 1)),
-          amount: Number(it.amount || 0),
-        }))
+            desc: it && it.desc ? String(it.desc) : "",
+            qty: Number(it.qty || 0),
+            price: typeof it.price === "number" ? it.price : (Number(it.amount || 0) / Number(it.qty || 1)),
+            amount: Number(it.amount || 0),
+          }))
         : [],
     };
 
@@ -321,19 +320,14 @@ exports.generate = async function (req, res) {
     const html = renderHtml(data);
 
     const browser = await getBrowser();
-    const page = await browser.newPage();
+    const page = await (await browser).newPage();
 
-    // Set timeout to prevent hanging
-    await page.setDefaultTimeout(5000);
-
+    // viewport width roughly equals 80mm at 96dpi (1mm ≈ 3.78px)
     const widthPx = Math.round(80 * 3.78);
     await page.setViewport({ width: widthPx, height: 800 });
 
-    // OPTIMIZATION: Use domcontentloaded instead of networkidle0
-    await page.setContent(html, {
-      waitUntil: "domcontentloaded", // Much faster than networkidle0
-      timeout: 3000
-    });
+    // render and wait for fonts/resources
+    await page.setContent(html, { waitUntil: "networkidle0" });
 
     // measure the .paper element height in CSS pixels
     const paperHeightPx = await page.evaluate(() => {
@@ -372,7 +366,7 @@ exports.generate = async function (req, res) {
     res.setHeader("Access-Control-Expose-Headers", "Content-Disposition,Content-Length");
     return res.send(pdfBuffer);
   } catch (err) {
-    console.error("PDF generation error:", err);
+    console.error("PDF generation error:", err && err.message ? err.message : err);
     return res.status(500).json({ error: "PDF generation failed", details: String(err) });
   }
 }
