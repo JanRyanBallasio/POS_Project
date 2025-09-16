@@ -1,4 +1,5 @@
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/cart-context";
 import { useCartSelection } from "@/hooks/pos/leftCol/useCartSelection";
 import { useProducts } from "@/hooks/global/fetching/useProducts";
@@ -23,9 +24,11 @@ import { productApi } from "@/hooks/products/useProductApi";
 
 interface POSLeftColProps {
   step: 1 | 2 | 3;
+  isMobile?: boolean;
+  onMobileNext?: () => void;
 }
 
-export default function POSLeftCol({ step }: POSLeftColProps) {
+export default function POSLeftCol({ step, isMobile = false, onMobileNext }: POSLeftColProps) {
   const { selectedRowId, selectRow, clearSelection } = useCartSelection<string>();
   const { products } = useProducts();
   const {
@@ -35,6 +38,7 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
     addProductToCart,
     updateCartItemPrice,
     deleteCartItem,
+    cartTotal,
   } = useCart();
 
   const { setOpen, setBarcode } = useProductModal();
@@ -256,7 +260,7 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
   return (
     <div className="relative w-full h-full">
       <Card className="w-full h-full flex flex-col">
-        <CardContent className="p-6 flex-1 flex flex-col min-h-0">
+        <CardContent className={`${isMobile ? 'p-4' : 'p-6'} flex-1 flex flex-col min-h-0`}>
           <ProductSearch
             inputRef={productSearchInputRef}
             searchQuery={searchQuery}
@@ -275,7 +279,7 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
               Searching...
             </div>
           )}
-          <div className="rounded-md border flex-1 overflow-auto">
+          <div className={`rounded-md border flex-1 overflow-auto ${isMobile ? 'max-h-96' : ''}`}>
             <CartTable
               cart={cart}
               selectedRowId={selectedRowId}
@@ -287,7 +291,21 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
             />
           </div>
         </CardContent>
+        
+        {/* Mobile Next Button */}
+        {isMobile && (
+          <CardFooter className=" ">
+            <Button
+              className="w-full h-12 text-lg font-medium"
+              onClick={onMobileNext}
+              disabled={cart.length === 0}
+            >
+              Next ({cart.length} item{cart.length !== 1 ? 's' : ''})
+            </Button>
+          </CardFooter>
+        )}
       </Card>
+      
       <ProductRegisterModal />
       <AlertDialog open={showRegisterDialog} onOpenChange={setShowRegisterDialog}>
         <AlertDialogContent className="max-w-md">
