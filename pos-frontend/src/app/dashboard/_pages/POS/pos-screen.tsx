@@ -43,7 +43,7 @@ export default function MainDashboard() {
     };
   }, []);
 
-  // NEW: listen for Ctrl+Enter and dispatch a focus event for the cash input
+  // Handle Ctrl+Enter and dispatch a focus event for the cash input
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -58,6 +58,27 @@ export default function MainDashboard() {
 
     window.addEventListener("keydown", handleCtrlEnter);
     return () => window.removeEventListener("keydown", handleCtrlEnter);
+  }, []);
+
+  // Handle Ctrl+B for step back functionality with event capture
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleCtrlB = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key.toLowerCase() === "b") {
+        // Prevent browser bold shortcut and sidebar collapse
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        
+        // Dispatch the step back event
+        window.dispatchEvent(new Event("pos:step-1-back"));
+      }
+    };
+
+    // Use capture phase to ensure this runs before other listeners
+    window.addEventListener("keydown", handleCtrlB, true);
+    return () => window.removeEventListener("keydown", handleCtrlB, true);
   }, []);
 
   return (

@@ -200,6 +200,145 @@ export default function CartTable({
     );
   };
 
+  // Add this custom quantity input component before the main CartTable component
+  const QuantityInput: React.FC<{
+    value: number;
+    onChange: (value: number) => void;
+    onFocus: () => void;
+    onBlur: () => void;
+    onKeyDown: (e: React.KeyboardEvent) => void;
+    disabled?: boolean;
+    itemId: string;
+  }> = ({ value, onChange, onFocus, onBlur, onKeyDown, disabled, itemId }) => {
+    const [inputValue, setInputValue] = useState<string>(value.toString());
+    const [isEditing, setIsEditing] = useState(false);
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    // Update input value when prop value changes (but not when user is editing)
+    useEffect(() => {
+      if (!isEditing) {
+        setInputValue(value.toString());
+      }
+    }, [value, isEditing]);
+
+    // Prevent focus loss from external sources while editing
+    useEffect(() => {
+      if (isEditing && inputRef.current) {
+        const handleFocusLoss = (e: FocusEvent) => {
+          // If focus is moving to another input, allow it
+          const target = e.relatedTarget as HTMLElement;
+          if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
+            return;
+          }
+          
+          // If focus is being lost to the body or null, prevent it and refocus
+          if (!target || target === document.body) {
+            e.preventDefault();
+            setTimeout(() => {
+              if (inputRef.current && isEditing) {
+                inputRef.current.focus();
+              }
+            }, 0);
+          }
+        };
+
+        const input = inputRef.current;
+        input.addEventListener('blur', handleFocusLoss);
+        
+        return () => {
+          input.removeEventListener('blur', handleFocusLoss);
+        };
+      }
+    }, [isEditing]);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const newValue = e.target.value;
+      
+      // Allow empty string, numbers, and valid decimal patterns
+      if (newValue === '' || newValue === '.' || /^\d*\.?\d*$/.test(newValue)) {
+        setInputValue(newValue);
+        // Don't call onChange here - only update on commit to prevent focus loss
+      }
+    };
+
+    const handleFocus = () => {
+      setIsEditing(true);
+      onFocus();
+    };
+
+    const handleBlur = () => {
+      setIsEditing(false);
+      
+      let finalValue: number;
+      let displayValue: string;
+      
+      // Validate and normalize the value on blur
+      if (inputValue === '' || inputValue === '.') {
+        finalValue = 1;
+        displayValue = '1';
+      } else {
+        const numValue = parseFloat(inputValue);
+        if (isNaN(numValue) || numValue <= 0) {
+          finalValue = 1;
+          displayValue = '1';
+        } else {
+          finalValue = numValue;
+          // Format to max 2 decimals
+          displayValue = numValue % 1 === 0 ? numValue.toString() : numValue.toFixed(2).replace(/\.?0+$/, '');
+        }
+      }
+      
+      // Update both the display and the actual value
+      setInputValue(displayValue);
+      onChange(finalValue);
+      
+      // Call the original onBlur handler
+      onBlur();
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+      // Handle Enter key
+      if (e.key === "Enter") {
+        handleBlur();
+        return;
+      }
+      
+      // Allow: backspace, delete, tab, escape, decimal point, and numbers
+      if (
+        [8, 9, 27, 46, 110, 190].indexOf(e.keyCode) !== -1 ||
+        // Allow Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+        (e.keyCode === 65 && e.ctrlKey === true) ||
+        (e.keyCode === 67 && e.ctrlKey === true) ||
+        (e.keyCode === 86 && e.ctrlKey === true) ||
+        (e.keyCode === 88 && e.ctrlKey === true) ||
+        // Allow home, end, left, right, up, down arrows
+        (e.keyCode >= 35 && e.keyCode <= 40) ||
+        // Allow numbers and decimal point
+        (e.keyCode >= 48 && e.keyCode <= 57) ||
+        (e.keyCode >= 96 && e.keyCode <= 105)
+      ) {
+        return;
+      }
+      e.preventDefault();
+    };
+
+    return (
+      <Input
+        ref={inputRef}
+        type="text"
+        data-cart-qty-input={itemId}
+        value={inputValue}
+        className="w-16 h-8 text-sm"
+        onFocus={handleFocus}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
+        disabled={disabled}
+        placeholder="1"
+      />
+    );
+  };
+
   if (cart.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center w-full h-full">
@@ -263,17 +402,10 @@ export default function CartTable({
 
               <TableCell className="py-3 px-4">
                 <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    min={1}
-                    data-cart-qty-input={item.id}
+                  <QuantityInput
                     value={item.quantity}
-                    className="w-16 h-8 text-sm"
+                    onChange={(qty) => updateCartItemQuantity(item.id, qty)}
                     onFocus={() => selectRow(item.id)}
-                    onChange={(e) => {
-                      const qty = Math.max(1, Number(e.target.value) || 1);
-                      updateCartItemQuantity(item.id, qty);
-                    }}
                     onBlur={focusSearchBar}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
@@ -282,9 +414,10 @@ export default function CartTable({
                       }
                     }}
                     disabled={disabled}
+                    itemId={item.id}
                   />
                   <span className="text-sm text-gray-600 font-medium">
-                    {item.product.unit || 'pcs'}
+                    {item.product.unit || "pcs"}
                   </span>
                 </div>
               </TableCell>

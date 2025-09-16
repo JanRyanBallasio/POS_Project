@@ -4,7 +4,7 @@ import { useCartSelection } from "@/hooks/pos/leftCol/useCartSelection";
 import { useProducts } from "@/hooks/global/fetching/useProducts";
 import { useProductSearch } from "@/hooks/pos/leftCol/useProductsSearch";
 import { useCartKeyboard } from "@/contexts/cart-context";
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import CartTable from "./CartTable";
 import ProductSearch from "./ProductSearch";
 import { useProductModal } from "@/contexts/productRegister-context";
@@ -49,18 +49,27 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
 
   const productSearchInputRef = useRef<HTMLInputElement>(null!);
 
- const {
-  searchQuery,
-  searchResults,
-  showSearchResults,
-  handleSearchChange,
-  clearSearch,
-  isScannerInputRef,
-  isLoading,
-} = useProductSearch(handleSearchSelect, products, handleScanAndAddToCart); // Add the callback
+  const {
+    searchQuery,
+    searchResults,
+    showSearchResults,
+    handleSearchChange,
+    clearSearch,
+    isScannerInputRef,
+    isLoading,
+  } = useProductSearch(handleSearchSelect, products, handleScanAndAddToCart);
 
   const [showRegisterDialog, setShowRegisterDialog] = useState(false);
   const [unregisteredBarcode, setUnregisteredBarcode] = useState<string | null>(null);
+
+  // Utility: focus search bar (same as in CartTable)
+  const focusSearchBar = useCallback(() => {
+    requestAnimationFrame(() => {
+      const ps = document.querySelector<HTMLInputElement>('[data-product-search="true"]');
+      ps?.focus();
+      ps?.select?.();
+    });
+  }, []);
 
   // Add effect to handle product added event
   useEffect(() => {
@@ -297,6 +306,10 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
               onClick={() => {
                 setShowRegisterDialog(false);
                 setUnregisteredBarcode(null);
+                // Focus search bar after modal closes
+                setTimeout(() => {
+                  focusSearchBar();
+                }, 100); // Small delay to ensure modal is fully closed
               }}
               className="px-4 py-2"
             >
