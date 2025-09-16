@@ -113,59 +113,23 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
         })),
       };
 
-      // Prefer the updated customer returned from POST /sales (backend is authoritative).
       const resp = await axios.post('/sales', salesPayload);
       const payload = resp?.data;
-      let updatedCustomer: any = null;
 
-      // common response shapes:
-      // { success: true, data: { customer: { ... } } }
-      // { success: true, customer: { ... } }
-      // { success: true, data: { ...updatedCustomer... } }
-      if (payload) {
-        if (payload.data && payload.data.customer) {
-          updatedCustomer = payload.data.customer;
-        } else if (payload.customer) {
-          updatedCustomer = payload.customer;
-        } else if (payload.data && payload.data.id) {
-          // maybe backend returned customer directly as data
-          updatedCustomer = payload.data;
-        } else if (payload.data && payload.data.newPoints !== undefined && selectedCustomer?.id) {
-          // backend might return summary fields; try to find customer in list later
-          updatedCustomer = null;
-        }
-      }
-
-      if (updatedCustomer && updatedCustomer.id) {
-        // update local cache (replace existing or append)
+      // OPTIMIZATION: Simplify customer update logic
+      if (payload?.data?.customer) {
         setAllCustomers((prev: any[] = []) => {
-          const idx = prev.findIndex((p) => String(p.id) === String(updatedCustomer.id));
+          const idx = prev.findIndex((p) => String(p.id) === String(payload.data.customer.id));
           if (idx >= 0) {
             const copy = [...prev];
-            copy[idx] = updatedCustomer;
+            copy[idx] = payload.data.customer;
             return copy;
           }
-          return [...prev, updatedCustomer];
+          return [...prev, payload.data.customer];
         });
-        // set selected customer to backend-updated object (authoritative)
-        selectCustomer(updatedCustomer);
-      } else {
-        // fallback: refresh entire customer list if backend didn't return the customer object
-        try {
-          const customerResp = await axios.get('/customers');
-          if (customerResp.data?.success && Array.isArray(customerResp.data.data)) {
-            setAllCustomers(customerResp.data.data);
-            if (selectedCustomer?.id) {
-              const updated = customerResp.data.data.find((c: any) => String(c.id) === String(selectedCustomer.id));
-              if (updated) selectCustomer(updated);
-            }
-          }
-        } catch (err) {
-          console.warn('Failed to refresh customer data after finalizing sale (fallback):', err);
-        }
+        selectCustomer(payload.data.customer);
       }
 
-      // Move to receipt view so user sees updated points
       setStep(3);
     } catch (err: any) {
       const errorMessage = err.response?.data?.error || err.message || "Unknown error";
@@ -174,6 +138,7 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
       setIsProcessingSale(false);
     }
   }, [cart, selectedCustomer, cartTotal, setAllCustomers, selectCustomer, setStep, isProcessingSale]);
+
 
   // NEW: completeTransaction (close receipt) — clear cart/customer and reset UI
   const completeTransaction = useCallback(() => {
@@ -408,28 +373,28 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
     const handleEnterKey = (e: KeyboardEvent) => {
       // Only handle Enter in Steps 2 and 3
       if (step !== 2 && step !== 3) return;
-      
+
       // Don't handle Enter if customer search is active
       if ((window as any).customerSearchActive) return;
-      
+
       // Don't handle Enter if we're processing
       if (isProcessingSale) return;
-      
+
       // Only handle Enter if no modifier keys are pressed
       if (e.ctrlKey || e.shiftKey || e.altKey) return;
-      
+
       // Check if we're focused on an input field
       const activeElement = document.activeElement as HTMLElement;
       if (activeElement && (
-        activeElement.tagName === 'INPUT' || 
+        activeElement.tagName === 'INPUT' ||
         activeElement.tagName === 'TEXTAREA' ||
         activeElement.contentEditable === 'true'
       )) {
         return;
       }
-      
+
       e.preventDefault();
-      
+
       if (step === 2) {
         // In Step 2, finish the transaction (finalize sale)
         void finalizeSale();
@@ -469,7 +434,7 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
                   onClick={handleNext}
                   disabled={cart.length === 0 || !amount || parseFloat(amount) < cartTotal}
                 >
-                  Next 
+                  Next
                 </Button>
               </CardFooter>
             </>
@@ -512,7 +477,7 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
                   onClick={() => void finalizeSale()}
                   disabled={isProcessingSale}
                 >
-                  Finish Transaction 
+                  Finish Transaction
                 </Button>
               </CardFooter>
             </>
@@ -534,7 +499,7 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
                   onClick={completeTransaction}
                   disabled={isProcessingSale}
                 >
-                  Close 
+                  Close
                 </Button>
               </CardFooter>
             </>
