@@ -140,7 +140,7 @@ function renderHtml({ customer, cartTotal, amount, change, items, points }) {
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <style>
-      @page { size: 80mm auto; margin: 0; }
+      @page { size: 82mm auto; margin: 0; }
       html,body { margin:0; padding:0; -webkit-print-color-adjust: exact; }
       body {
         font-family: 'Courier New', Courier, monospace;
@@ -150,21 +150,21 @@ function renderHtml({ customer, cartTotal, amount, change, items, points }) {
       }
       .paper {
         box-sizing: border-box;
-        width: 80mm;
-        padding: 0 10px 20px 10px; /* top padding removed, bottom added for feed */
+        width: 82mm;
+        padding: 0 12px 20px 12px; /* Increased side padding for full width */
       }
       .center { text-align:center; }
       .logo { margin: 0 auto 5px auto; display:block; max-width:50px; }
       .store-sub { font-size:11px; color:#444; margin-bottom:8px; }
       .divider { border-bottom: 1px dashed #444; margin:8px 0; }
       .row { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; }
-      .label { width:90px; font-weight:bold; color:#111; font-size:13px; }
+      .label { width:100px; font-weight:bold; color:#111; font-size:13px; } /* Increased label width */
       .value { flex:1; text-align:right; color:#111; font-size:13px; word-break:break-word; }
       .table-header { display:flex; font-weight:bold; font-size:13px; margin-bottom:2px; letter-spacing:1px;}
-      .col-desc { flex:2.5; text-align:left; }
-      .col-qty { flex:0.7; text-align:right; }
-      .col-prc { flex:1; text-align:right; }
-      .col-amt { flex:1; text-align:right; }
+      .col-desc { flex:3; text-align:left; } /* Increased description column */
+      .col-qty { flex:0.8; text-align:right; } /* Slightly increased quantity column */
+      .col-prc { flex:1.2; text-align:right; } /* Increased price column */
+      .col-amt { flex:1.2; text-align:right; } /* Increased amount column */
       .item-row { display:flex; font-size:13px; margin-bottom:8px; }
       .total-row { display:flex; justify-content:flex-end; margin-top:8px; font-weight:bold; font-size:14px; }
       .footer { text-align:center; margin-top:10px; font-size:12px; font-weight:bold; color:#111; }
@@ -262,14 +262,17 @@ exports.generate = async function (req, res) {
     const browser = await getBrowser();
     const page = await (await browser).newPage();
 
-    // viewport width roughly equals 80mm at 96dpi (1mm ≈ 3.78px)
-    const widthPx = Math.round(80 * 3.78);
-    await page.setViewport({ width: widthPx, height: 800 });
+    // Dynamic viewport height based on number of items
+    const estimatedHeight = Math.max(800, data.items.length * 25 + 400); // 25px per item + 400px for headers/footers
+    
+    // viewport width for 82mm at 203 DPI (1mm ≈ 7.99px)
+    const widthPx = Math.round(82 * 7.99);
+    await page.setViewport({ width: widthPx, height: estimatedHeight });
 
     // render and wait for fonts/resources
     await page.setContent(html, { waitUntil: "networkidle0" });
 
-    // measure the .paper element height in CSS pixels
+    // measure the actual .paper element height in CSS pixels
     const paperHeightPx = await page.evaluate(() => {
       const el = document.getElementById('receipt') || document.querySelector('.paper') || document.body;
       const rect = el.getBoundingClientRect();
@@ -279,20 +282,23 @@ exports.generate = async function (req, res) {
       return Math.ceil(rect.height + mt + mb);
     });
 
-    // convert px -> mm (assuming 96dpi)
-    const pxToMm = 25.4 / 96;
-    let heightMm = Math.ceil(paperHeightPx * pxToMm) + 2; // small padding to avoid clipping
+    // convert px -> mm for 203 DPI printer
+    const pxToMm = 25.4 / 203;
+    let heightMm = Math.ceil(paperHeightPx * pxToMm) + 5; // Extra padding for thermal printer
 
-    // clamp size
+    // Dynamic height limits based on content
     const MIN_HEIGHT_MM = 40;
-    const MAX_HEIGHT_MM = 4000;
+    const MAX_HEIGHT_MM = Math.max(4000, data.items.length * 8 + 200); // 8mm per item + 200mm for headers
+    
     if (heightMm < MIN_HEIGHT_MM) heightMm = MIN_HEIGHT_MM;
     if (heightMm > MAX_HEIGHT_MM) heightMm = MAX_HEIGHT_MM;
 
+    console.log(`Receipt: ${data.items.length} items, ${heightMm}mm height`); // Debug info
+
     const pdfBuffer = await page.pdf({
       printBackground: true,
-      width: "80mm",
-      height: `${heightMm}mm`,
+      width: "82mm",
+      height: `${heightMm}mm`, // This will be different for each receipt!
       margin: { top: "0mm", bottom: "0mm", left: "0mm", right: "0mm" },
     });
 
@@ -302,7 +308,6 @@ exports.generate = async function (req, res) {
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
     res.setHeader("Content-Length", Buffer.byteLength(pdfBuffer));
-    // expose Content-Disposition so browsers on other origins can read filename if needed
     res.setHeader("Access-Control-Expose-Headers", "Content-Disposition,Content-Length");
     return res.send(pdfBuffer);
   } catch (err) {
