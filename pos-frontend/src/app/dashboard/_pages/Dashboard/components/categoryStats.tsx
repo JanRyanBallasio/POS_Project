@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import useSWR from 'swr'
-import { CalendarIcon, ChevronDown, ChevronUp, History } from 'lucide-react'
+import { CalendarIcon, ChevronDown, ChevronUp, History, List } from 'lucide-react'
 import type { DateRange } from 'react-day-picker'
 import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts'
 import axios from "@/lib/axios"
@@ -29,12 +29,46 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Skeleton } from '@/components/ui/skeleton'
 
-type SaleItem = {
+// Manila offset in ms
+const MANILA_OFFSET_MS = 8 * 60 * 60 * 1000
+
+// Return UTC ISO that corresponds to Manila 00:00:00.000 for the provided date (inclusive start).
+// Caller should pass a Date representing the selected local day (from calendar).
+function manilaDayStartUTCiso(d: Date) {
+  const manilaLocal = new Date(d.getTime() + MANILA_OFFSET_MS)
+  const y = manilaLocal.getUTCFullYear()
+  const m = manilaLocal.getUTCMonth()
+  const day = manilaLocal.getUTCDate()
+  const manilaMidnightUTCms = Date.UTC(y, m, day, 0, 0, 0) - MANILA_OFFSET_MS
+  return new Date(manilaMidnightUTCms).toISOString() // inclusive start
+}
+
+// Return UTC ISO for Manila next-day 00:00:00.000 (exclusive end).
+// Use this as `to` so backend can use created_at < to and include the whole last Manila day.
+function manilaNextDayStartUTCiso(d: Date) {
+  const manilaLocal = new Date(d.getTime() + MANILA_OFFSET_MS)
+  const y = manilaLocal.getUTCFullYear()
+  const m = manilaLocal.getUTCMonth()
+  const day = manilaLocal.getUTCDate()
+  const manilaMidnightUTCms = Date.UTC(y, m, day, 0, 0, 0) - MANILA_OFFSET_MS
+  const nextMidnight = manilaMidnightUTCms + 24 * 60 * 60 * 1000
+  return new Date(nextMidnight).toISOString() // exclusive end
+}
+
+type CategoryAnalytics = {
   category: string
-  quantity: number
-  total_sales: number  // Add this field
-  last_purchase: string
-  unit?: string
+  total_sales: number
+  total_items: number
+}
+
+type CategoryAnalyticsResponse = {
+  salesTotals: Array<{
+    sale_date: string
+    total_sales: number
+    total_items: number
+    total_transactions: number
+  }>
+  categoryAnalytics: CategoryAnalytics[]
 }
 
 type Product = {
@@ -42,11 +76,11 @@ type Product = {
   qty: number
   price: number
   unit?: string
-  last_purchase?: string // Add this property
-  total?: number // Add this property too
+  last_purchase?: string
+  total?: number
 }
 
-type ChartData = SaleItem
+type ChartData = CategoryAnalytics
 
 const chartConfig: ChartConfig = {
   total_sales: {
@@ -55,314 +89,222 @@ const chartConfig: ChartConfig = {
   }
 }
 
-
 const fetcher = async (url: string) => {
   const response = await axios.get(url)
   return response.data?.data || response.data || []
 }
 
-// Fetch products to get unit information
-const productsFetcher = async () => {
-  const response = await axios.get('/products?limit=all')
-  return response.data?.data || response.data || []
-}
-
-export default function ProductStats() {
+export default function CategoryStats() {
   const today = new Date()
   const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
-
   const [range, setRange] = useState<DateRange | undefined>({
     from: startOfMonth,
     to: today
   })
-  // Change the default sort order from 'desc' to 'recent':
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | 'recent'>('recent')
   
-  // ADD: Move these state declarations here
+  // NEW: Add sorting state for category analytics
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | 'normal'>('normal')
+  
+  // State for dialog
   const [open, setOpen] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [products, setProducts] = useState<Product[]>([])
   const [loadingProducts, setLoadingProducts] = useState(false)
-  // Also change the table sort order default:
   const [tableSortOrder, setTableSortOrder] = useState<'asc' | 'desc' | 'recent'>('recent')
-  const [categoryTotals, setCategoryTotals] = useState<{[key: string]: number}>({})
 
-  const saleItemsUrl = useMemo(() => {
-    const params = new URLSearchParams()
-    if (range?.from) params.set('from', range.from.toISOString())
-    if (range?.to) params.set('to', range.to.toISOString())
-    return `/sales-items?${params.toString()}`
-  }, [range])
+  // Updated URL to use the new category analytics endpoint - FIXED: Use same date conversion as Sales Chart
+  const categoryAnalyticsUrl = useMemo(() => {
+    if (!range?.from || !range?.to) return '/sales/category-analytics'
+    const fromIso = manilaDayStartUTCiso(range.from)
+    const toIso = manilaNextDayStartUTCiso(range.to) // exclusive end: includes the whole `range.to` Manila day
+    return `/sales/category-analytics?from=${encodeURIComponent(fromIso)}&to=${encodeURIComponent(toIso)}`
+  }, [range?.from?.getTime(), range?.to?.getTime()])
 
   // Keep previous data during revalidation and avoid refetch on window focus
-  const { data: saleItems = [], error, isLoading, isValidating } = useSWR<SaleItem[]>(
-    saleItemsUrl,
+  const { data: analyticsData, error, isLoading, isValidating } = useSWR<CategoryAnalyticsResponse>(
+    categoryAnalyticsUrl,
     fetcher,
     { keepPreviousData: true, revalidateOnFocus: false }
   )
 
-  // Fetch products to get unit information
-  const { data: allProducts = [] } = useSWR(
-    '/products?limit=all',
-    productsFetcher,
-    { keepPreviousData: true, revalidateOnFocus: false }
-  )
+  // Extract category analytics data
+  const chartData = useMemo(() => {
+    return analyticsData?.categoryAnalytics || []
+  }, [analyticsData])
 
-  // Create a map of category to unit (assuming products in same category have same unit)
-  const categoryUnitMap = useMemo(() => {
-    const map = new Map<string, string>()
-    console.log('All products for mapping:', allProducts) // Debug log
-    allProducts.forEach((product: any) => {
-      if (product.category_id && product.unit) {
-        // We need to find the actual category name, not just "Category X"
-        // Let's use the category_id to map to the actual category name from the chart data
-        map.set(`Category ${product.category_id}`, product.unit)
+  // NEW: Add sorting logic for category chart data
+  const sortedChartData = useMemo(() => {
+    if (sortOrder === 'normal') return chartData
+    
+    const sorted = [...chartData]
+    switch (sortOrder) {
+      case 'desc':
+        return sorted.sort((a, b) => (b.total_sales || 0) - (a.total_sales || 0))
+      case 'asc':
+        return sorted.sort((a, b) => (a.total_sales || 0) - (b.total_sales || 0))
+      default:
+        return sorted
+    }
+  }, [chartData, sortOrder])
 
-        // Also try to map common category names
-        if (product.category_name) {
-          map.set(product.category_name, product.unit)
-        }
-      }
-    })
-    console.log('Final category-unit map:', map) // Debug log
-    return map
-  }, [allProducts])
+  // Calculate total sales from the sales totals - this will now match the Sales Chart total
+  const totalSales = useMemo(() => {
+   
+    
+    if (!analyticsData?.salesTotals) return 0
+    return analyticsData.salesTotals.reduce((sum, total) => sum + (total.total_sales || 0), 0)
+  }, [analyticsData])
 
-  // MODIFY: Update handleBarClick to also calculate the correct total for tooltip
-  const handleBarClick = async (data: any) => {
-    console.log('Clicked category:', data.category)
+  const isUpdating = isValidating && chartData.length > 0
+
+  // Handle bar click to show products - FIXED: Use same date conversion and better data handling
+  const handleBarClick = useCallback(async (data: any) => {
+    if (!data?.category) return
+    
     setSelectedCategory(data.category)
     setOpen(true)
     setLoadingProducts(true)
-
+    
     try {
       const params = new URLSearchParams()
       params.set('category_name', data.category)
-      if (range?.from) params.set('from_date', range.from.toISOString())
-      if (range?.to) params.set('to_date', range.to.toISOString())
-
-      const url = `/sales-items/products-by-category?${params.toString()}`
-      console.log('Making request to:', url)
-
-      const response = await axios.get(url)
-      console.log('Products by category response:', response.data)
-      const items = response.data?.data || response.data || []
-      console.log('Parsed product items:', items)
-
-      // Find the correct unit for this category
-      let categoryUnit = 'pcs' // default
-      const categoryProduct = allProducts.find((p: any) => {
-        return p.category_name === data.category ||
-          p.category_id && `Category ${p.category_id}` === data.category
-      })
-      if (categoryProduct && categoryProduct.unit) {
-        categoryUnit = categoryProduct.unit
+      
+      // FIXED: Use proper Manila timezone conversion like Sales Chart
+      if (range?.from) {
+        const fromIso = manilaDayStartUTCiso(range.from)
+        params.set('from_date', fromIso)
       }
-
-      // Transform the data to match expected structure
-      const transformedItems = items.map((item: any) => ({
-        name: item.product_name || 'Unknown Product',
-        qty: item.qty || 0,
-        price: item.price || 0,
-        total: item.total || 0,
+      if (range?.to) {
+        const toIso = manilaNextDayStartUTCiso(range.to)
+        params.set('to_date', toIso)
+      }
+      
+      const response = await axios.get(`/sales-items/products-by-category?${params.toString()}`)
+      const products = response.data?.data || response.data || []
+      
+      // FIXED: Transform the data to match the expected format
+      const transformedProducts = products.map((item: any) => ({
+        name: item.product_name || item.name || 'Unknown Product',
+        qty: Number(item.qty || item.quantity || 0),
+        price: Number(item.price || 0),
+        total: Number(item.total || (item.qty || item.quantity || 0) * (item.price || 0)),
         unit: item.unit || 'pcs',
-        last_purchase: item.last_purchase
-      }))
-
-      console.log('Transformed product items:', transformedItems)
-      setProducts(transformedItems)
-
-      // ADD: Calculate and store the correct total for this category
-      const correctTotal = transformedItems.reduce((acc: number, item: Product) => acc + (Number(item.total) || 0), 0)
-      setCategoryTotals(prev => ({
-        ...prev,
-        [data.category]: correctTotal
+        last_purchase: item.last_purchase || item.created_at
       }))
       
-      console.log(`Correct total for ${data.category}: ₱${correctTotal.toLocaleString()}`)
-    } catch (error: any) {
-      console.error('Error fetching products by category:', error)
-      console.error('Error details:', error.response?.data)
+      setProducts(transformedProducts)
+    } catch (error) {
+      console.error('Error fetching products:', error)
       setProducts([])
     } finally {
       setLoadingProducts(false)
     }
-  }
-  // Sort table data locally based on tableSortOrder
+  }, [range])
+
+  // Sort products based on table sort order
   const sortedProducts = useMemo(() => {
+    if (!products.length) return []
+    
+    const sorted = [...products]
     switch (tableSortOrder) {
       case 'asc':
-        return [...products].sort((a, b) => (a.total || 0) - (b.total || 0))
+        return sorted.sort((a, b) => (a.total || 0) - (b.total || 0))
       case 'desc':
-        return [...products].sort((a, b) => (b.total || 0) - (a.total || 0))
+        return sorted.sort((a, b) => (b.total || 0) - (a.total || 0))
       case 'recent':
-      default:
-        // newest first by last_purchase (robust to missing values)
-        return [...products].sort((a, b) => {
-          const ta = a.last_purchase ? new Date(a.last_purchase).getTime() : 0
-          const tb = b.last_purchase ? new Date(b.last_purchase).getTime() : 0
-          return tb - ta
+        return sorted.sort((a, b) => {
+          const dateA = new Date(a.last_purchase || 0)
+          const dateB = new Date(b.last_purchase || 0)
+          return dateB.getTime() - dateA.getTime()
         })
+      default:
+        return sorted
     }
   }, [products, tableSortOrder])
 
-  // compute total of products currently shown in modal
-  const productsTotal = products.reduce((acc, p) => acc + (Number(p.total) || 0), 0)
-
-  // ADD: Debug the modal total calculation
-  console.log('Modal products:', products)
-  console.log('Modal total calculation:', productsTotal)
-  console.log('Individual product totals:', products.map(p => ({ name: p.name, total: p.total })))
-
-  // initial empty state: show skeleton full-chart if first load and no data
-  const initialLoadingNoData = isLoading && saleItems.length === 0
-  // updating overlay while revalidating (keep previous chart visible)
-  const isUpdating = isValidating && saleItems.length > 0
-
-  // Note: do not return early on error — render error inside the chart area so header/footer remain visible.
-
-  // ADD: Fetch correct totals for all categories
-  const fetchCategoryTotals = useCallback(async () => {
-    if (!range?.from || !range?.to) return
-
-    try {
-      const categoryTotalsMap: {[key: string]: number} = {}
-      
-      // Get all unique categories from saleItems
-      const categories = [...new Set(saleItems.map(si => si.category))]
-      
-      // Fetch totals for each category
-      for (const category of categories) {
-        try {
-          const params = new URLSearchParams()
-          params.set('category_name', category)
-          params.set('from_date', range.from.toISOString())
-          params.set('to_date', range.to.toISOString())
-
-          const response = await axios.get(`/sales-items/products-by-category?${params.toString()}`)
-          const items = response.data?.data || response.data || []
-          
-          const total = items.reduce((acc: number, item: any) => acc + (Number(item.total) || 0), 0)
-          categoryTotalsMap[category] = total
-          
-          console.log(`Correct total for ${category}: ₱${total.toLocaleString()}`)
-        } catch (error) {
-          console.error(`Error fetching total for ${category}:`, error)
-          // Fallback to original total
-          const originalItem = saleItems.find(si => si.category === category)
-          categoryTotalsMap[category] = Number(originalItem?.total_sales) || 0
-        }
-      }
-      
-      setCategoryTotals(categoryTotalsMap)
-    } catch (error) {
-      console.error('Error fetching category totals:', error)
-    }
-  }, [saleItems, range])
-
-  // ADD: Effect to fetch category totals when data changes
-  useEffect(() => {
-    if (saleItems.length > 0 && range?.from && range?.to) {
-      fetchCategoryTotals()
-    }
-  }, [saleItems, range, fetchCategoryTotals])
-
-  // MODIFY: Update chartData to use correct totals when available
-  const chartData = useMemo(() => {
-    const arr = saleItems.map(si => {
-      // Try to find the unit for this category
-      let unit = 'pcs' // default
-
-      // First try to find by exact category name
-      if (categoryUnitMap.has(si.category)) {
-        unit = categoryUnitMap.get(si.category)!
-      } else {
-        // If not found, try to find by looking up products in this category
-        const categoryProduct = allProducts.find((p: any) => {
-          return p.category_name === si.category ||
-            p.category_id && `Category ${p.category_id}` === si.category
-        })
-        if (categoryProduct && categoryProduct.unit) {
-          unit = categoryProduct.unit
-        }
-      }
-
-      // USE CORRECT TOTAL if available, otherwise use the aggregated total
-      const totalSales = categoryTotals[si.category] || Number(si.total_sales) || 0
-
-      return {
-        category: si.category,
-        quantity: Number(si.quantity) || 0,
-        total_sales: totalSales, // Use correct total
-        last_purchase: si.last_purchase,
-        unit: unit
-      }
-    })
-
-    // Debug log to see the actual data
-    console.log('Chart data before sorting:', arr)
-    console.log('Total sales sum:', arr.reduce((acc, curr) => acc + curr.total_sales, 0))
-    
-    // Debug each category's total
-    arr.forEach(item => {
-      console.log(`Category: ${item.category}, Total Sales: ₱${item.total_sales.toLocaleString()}`)
-    })
-
-    switch (sortOrder) {
-      case 'asc': return [...arr].sort((a, b) => a.total_sales - b.total_sales)
-      case 'desc': return [...arr].sort((a, b) => b.total_sales - a.total_sales)
-      case 'recent': return [...arr].sort((a, b) => new Date(b.last_purchase).getTime() - new Date(a.last_purchase).getTime())
-      default: return [...arr].sort((a, b) => b.total_sales - a.total_sales)
-    }
-  }, [saleItems, sortOrder, categoryUnitMap, allProducts, categoryTotals]) // ADD categoryTotals to dependencies
-
-  const total = useMemo(() => chartData.reduce((acc, curr) => acc + curr.total_sales, 0), [chartData])
+  if (error && !chartData.length) return <div>Error loading category data.</div>
 
   return (
     <>
-      <Card className='@container/card w-full relative'>
-        <CardHeader className='flex flex-col border-b @md/card:grid'>
-          <CardTitle>Category Analytics</CardTitle>
-          <CardDescription>Showing most sold categories for this month.</CardDescription>
-          <CardAction className='mt-2 @md/card:mt-0'>
-            <div className="flex gap-2 items-center mt-2">
-              <Button onClick={() => setSortOrder('desc')} variant={sortOrder === 'desc' ? 'default' : 'outline'} size="sm"><ChevronDown size={16} /></Button>
-              <Button onClick={() => setSortOrder('recent')} variant={sortOrder === 'recent' ? 'default' : 'outline'} size="sm"><History size={16} /></Button>
-              <Button onClick={() => setSortOrder('asc')} variant={sortOrder === 'asc' ? 'default' : 'outline'} size="sm"><ChevronUp size={16} /></Button>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant='outline'>
-                    <CalendarIcon />
-                    {range?.from && range?.to
-                      ? `${range.from.toLocaleDateString()} - ${range.to.toLocaleDateString()}`
-                      : `${startOfMonth.toLocaleDateString()} - ${today.toLocaleDateString()}`}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className='w-auto p-0' align='end'>
-                  <Calendar mode='range' defaultMonth={range?.from} selected={range} onSelect={setRange} fixedWeeks showOutsideDays disabled={{ after: today }} />
-                </PopoverContent>
-              </Popover>
+      <Card className="w-full">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <div className="space-y-1">
+            <CardTitle className="text-base font-medium">Category Analytics</CardTitle>
+            <CardDescription>Showing most sold categories for this month.</CardDescription>
+          </div>
+          <div className="flex items-center space-x-2">
+            {/* NEW: Filter Icons */}
+            <div className="flex items-center space-x-1">
+              <Button
+                variant={sortOrder === 'normal' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSortOrder('normal')}
+                className="h-8 w-8 p-0"
+              >
+                <List className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={sortOrder === 'desc' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSortOrder('desc')}
+                className="h-8 w-8 p-0"
+              >
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={sortOrder === 'asc' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSortOrder('asc')}
+                className="h-8 w-8 p-0"
+              >
+                <ChevronUp className="h-4 w-4" />
+              </Button>
             </div>
-          </CardAction>
+            
+            {/* Existing Calendar Filter */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  id="date"
+                  variant={"outline"}
+                  className="w-[260px] justify-start text-left font-normal"
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {range?.from ? (
+                    range.to ? (
+                      <>
+                        {range.from.toLocaleDateString()} -{" "}
+                        {range.to.toLocaleDateString()}
+                      </>
+                    ) : (
+                      range.from.toLocaleDateString()
+                    )
+                  ) : (
+                    <span>Pick a date range</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  initialFocus
+                  mode="range"
+                  defaultMonth={range?.from}
+                  selected={range}
+                  onSelect={setRange}
+                  numberOfMonths={1}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
         </CardHeader>
 
-        {/* CardContent is always rendered so header/footer don't disappear */}
         <CardContent className='px-4'>
-          {/* Chart wrapper: relative so we can overlay the skeleton.
-              h-89 is preserved on the wrapper so size remains constant. */}
           <div className="relative h-89 w-full">
-            {/* Chart area (keeps previous data visible because SWR keepPreviousData is enabled).
-                We render either:
-                  - the chart (when there is chart data),
-                  - a "no data" / error message (when not loading & no data),
-                  - underlying empty area (chart hidden) while initial skeleton shows on top.
-            */}
             <div className="absolute inset-0 z-10 flex items-center justify-center">
-              {chartData.length > 0 ? (
+              {sortedChartData.length > 0 ? (
                 <div className="w-full h-full">
-                  {/* ChartContainer sized to fill the area */}
                   <ChartContainer config={chartConfig} className='aspect-auto h-89 w-full'>
-                    <BarChart data={chartData} margin={{ left: 12, right: 12 }}>
+                    <BarChart data={sortedChartData} margin={{ left: 12, right: 12 }}>
                       <CartesianGrid vertical={false} />
                       <XAxis dataKey='category' tickLine={false} axisLine={false} tickMargin={8} minTickGap={20} />
                       <ChartTooltip
@@ -372,10 +314,9 @@ export default function ProductStats() {
                             nameKey='total_sales'
                             labelFormatter={v => v}
                             formatter={(value, name, props) => {
-                              console.log('Tooltip data:', { value, name, props }) // Debug log
                               return [
-                                `₱ ${Number(value).toLocaleString()}`, // Show just the price
-                                '' // Empty string instead of 'Total Sales'
+                                `₱ ${Number(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                                ''
                               ]
                             }}
                           />
@@ -386,132 +327,97 @@ export default function ProductStats() {
                   </ChartContainer>
                 </div>
               ) : (
-                // show helpful messages when there is no chart data
                 <div className="w-full h-full flex items-center justify-center px-4">
-                  {error ? (
-                    <div className="text-sm text-red-600">Error loading product stats.</div>
-                  ) : (!isLoading && saleItems.length === 0) ? (
-                    <div className="text-sm text-gray-600">No data for the selected range.</div>
-                  ) : (
-                    // keep empty while initial skeleton (below) handles first-load UX
-                    <div className="w-full h-full" />
-                  )}
+                  <div className="text-center text-muted-foreground">
+                    <p>No category data for the selected period.</p>
+                    <p className="text-sm">Try selecting a different date range.</p>
+                  </div>
                 </div>
               )}
-            </div>
-
-            {/* Skeleton overlay — used both for initial loading (no data) and for updates.
-                Overlay sits above chart (z-20), fades in/out using transition-opacity.
-                pointer-events-none ensures underlying chart remains interactive if needed. */}
-            <div
-              aria-hidden
-              className={`absolute inset-0 z-20 flex items-end px-4 pointer-events-none transition-opacity duration-300 ease-in-out ${(isUpdating || initialLoadingNoData) ? 'opacity-100' : 'opacity-0'
-                }`}
-            >
-              <div className="flex w-full h-full items-end gap-3">
-                {Array.from({ length: Math.max(6, chartData.length || 6) }).map((_, i) => {
-                  // create some height variety for a natural skeleton chart
-                  const heights = [28, 44, 60, 36, 52, 40]
-                  const pct = heights[i % heights.length]
-                  return (
-                    <div key={i} className="flex-1 flex items-end justify-center">
-                      <div className="w-3/4">
-                        <Skeleton className="rounded-t-md animate-pulse" style={{ height: `${pct}%` }} />
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
             </div>
           </div>
         </CardContent>
 
-        <CardFooter className='border-t'>
-          <div className='text-sm'>
-            Total sales: <span className='font-semibold'>₱ {total.toLocaleString()}</span>
+        <CardFooter className="flex flex-col items-start space-y-2">
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-muted-foreground">Total sales:</span>
+            <span className="text-lg font-bold">₱ {totalSales.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
         </CardFooter>
       </Card>
 
-      {/* Modal with filter buttons + scroll area */}
+      {/* Products Dialog - IMPROVED: Wider modal with totals */}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="w-full max-w-5xl sm:max-w-4xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl">
           <DialogHeader className="flex flex-row items-center justify-between">
-            <DialogTitle className="text-lg font-semibold items-center">
-              {selectedCategory ? `${selectedCategory} — Total Amount: ₱ ${productsTotal.toLocaleString()}` : `₱ ${productsTotal.toLocaleString()}`}
-            </DialogTitle>
+            <div>
+              <DialogTitle className="text-lg font-semibold items-center">
+                {selectedCategory ? `Products in ${selectedCategory} — Total Amount: ₱ ${products.reduce((acc, p) => acc + (p.total || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'Products'}
+              </DialogTitle>
+              <div className="text-sm text-gray-600 mt-1">
+                Total Products: {products.length} • Total Quantity Sold: {products.reduce((acc, p) => acc + (p.qty || 0), 0).toLocaleString()} {products[0]?.unit || 'units'}
+              </div>
+            </div>
             <div className="flex gap-2 pr-4">
               <Button
-                onClick={() => setTableSortOrder('desc')}
-                variant={tableSortOrder === 'desc' ? 'default' : 'outline'}
-                size="icon"
-                className="w-8 h-8"
-              >
-                <ChevronDown size={16} />
-              </Button>
-              <Button
-                onClick={() => setTableSortOrder('recent')}
                 variant={tableSortOrder === 'recent' ? 'default' : 'outline'}
                 size="icon"
                 className="w-8 h-8"
+                onClick={() => setTableSortOrder('recent')}
               >
-                <History size={16} />
+                <History className="w-4 h-4" />
               </Button>
               <Button
-                onClick={() => setTableSortOrder('asc')}
+                variant={tableSortOrder === 'desc' ? 'default' : 'outline'}
+                size="icon"
+                className="w-8 h-8"
+                onClick={() => setTableSortOrder('desc')}
+              >
+                <ChevronDown className="w-4 h-4" />
+              </Button>
+              <Button
                 variant={tableSortOrder === 'asc' ? 'default' : 'outline'}
                 size="icon"
                 className="w-8 h-8"
+                onClick={() => setTableSortOrder('asc')}
               >
-                <ChevronUp size={16} />
+                <ChevronUp className="w-4 h-4" />
               </Button>
             </div>
           </DialogHeader>
-
-          {/* Table area */}
-          <ScrollArea className="h-80 mt-4 rounded-md border bg-white">
-            {/* If we're loading and have no previous products, show loading message */}
-            {loadingProducts && products.length === 0 && (
-              <div className="p-4 text-center text-gray-600">Loading products…</div>
-            )}
-
-            {/* Show existing / fetched table if we have products */}
-            {sortedProducts.length > 0 ? (
-              <>
-                {/* optional small loader banner while updating */}
-                {loadingProducts && (
-                  <div className="p-2 text-sm text-gray-600 border-b">Updating products…</div>
-                )}
-                <table className="w-full text-sm border-collapse">
-                  <thead className="bg-gray-100 sticky top-0">
-                    <tr>
-                      <th className="p-2 border text-left font-semibold">Product</th>
-                      <th className="p-2 border text-center font-semibold">Quantity Sold</th>
-                      <th className="p-2 border text-center font-semibold">Unit Price</th>
-                      <th className="p-2 border text-center font-semibold">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sortedProducts.map((p, idx) => (
-                      <tr key={idx} className="hover:bg-gray-50 transition">
-                        <td className="p-2 border font-medium">{p.name}</td>
-                        <td className="p-2 border text-center font-semibold text-blue-600">
-                          {p.qty.toLocaleString()} {p.unit}
-                        </td>
-                        <td className="p-2 border text-left">₱ {p.price.toLocaleString()}</td>
-                        <td className="p-2 border text-left font-semibold">₱ {(p.total || 0).toLocaleString()}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </>
-            ) : (
-              // If not loading and no products, show empty state
-              !loadingProducts && (
-                <p className="p-4 text-center text-gray-500">No products found for this category.</p>
-              )
-            )}
-          </ScrollArea>
+          
+          <div className="space-y-4">
+            <ScrollArea className="h-[400px]">
+              {loadingProducts ? (
+                <div className="space-y-2">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Skeleton key={i} className="h-12 w-full" />
+                  ))}
+                </div>
+              ) : sortedProducts.length > 0 ? (
+                <div className="space-y-2">
+                  {sortedProducts.map((product, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex-1">
+                        <h4 className="font-medium">{product.name}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {product.qty} {product.unit || 'units'} • Last: {product.last_purchase ? new Date(product.last_purchase).toLocaleDateString() : 'N/A'}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium">₱ {Number(product.total || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                        <p className="text-sm text-muted-foreground">₱ {Number(product.price || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} each</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center text-muted-foreground py-8">
+                  <p>No products found for this category.</p>
+                </div>
+              )}
+            </ScrollArea>
+          </div>
         </DialogContent>
       </Dialog>
     </>

@@ -4,7 +4,7 @@ import * as React from 'react'
 import useSWR from 'swr'
 import axios from "@/lib/axios";
 import { CartesianGrid, Line, LineChart, XAxis } from 'recharts'
-import { CalendarIcon, List, ChevronDown, ChevronUp } from 'lucide-react'
+import { CalendarIcon, List, ChevronDown, ChevronUp, Filter } from 'lucide-react'
 import type { DateRange } from 'react-day-picker'
 
 import { Button } from '@/components/ui/button'
@@ -23,9 +23,11 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Skeleton } from '@/components/ui/skeleton'
 
-type Sale = {
-  created_at: string
-  total_purchase: number
+type SalesTotal = {
+  sale_date: string
+  total_sales: number
+  total_items: number
+  total_transactions: number
 }
 
 type ChartData = {
@@ -116,265 +118,221 @@ export default function SalesStats() {
   })
   const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc' | 'normal'>('normal')
 
-  // build URL with from/to when range selected (convert to Manila day boundaries -> UTC ISO)
-  // pass from = Manila 00:00 (inclusive), to = next Manila 00:00 (exclusive) so backend can use gte / lt
+  // Updated URL to use the new sales totals endpoint
   const salesUrl = React.useMemo(() => {
-    if (!range?.from || !range?.to) return '/sales'
+    if (!range?.from || !range?.to) return '/sales/totals'
     const fromIso = manilaDayStartUTCiso(range.from)
     const toIso = manilaNextDayStartUTCiso(range.to) // exclusive end: includes the whole `range.to` Manila day
-    return `/sales?from=${encodeURIComponent(fromIso)}&to=${encodeURIComponent(toIso)}`
+    return `/sales/totals?from=${encodeURIComponent(fromIso)}&to=${encodeURIComponent(toIso)}`
   }, [range?.from?.getTime(), range?.to?.getTime()])
 
   // Keep previous data during revalidation to avoid flicker
-  const { data: sales = [], error, isLoading, isValidating } = useSWR<Sale[]>(
+  const { data: salesTotals = [], error, isLoading, isValidating } = useSWR<SalesTotal[]>(
     salesUrl,
     fetcher,
     { keepPreviousData: true, revalidateOnFocus: false }
   )
 
-  // Group by Manila date (YYYY-MM-DD)
-  const groupedByDateMap = React.useMemo(() => {
-    const map = new Map<string, number>()
-    sales.forEach(sale => {
-      const key = createdAtToManilaYmd(sale.created_at)
-      map.set(key, (map.get(key) || 0) + (sale.total_purchase || 0))
-    })
-    return map
-  }, [sales])
+  // Convert sales totals to chart data format
+  const chartData = React.useMemo(() => {
+    return salesTotals.map(total => ({
+      date: total.sale_date,
+      customer: total.total_sales
+    }))
+  }, [salesTotals])
 
-  // Build full date series based on selected range (or fallback to data date span)
-  const chartSeries = React.useMemo(() => {
-    let fromDate: Date
-    let toDate: Date
-    if (range?.from && range?.to) {
-      fromDate = new Date(range.from.getFullYear(), range.from.getMonth(), range.from.getDate())
-      toDate = new Date(range.to.getFullYear(), range.to.getMonth(), range.to.getDate())
-    } else if (sales.length > 0) {
-      const keys = Array.from(groupedByDateMap.keys()).sort()
-      const min = parseYmdToLocalDate(keys[0])
-      const max = parseYmdToLocalDate(keys[keys.length - 1])
-      fromDate = new Date(min.getFullYear(), min.getMonth(), min.getDate())
-      toDate = new Date(max.getFullYear(), max.getMonth(), max.getDate())
-    } else {
-      fromDate = new Date(today.getFullYear(), today.getMonth(), today.getDate())
-      toDate = fromDate
-    }
-
-    const days = eachDayInclusive(fromDate, toDate)
-    return days.map(d => {
-      const key = ymd(d) // YYYY-MM-DD (Manila/local day keys)
-      return {
-        date: key,
-        customer: groupedByDateMap.get(key) || 0
-      }
-    })
-  }, [range?.from?.getTime(), range?.to?.getTime(), sales, groupedByDateMap, today])
+  // Calculate total sales for the period - this will now match the Category Analytics total
+  const totalSales = React.useMemo(() => {
+    return salesTotals.reduce((sum, total) => sum + (total.total_sales || 0), 0)
+  }, [salesTotals])
 
   // --- NEW: compute chartDisplayData based on sortOrder ---
   const chartDisplayData = React.useMemo(() => {
-    if (sortOrder === 'normal') return chartSeries
-    const arr = [...chartSeries]
+    if (sortOrder === 'normal') return chartData
+    const arr = [...chartData]
     if (sortOrder === 'asc') {
       arr.sort((a, b) => a.customer - b.customer)
     } else if (sortOrder === 'desc') {
       arr.sort((a, b) => b.customer - a.customer)
     }
     return arr
-  }, [chartSeries, sortOrder])
+  }, [chartData, sortOrder])
   // -------------------------------------------------------
 
   // sortedDataForTable (affects table/summaries only)
   const sortedDataForTable = React.useMemo(() => {
-    let arr = [...chartSeries]
+    let arr = [...chartData]
     if (sortOrder === 'asc') arr.sort((a, b) => a.customer - b.customer)
     else if (sortOrder === 'desc') arr.sort((a, b) => b.customer - a.customer)
     return arr
-  }, [chartSeries, sortOrder])
+  }, [chartData, sortOrder])
 
-  // total sums the filtered chartSeries values
+  // total sums the filtered chartData values
   const total = React.useMemo(
-    () => chartSeries.reduce((acc, curr) => acc + curr.customer, 0),
-    [chartSeries]
+    () => chartData.reduce((acc, curr) => acc + curr.customer, 0),
+    [chartData]
   )
 
   // Detect "empty" period: all points are zero
   const isEmptyPeriod = React.useMemo(() => {
-    return chartSeries.length > 0 && chartSeries.every(pt => (pt.customer ?? 0) === 0)
-  }, [chartSeries])
+    return chartData.length > 0 && chartData.every(pt => (pt.customer ?? 0) === 0)
+  }, [chartData])
 
-  const initialLoadingNoData = isLoading && sales.length === 0
-  const isUpdating = isValidating && sales.length > 0
+  const initialLoadingNoData = isLoading && salesTotals.length === 0
+  const isUpdating = isValidating && salesTotals.length > 0
 
-  if (error && !sales.length) return <div>Error loading sales data.</div>
+  if (error && !salesTotals.length) return <div>Error loading sales data.</div>
 
   return (
-    <Card className='@container/card w-full'>
-      <CardHeader className='flex flex-col border-b @md/card:grid'>
-        <CardTitle>Sales Chart</CardTitle>
-        <CardDescription>Filter total sales by date range</CardDescription>
-        <CardAction className='mt-2 @md/card:mt-0'>
-          <div className="flex gap-2 items-center mt-2">
-            <Button
-              variant={sortOrder === 'desc' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setSortOrder('desc')}
-              aria-label="Sort Descending"
-            >
-              <ChevronDown size={16} />
-            </Button>
+    <Card className="w-full">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <div className="space-y-1">
+          <CardTitle className="text-semibold font-xl">Sales Chart</CardTitle>
+          <CardDescription>Filter total sales by date range</CardDescription>
+        </div>
+        <div className="flex items-center space-x-2">
+          {/* NEW: Filter Icons */}
+          <div className="flex items-center space-x-1">
             <Button
               variant={sortOrder === 'normal' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setSortOrder('normal')}
-              aria-label="Follow Order"
+              className="h-8 w-8 p-0"
             >
-              <List size={16} />
+              <List className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={sortOrder === 'desc' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSortOrder('desc')}
+              className="h-8 w-8 p-0"
+            >
+              <ChevronDown className="h-4 w-4" />
             </Button>
             <Button
               variant={sortOrder === 'asc' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setSortOrder('asc')}
-              aria-label="Sort Ascending"
+              className="h-8 w-8 p-0"
             >
-              <ChevronUp size={16} />
+              <ChevronUp className="h-4 w-4" />
             </Button>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant='outline'>
-                  <CalendarIcon />
-                  {range?.from && range?.to
-                    ? `${range.from.toLocaleDateString()} - ${range.to.toLocaleDateString()}`
-                    : `${startOfMonth.toLocaleDateString()} - ${today.toLocaleDateString()}`}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className='w-auto overflow-hidden p-0' align='end'>
-                <Calendar
-                  className='w-full'
-                  mode='range'
-                  defaultMonth={range?.from}
-                  selected={range}
-                  onSelect={setRange}
-                  fixedWeeks
-                  showOutsideDays
-                  disabled={{
-                    after: today
-                  }}
-                />
-              </PopoverContent>
-            </Popover>
           </div>
-        </CardAction>
+          
+          {/* Existing Calendar Filter */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                id="date"
+                variant={"outline"}
+                className="w-[260px] justify-start text-left font-normal"
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {range?.from ? (
+                  range.to ? (
+                    <>
+                      {range.from.toLocaleDateString()} -{" "}
+                      {range.to.toLocaleDateString()}
+                    </>
+                  ) : (
+                    range.from.toLocaleDateString()
+                  )
+                ) : (
+                  <span>Pick a date range</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                initialFocus
+                mode="range"
+                defaultMonth={range?.from}
+                selected={range}
+                onSelect={setRange}
+                numberOfMonths={1}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
       </CardHeader>
 
       <CardContent className='px-4'>
-        {/* Chart area: keep size fixed h-89 */}
         <div className="relative h-89 w-full">
-          {/* Initial full-screen skeleton when first load and no previous data */}
-          {initialLoadingNoData && (
-            <div className="absolute inset-0 flex items-end px-4">
-              <div className="flex w-full h-full items-end gap-3">
-                {Array.from({ length: Math.max(6, chartSeries.length || 6) }).map((_, i) => {
-                  const heights = [28, 44, 60, 36, 52, 40]
-                  const pct = heights[i % heights.length]
-                  return (
-                    <div key={i} className="flex-1 flex items-end justify-center">
-                      <div className="w-3/4">
-                        <Skeleton className="rounded-t-md animate-pulse" style={{ height: `${pct}%` }} />
-                      </div>
-                    </div>
-                  )
-                })}
+          <div className="absolute inset-0 z-10 flex items-center justify-center">
+            {initialLoadingNoData ? (
+              <div className="flex flex-col items-center space-y-2">
+                <Skeleton className="h-4 w-[200px]" />
+                <Skeleton className="h-4 w-[150px]" />
               </div>
-            </div>
-          )}
-
-          {/* If selected period has no sales (all zeros), show centered muted message */}
-          {!initialLoadingNoData && isEmptyPeriod && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center text-sm text-gray-500">
-                No sales found for the selected period
+            ) : isEmptyPeriod ? (
+              <div className="text-center text-muted-foreground">
+                <p>No sales data for the selected period.</p>
+                <p className="text-sm">Try selecting a different date range.</p>
               </div>
-            </div>
-          )}
-
-          {/* Chart (render when not initial-loading and not empty-period). Keeps previous data during revalidation. */}
-          {!initialLoadingNoData && !isEmptyPeriod && (
-            <div className="absolute inset-0 w-full h-full">
-              <ChartContainer config={chartConfig} className='aspect-auto h-89 w-full'>
-                <LineChart
-                  accessibilityLayer
-                  data={chartDisplayData} // <-- use sorted/normal display data
-                  margin={{ left: 12, right: 12 }}
-                >
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="date"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    minTickGap={20}
-                    tickFormatter={value => {
-                      const date = parseYmdToLocalDate(String(value))
-                      return date.toLocaleDateString(undefined, {
-                        month: 'short', // or 'long' if you want full month
-                        day: 'numeric'
-                      })
-                    }}
-                  />
-                  <ChartTooltip
-                    content={
-                      <ChartTooltipContent
-                        className='w-[200px]'
-                        nameKey='customer'
-                        labelFormatter={value =>
-                          parseYmdToLocalDate(String(value)).toLocaleDateString(undefined, {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric'
-                          })
-                        }
-                      />
-                    }
-                  />
-                  <Line
-                    dataKey="customer"
-                    type="monotone"
-                    stroke={`var(--color-customer)`}
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                </LineChart>
-              </ChartContainer>
-            </div>
-          )}
-
-          {/* Overlay skeleton when revalidating (keeps previous chart visible underneath) */}
-          {!initialLoadingNoData && isUpdating && !isEmptyPeriod && (
-            <div
-              aria-hidden
-              className="absolute inset-0 flex items-end px-4 pointer-events-none transition-opacity duration-300 ease-in-out z-20"
-            >
-              <div className="flex w-full h-full items-end gap-3">
-                {Array.from({ length: Math.max(6, chartSeries.length || 6) }).map((_, i) => {
-                  const heights = [28, 44, 60, 36, 52, 40]
-                  const pct = heights[i % heights.length]
-                  return (
-                    <div key={i} className="flex-1 flex items-end justify-center">
-                      <div className="w-3/4">
-                        <Skeleton className="rounded-t-md animate-pulse" style={{ height: `${pct}%` }} />
-                      </div>
-                    </div>
-                  )
-                })}
+            ) : (
+              <div className="absolute inset-0 w-full h-full">
+                <ChartContainer config={chartConfig} className='aspect-auto h-89 w-full'>
+                  <LineChart
+                    accessibilityLayer
+                    data={chartDisplayData}
+                    margin={{ left: 12, right: 12 }}
+                  >
+                    <CartesianGrid vertical={false} />
+                    <XAxis
+                      dataKey="date"
+                      tickLine={false}
+                      axisLine={false}
+                      tickMargin={8}
+                      minTickGap={20}
+                      tickFormatter={value => {
+                        const date = parseYmdToLocalDate(String(value))
+                        return date.toLocaleDateString(undefined, {
+                          month: 'short',
+                          day: 'numeric'
+                        })
+                      }}
+                    />
+                    <ChartTooltip
+                      content={
+                        <ChartTooltipContent
+                          className='w-[200px]'
+                          nameKey='customer'
+                          labelFormatter={value =>
+                            parseYmdToLocalDate(String(value)).toLocaleDateString(undefined, {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric'
+                            })
+                          }
+                          formatter={(value, name, props) => {
+                            return [
+                              `₱ ${Number(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                              ''
+                            ]
+                          }}
+                        />
+                      }
+                    />
+                    <Line
+                      dataKey="customer"
+                      type="monotone"
+                      stroke={`var(--color-customer)`}
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                  </LineChart>
+                </ChartContainer>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </CardContent>
 
-      <CardFooter className='border-t'>
-        <div className='text-sm'>
-          You had <span className='font-semibold'>₱ {total.toLocaleString()}</span> total sales for the selected period.
+      <CardFooter className="flex flex-col items-start space-y-2">
+        <div className="flex items-center space-x-2">
+          <span className="text-sm text-muted-foreground">You had</span>
+          <span className="text-lg font-bold">₱ {totalSales.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          <span className="text-sm text-muted-foreground">total sales for the selected period.</span>
         </div>
       </CardFooter>
     </Card>

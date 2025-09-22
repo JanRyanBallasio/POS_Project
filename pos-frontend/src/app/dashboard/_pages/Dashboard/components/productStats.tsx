@@ -128,7 +128,6 @@ export default function ProductStats() {
     })
     
     const result = Array.from(productMap.values())
-    console.log('Product sales data:', result)
     return result
   }, [productSales])
 
@@ -150,7 +149,6 @@ export default function ProductStats() {
 
   // Fix the handleBarClick function:
   const handleBarClick = async (data: any) => {
-    console.log('Clicked product:', data.product_name)
     setSelectedProduct(data.product_name)
     setOpen(true)
     setLoadingDetails(true)
@@ -161,7 +159,6 @@ export default function ProductStats() {
         item.product_name === data.product_name
       )
 
-      console.log('Filtered product sales items:', productSalesItems)
 
       const transformedDetails = productSalesItems.map((item: any) => ({
         name: item.product_name,
@@ -172,7 +169,6 @@ export default function ProductStats() {
         last_purchase: item.last_purchase
       }))
 
-      console.log('Transformed product details:', transformedDetails)
       setProductDetails(transformedDetails)
     } catch (error: any) {
       console.error('Error fetching product details:', error)
@@ -213,14 +209,7 @@ export default function ProductStats() {
       last_purchase: item.last_purchase
     }))
 
-    // Debug log to see the actual data
-    console.log('Product chart data before sorting:', arr)
-    console.log('Total sales sum:', arr.reduce((acc, curr) => acc + curr.total_sales, 0))
     
-    // Debug each product's total
-    arr.forEach(item => {
-      console.log(`Product: ${item.product_name}, Total Sales: ₱${item.total_sales.toLocaleString()}`)
-    })
 
     // Sort first, then limit to the specified number of products
     let sorted
@@ -322,7 +311,6 @@ export default function ProductStats() {
                             nameKey='total_sales'
                             labelFormatter={v => v}
                             formatter={(value, name, props) => {
-                              console.log('Tooltip data:', { value, name, props })
                               return [
                                 `₱ ${Number(value).toLocaleString()}`,
                                 ''
