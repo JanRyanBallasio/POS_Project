@@ -193,6 +193,106 @@ const salesController = {
       });
     }
   },
+
+  // New endpoint for sales totals using the get_sales_totals function
+  getSalesTotals: async (req, res) => {
+    try {
+      let { from, to } = req.query;
+
+      // Default to Manila calendar day (converted to UTC) if not provided
+      if (!from || !to) {
+        const range = getManilaDayRangeAsUTC();
+        from = range.from;
+        to = range.to;
+      }
+
+      // Call the get_sales_totals function
+      const { data, error } = await supabase.rpc('get_sales_totals', {
+        from_date: from,
+        to_date: to
+      });
+
+      if (error) throw error;
+
+      return res.json({ success: true, data: data || [] });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        error: error?.message || String(error),
+      });
+    }
+  },
+
+  // Fixed endpoint for category analytics using get_sales_totals
+  getCategoryAnalytics: async (req, res) => {
+    try {
+      let { from, to } = req.query;
+
+      // Default to Manila calendar day (converted to UTC) if not provided
+      if (!from || !to) {
+        const range = getManilaDayRangeAsUTC();
+        from = range.from;
+        to = range.to;
+      }
+
+      // Get sales totals first - this is the correct total that matches Sales Chart
+      const { data: salesTotals, error: salesError } = await supabase.rpc('get_sales_totals', {
+        from_date: from,
+        to_date: to
+      });
+
+      if (salesError) throw salesError;
+
+      // Get category breakdown for the same period - FIXED: Use LEFT JOIN to include ALL items
+      const { data: categoryData, error: categoryError } = await supabase
+        .from('SaleItems')
+        .select(`
+          quantity,
+          price,
+          Products!left(category_id, Categories!left(name)),
+          Sales!inner(created_at)
+        `)
+        .gte('Sales.created_at', from)
+        .lt('Sales.created_at', to);
+
+      if (categoryError) throw categoryError;
+
+      // Group by category and calculate totals
+      const categoryMap = new Map();
+      categoryData.forEach(item => {
+        // Handle missing category data - group as "Uncategorized"
+        const category = item.Products?.Categories?.name || 'Uncategorized';
+        const total = (item.quantity || 0) * (item.price || 0);
+        
+        if (!categoryMap.has(category)) {
+          categoryMap.set(category, {
+            category,
+            total_sales: 0,
+            total_items: 0
+          });
+        }
+        
+        const existing = categoryMap.get(category);
+        existing.total_sales += total;
+        existing.total_items += item.quantity || 0;
+      });
+
+      const result = Array.from(categoryMap.values());
+
+      return res.json({ 
+        success: true, 
+        data: {
+          salesTotals: salesTotals || [], // This contains the correct total from get_sales_totals
+          categoryAnalytics: result
+        }
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        error: error?.message || String(error),
+      });
+    }
+  },
 };
 
 module.exports = salesController;
