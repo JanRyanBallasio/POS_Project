@@ -384,7 +384,7 @@ exports.testBulkReceipt = async function (req, res) {
       "MARSHMALLOW 28G"
     ];
 
-    for (let i = 0; i < 30; i++) { // CHANGED from 200 to 150
+    for (let i = 0; i < 120; i++) { // CHANGED from 200 to 150
       const productIndex = i % sampleProducts.length;
       const qty = Math.floor(Math.random() * 10) + 1; // Random quantity 1-10
       const price = Math.floor(Math.random() * 50) + 10; // Random price 10-60
@@ -473,7 +473,7 @@ exports.testBulkReceipt = async function (req, res) {
 
     await page.close();
 
-    const filename = `test-bulk-receipt-150-items.pdf`; // CHANGED from 200 to 150
+    const filename = `test-bulk-receipt-120-items.pdf`; // CHANGED from 200 to 150
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
     res.setHeader("Content-Length", Buffer.byteLength(pdfBuffer));

@@ -39,8 +39,11 @@ app.use((req, res, next) => {
 // Public Auth routes
 app.use('/api/auth', authRoutes); // REPLACE dev-stub with real auth routes
 
-// NEW: Public test route (no auth required) - ADD THIS LINE
-app.use('/api/test', require('./src/routes/receiptRoutes'));
+// Remove the public test route
+// app.use('/api/test', require('./src/routes/receiptRoutes'));
+
+// Add it to protected routes instead
+app.use('/api/test', auth, require('./src/routes/receiptRoutes'));
 
 // ADDITIONAL: Direct test route for convenience
 app.get('/api/test-bulk', require('./src/controllers/receiptPdfController').testBulkReceipt);
