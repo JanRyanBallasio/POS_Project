@@ -10,6 +10,7 @@ import Receipt from "./Receipt";
 import AddCustomerModal from "./AddCustomerModal";
 import type { Customer } from "@/hooks/pos/rightCol/useCustomerTagging";
 import axios from "@/lib/axios";
+import { qz } from 'qz-tray';
 
 interface POSRightColProps {
   step: 1 | 2 | 3;
@@ -169,7 +170,7 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
     }
   }, [clearCustomer, setStep, setAmount, setChange, clearCart]);
 
-  // Print Receipt (server-generated PDF via /receipt) — old behavior
+  // Direct Print Receipt - Backend ESC/POS communication with debug mode
   const handlePrintReceipt = useCallback(async () => {
     if (isProcessingSale) return;
 
@@ -189,45 +190,108 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
 
     try {
       setIsProcessingSale(true);
-      const res = await axios.post('/receipt', payload, { responseType: 'blob' });
-      const blob = res.data;
-      const url = URL.createObjectURL(blob);
-
-      // Client-only: prefer print-js, but always fallback to opening the PDF in a new tab.
-      if (typeof window !== 'undefined') {
-        try {
-          const printJS = (await import('print-js')).default;
-          if (printJS) {
-            printJS({
-              printable: url,
-              type: 'pdf',
-              showModal: false,
-              onError: (err: any) => alert('Print error: ' + err),
-              onLoadingEnd: () => setTimeout(() => URL.revokeObjectURL(url), 10000),
-            });
-            return;
-          }
-        } catch (err) {
-          console.warn('print-js import failed, falling back to window.open', err);
+      
+      // Check if we're in debug mode (you can add a toggle for this)
+      const isDebugMode = true; // Set to false when you have your actual printer
+      
+      // Send print job directly to backend
+      const response = await axios.post(`/api/direct-print${isDebugMode ? '?debug=true' : ''}`, payload);
+      
+      if (response.data.success) {
+        if (response.data.debug) {
+          console.log('Receipt saved to file (debug mode):', response.data.filepath);
+          alert(`Receipt saved to file (debug mode)!\nItems: ${response.data.itemCount}\nTotal: P${response.data.totalAmount}\nFile: ${response.data.filepath}`);
+        } else {
+          console.log('Receipt printed successfully to ZY609 printer');
+          alert(`Receipt printed successfully!\nItems: ${response.data.itemCount}\nTotal: P${response.data.totalAmount}`);
         }
-
-        // Fallback: open PDF in new tab (runs only on client)
-        try {
-          window.open(url, '_blank');
-          setTimeout(() => URL.revokeObjectURL(url), 10000);
-        } catch (err) {
-          console.warn('Failed to open PDF in new tab:', err);
-          // last resort: revoke URL later
-          setTimeout(() => URL.revokeObjectURL(url), 10000);
-        }
+      } else {
+        throw new Error(response.data.error || 'Print failed');
       }
+        
     } catch (err: any) {
+      console.error('Direct print error:', err);
       const errorMessage = err.response?.data?.error || err.message || "Unknown error";
-      alert("Error printing receipt: " + errorMessage);
+      const suggestion = err.response?.data?.suggestion || "";
+      alert(`Print failed: ${errorMessage}\n\n${suggestion}`);
     } finally {
       setIsProcessingSale(false);
     }
   }, [cart, selectedCustomer, cartTotal, amount, change, isProcessingSale]);
+
+  // Generate plain text receipt (better for thermal printers)
+  const generateReceiptText = (data: any) => {
+    const dateStr = new Date().toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long", 
+      day: "2-digit",
+    });
+
+    let receipt = `
+================================
+        YZY STORE
+    Eastern Slide, Tuding
+================================
+
+Customer: ${data.customer?.name || "N/A"}
+Date: ${dateStr}
+--------------------------------
+Item                QTY  Price  Amount
+--------------------------------
+`;
+
+    // Add all items
+    data.items.forEach((item: any) => {
+      const desc = item.desc.length > 20 ? item.desc.substring(0, 17) + "..." : item.desc;
+      const qty = item.qty.toString().padStart(3);
+      // Fix: Calculate price from amount and qty if price is undefined
+      const price = item.price ? item.price.toFixed(2) : (item.amount / item.qty).toFixed(2);
+      const amount = item.amount.toFixed(2).padStart(7);
+      
+      receipt += `${desc.padEnd(20)} ${qty} ${price.padStart(6)} ${amount}\n`;
+    });
+
+    receipt += `--------------------------------
+Total:                    P${data.cartTotal.toFixed(2)}
+Amount:                   P${data.amount.toFixed(2)}
+Change:                   P${data.change.toFixed(2)}
+--------------------------------
+Customer Points: ${data.points || 0}
+--------------------------------
+
+THANK YOU - GATANG KA MANEN!
+
+CUSTOMER COPY
+
+================================
+`;
+
+    return receipt;
+  };
+
+  // Fallback function for new window approach
+  const fallbackToNewWindow = useCallback((url: string) => {
+    try {
+      const newWindow = window.open(url, '_blank', 'width=800,height=600');
+      if (newWindow) {
+        newWindow.onload = () => {
+          setTimeout(() => {
+            newWindow.print();
+          }, 1000);
+        };
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
+      } else {
+        // If popup blocked, just open the PDF
+        window.open(url, '_blank');
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
+      }
+    } catch (err) {
+      console.error('New window fallback failed:', err);
+      // Last resort: just open the PDF
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    }
+  }, []);
 
   // Print to PDF (fallback to window.print for now)
   const handlePrintPDF = useCallback(() => {
