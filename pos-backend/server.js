@@ -18,6 +18,7 @@ const customerRoutes = require('./src/routes/customerRoutes');
 const stockTransactionRoutes = require('./src/routes/stockTransactionRoutes');
 const receiptRoutes = require("./src/routes/receiptRoutes");
 const authRoutes = require('./src/routes/auth.routes'); // UNCOMMENTED: use central auth router
+const directPrintRoutes = require("./src/routes/directPrintRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -39,6 +40,9 @@ app.use((req, res, next) => {
 // Public Auth routes
 app.use('/api/auth', authRoutes); // REPLACE dev-stub with real auth routes
 
+// FIXED: Mount direct print routes as completely public (no auth required)
+app.use('/api', directPrintRoutes);
+
 // Protect API routes (require valid access token)
 app.use('/api/users', auth, userRoutes);
 app.use('/api/customers', auth, customerRoutes);
@@ -50,6 +54,7 @@ app.use('/api/sales-items', auth, salesItemsRoutes);
 app.use('/api/stock-transactions', auth, stockTransactionRoutes);
 app.use('/api', auth, receiptRoutes);
 app.use('/api/auth', authRoutes);
+
 // 404 fallback (optional)
 app.use((req, res, next) => {
   res.status(404).json({ success: false, message: 'Not found' });
