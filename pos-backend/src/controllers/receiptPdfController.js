@@ -357,6 +357,14 @@ exports.generate = async function (req, res) {
       width: "80mm",
       height: `${heightMm}mm`,
       margin: { top: "0mm", bottom: "0mm", left: "0mm", right: "0mm" },
+      // Optimize for thermal printers
+      preferCSSPageSize: true,
+      displayHeaderFooter: false,
+      // Reduce complexity for thermal printer compatibility
+      scale: 1.0,
+      // Add these options for better thermal printer support
+      format: undefined, // Let the width/height control the format
+      tagged: false, // Disable PDF tagging for simpler output
     });
 
     await page.close();
