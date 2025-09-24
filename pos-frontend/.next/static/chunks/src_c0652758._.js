@@ -1433,7 +1433,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$axios$2f$ind
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$stores$2f$userStore$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/stores/userStore.ts [app-client] (ecmascript)");
 ;
 ;
-const API_BASE = ("TURBOPACK compile-time value", "http://3.107.238.186:5000/api") || 'http://3.107.238.186:5000/api';
+const API_BASE = ("TURBOPACK compile-time value", "http://localhost:5000/api") || 'http://3.107.238.186:5000/api';
 const axios = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$axios$2f$lib$2f$axios$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"].create({
     baseURL: API_BASE,
     withCredentials: true,
