@@ -199,11 +199,14 @@ const salesController = {
     try {
       let { from, to } = req.query;
 
+      console.log('getSalesTotals called with:', { from, to });
+
       // Default to Manila calendar day (converted to UTC) if not provided
       if (!from || !to) {
         const range = getManilaDayRangeAsUTC();
         from = range.from;
         to = range.to;
+        console.log('Using default range:', { from, to });
       }
 
       // Call the get_sales_totals function
@@ -212,10 +215,16 @@ const salesController = {
         to_date: to
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('get_sales_totals RPC error:', error);
+        throw error;
+      }
+
+      console.log('get_sales_totals result:', data);
 
       return res.json({ success: true, data: data || [] });
     } catch (error) {
+      console.error('getSalesTotals error:', error);
       return res.status(500).json({
         success: false,
         error: error?.message || String(error),

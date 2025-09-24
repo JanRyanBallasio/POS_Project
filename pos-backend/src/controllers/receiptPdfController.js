@@ -140,18 +140,33 @@ function renderHtml({ customer, cartTotal, amount, change, items, points }) {
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <style>
-      @page { size: 82mm auto; margin: 0; }
-      html,body { margin:0; padding:0; -webkit-print-color-adjust: exact; }
+      @page { 
+        size: 82mm auto; 
+        margin: 0; 
+        orientation: portrait;
+      }
+      html,body { 
+        margin:0; 
+        padding:0; 
+        -webkit-print-color-adjust: exact;
+        width: 82mm;
+        max-width: 82mm;
+        overflow-x: hidden;
+      }
       body {
         font-family: 'Courier New', Courier, monospace;
         color:#111;
         font-size:10px; /* FURTHER REDUCED from 11px to 10px */
         -webkit-font-smoothing:antialiased;
         line-height: 1.1; /* TIGHTER line spacing */
+        width: 82mm;
+        max-width: 82mm;
+        overflow-x: hidden;
       }
       .paper {
         box-sizing: border-box;
         width: 82mm;
+        max-width: 82mm;
         padding: 0 6px 5px 6px; /* REDUCED bottom padding to 5px */
         overflow: hidden;
       }
@@ -330,6 +345,10 @@ exports.generate = async function (req, res) {
       width: "82mm",
       height: `${heightMm}mm`,
       margin: { top: "0mm", bottom: "0mm", left: "0mm", right: "0mm" },
+      preferCSSPageSize: true,
+      displayHeaderFooter: false,
+      printMedia: true,
+      landscape: false,
     });
 
     await page.close();
@@ -466,9 +485,10 @@ exports.testBulkReceipt = async function (req, res) {
       width: "82mm",
       height: `${heightMm}mm`, // FIXED: Use calculated height, not "auto"
       margin: { top: "0mm", bottom: "0mm", left: "0mm", right: "0mm" },
-      // NEW: Optimize for thermal printers
       preferCSSPageSize: true,
       displayHeaderFooter: false,
+      printMedia: true,
+      landscape: false,
     });
 
     await page.close();
