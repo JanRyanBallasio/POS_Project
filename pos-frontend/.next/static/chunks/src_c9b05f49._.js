@@ -1913,9 +1913,9 @@ function POSRight(param) {
             try {
                 setIsProcessingSale(true);
                 // Check if we're in debug mode (you can add a toggle for this)
-                const isDebugMode = true; // Set to false when you have your actual printer
+                const isDebugMode = false; // Set to false when you have your actual printer
                 // Send print job directly to backend
-                const response = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$axios$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"].post("/api/direct-print".concat(("TURBOPACK compile-time truthy", 1) ? '?debug=true' : "TURBOPACK unreachable"), payload);
+                const response = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$axios$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"].post("/direct-print".concat(("TURBOPACK compile-time falsy", 0) ? "TURBOPACK unreachable" : ''), payload);
                 if (response.data.success) {
                     if (response.data.debug) {
                         console.log('Receipt saved to file (debug mode):', response.data.filepath);
@@ -2264,7 +2264,7 @@ function POSRight(param) {
                     children: "Total"
                 }, void 0, false, {
                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                    lineNumber: 498,
+                    lineNumber: 497,
                     columnNumber: 9
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2276,25 +2276,25 @@ function POSRight(param) {
                                 children: "₱"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                lineNumber: 501,
+                                lineNumber: 500,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h1", {
                                 children: cartTotal.toFixed(2)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                lineNumber: 502,
+                                lineNumber: 501,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                        lineNumber: 500,
+                        lineNumber: 499,
                         columnNumber: 11
                     }, this)
                 }, void 0, false, {
                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                    lineNumber: 499,
+                    lineNumber: 498,
                     columnNumber: 9
                 }, this),
                 isDebugMode && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2304,14 +2304,14 @@ function POSRight(param) {
                             children: "Debug Mode:"
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                            lineNumber: 507,
+                            lineNumber: 506,
                             columnNumber: 13
                         }, this),
                         " This transaction will not be saved to the database."
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                    lineNumber: 506,
+                    lineNumber: 505,
                     columnNumber: 11
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2326,14 +2326,14 @@ function POSRight(param) {
                                     cartIsEmpty: cart.length === 0
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                    lineNumber: 513,
+                                    lineNumber: 512,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                     className: "flex-1"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                    lineNumber: 519,
+                                    lineNumber: 518,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardFooter"], {
@@ -2345,12 +2345,12 @@ function POSRight(param) {
                                         children: "Next"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                        lineNumber: 521,
+                                        lineNumber: 520,
                                         columnNumber: 17
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                    lineNumber: 520,
+                                    lineNumber: 519,
                                     columnNumber: 15
                                 }, this)
                             ]
@@ -2363,14 +2363,14 @@ function POSRight(param) {
                                     change: change
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                    lineNumber: 533,
+                                    lineNumber: 532,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                     className: "flex-1"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                    lineNumber: 534,
+                                    lineNumber: 533,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_pages$2f$POS$2f$components$2f$rightColumn$2f$CustomerSearch$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -2389,7 +2389,7 @@ function POSRight(param) {
                                     }
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                    lineNumber: 535,
+                                    lineNumber: 534,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_pages$2f$POS$2f$components$2f$rightColumn$2f$AddCustomerModal$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -2398,7 +2398,7 @@ function POSRight(param) {
                                     onCustomerAdded: handleCustomerAdded
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                    lineNumber: 550,
+                                    lineNumber: 549,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardFooter"], {
@@ -2412,7 +2412,7 @@ function POSRight(param) {
                                             children: "Back"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                            lineNumber: 556,
+                                            lineNumber: 555,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -2422,13 +2422,13 @@ function POSRight(param) {
                                             children: "Finish Transaction"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                            lineNumber: 564,
+                                            lineNumber: 563,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                    lineNumber: 555,
+                                    lineNumber: 554,
                                     columnNumber: 15
                                 }, this)
                             ]
@@ -2440,7 +2440,7 @@ function POSRight(param) {
                                     cartTotal: cartTotal
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                    lineNumber: 576,
+                                    lineNumber: 575,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardFooter"], {
@@ -2453,7 +2453,7 @@ function POSRight(param) {
                                             children: isProcessingSale ? "Processing..." : "Print Receipt"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                            lineNumber: 578,
+                                            lineNumber: 577,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -2464,13 +2464,13 @@ function POSRight(param) {
                                             children: "Close"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                            lineNumber: 585,
+                                            lineNumber: 584,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                    lineNumber: 577,
+                                    lineNumber: 576,
                                     columnNumber: 15
                                 }, this)
                             ]
@@ -2478,18 +2478,18 @@ function POSRight(param) {
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                    lineNumber: 510,
+                    lineNumber: 509,
                     columnNumber: 9
                 }, this)
             ]
         }, void 0, true, {
             fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-            lineNumber: 497,
+            lineNumber: 496,
             columnNumber: 7
         }, this)
     }, void 0, false, {
         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-        lineNumber: 496,
+        lineNumber: 495,
         columnNumber: 5
     }, this);
 }
