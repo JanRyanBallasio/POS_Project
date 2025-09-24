@@ -66,6 +66,68 @@ export default function POSLeftCol({ step, isMobile = false, onMobileNext }: POS
   const [showRegisterDialog, setShowRegisterDialog] = useState(false);
   const [unregisteredBarcode, setUnregisteredBarcode] = useState<string | null>(null);
 
+  // DEBUG TOOL: Add 100 items to cart
+  const addDebugItems = useCallback(() => {
+    // Only work in development or when explicitly enabled
+    if (process.env.NODE_ENV === 'production' && !window.location.search.includes('debug=true')) {
+      console.log('🔧 DEBUG: Debug mode disabled in production');
+      return;
+    }
+
+    // Generate 100 random products
+    const debugProducts = Array.from({ length: 100 }, (_, index) => ({
+      id: `debug-${index + 1}`,
+      name: `Debug Product ${index + 1}`,
+      barcode: `DEBUG${String(index + 1).padStart(3, '0')}`,
+      price: Math.floor(Math.random() * 100) + 10, // Random price between 10-110
+      quantity: Math.floor(Math.random() * 50) + 1, // Random quantity between 1-50
+      category_id: Math.floor(Math.random() * 5) + 1, // Random category 1-5
+    }));
+
+    // Add each product to cart with a small delay
+    debugProducts.forEach((product, index) => {
+      setTimeout(() => {
+        try {
+          const addedId = addProductToCart(product);
+          if (addedId && index === 0) {
+            selectRow(addedId); // Select first item
+          }
+        } catch (error) {
+          console.error('Error adding debug product:', error);
+        }
+      }, index * 5); // 5ms delay between additions
+    });
+
+    // Clear search after adding
+    setTimeout(() => {
+      clearSearch();
+      productSearchInputRef.current?.focus();
+    }, 600);
+
+    // Add a visual indicator
+    console.log('🔧 DEBUG: Added 100 items to cart');
+    console.log('⚠️ WARNING: These are debug items and will NOT save to database');
+    
+    // Optional: Show a toast notification
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('debug:items-added', { 
+        detail: { count: 100 } 
+      }));
+    }
+  }, [addProductToCart, selectRow, clearSearch]);
+
+  // Enhanced search handler with debug support
+  const handleSearchChangeWithDebug = useCallback((value: string) => {
+    // Check for debug code
+    if (value.toLowerCase() === 'debug100') {
+      addDebugItems();
+      return;
+    }
+    
+    // Normal search handling
+    handleSearchChange(value);
+  }, [addDebugItems, handleSearchChange]);
+
   // Utility: focus search bar (same as in CartTable)
   const focusSearchBar = useCallback(() => {
     requestAnimationFrame(() => {
@@ -266,7 +328,7 @@ export default function POSLeftCol({ step, isMobile = false, onMobileNext }: POS
             searchQuery={searchQuery}
             searchResults={searchResults}
             showSearchResults={showSearchResults}
-            handleSearchChange={handleSearchChange}
+            handleSearchChange={handleSearchChangeWithDebug} // Use enhanced handler
             handleSearchSelect={handleSearchSelect}
             clearSearch={clearSearch}
             disabled={step === 2 || step === 3}

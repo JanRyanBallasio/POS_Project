@@ -1,6 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { Search, CheckCircle } from "lucide-react";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Product } from "@/hooks/products/useProductApi";
 
 interface ProductSearchProps {
@@ -99,6 +99,63 @@ export default function ProductSearch({
     showSearchResults &&
     !isScannerInputRef?.current &&
     searchResults.length > 0;
+
+  // DEBUG TOOL: Add 100 items to cart
+  const addDebugItems = useCallback(() => {
+    // Only work in development or when explicitly enabled
+    if (process.env.NODE_ENV === 'production' && !window.location.search.includes('debug=true')) {
+      return;
+    }
+
+    // Generate 100 random products
+    const debugProducts = Array.from({ length: 100 }, (_, index) => ({
+      id: `debug-${index + 1}`,
+      name: `Debug Product ${index + 1}`,
+      barcode: `DEBUG${String(index + 1).padStart(3, '0')}`,
+      price: Math.floor(Math.random() * 100) + 10, // Random price between 10-110
+      quantity: Math.floor(Math.random() * 50) + 1, // Random quantity between 1-50
+      category_id: Math.floor(Math.random() * 5) + 1, // Random category 1-5
+    }));
+
+    // Add each product to cart
+    debugProducts.forEach((product, index) => {
+      setTimeout(() => {
+        handleSearchSelect(product);
+      }, index * 10); // Small delay between additions to avoid overwhelming the UI
+    });
+
+    // Clear the search after adding
+    setTimeout(() => {
+      clearSearch();
+    }, 1000);
+
+    console.log('🔧 DEBUG: Added 100 items to cart');
+  }, [handleSearchSelect, clearSearch]);
+
+  // Listen for debug code
+  useEffect(() => {
+    const handleSearchChangeWithDebug = (value: string) => {
+      // Check for debug code
+      if (value.toLowerCase() === 'debug100') {
+        addDebugItems();
+        return;
+      }
+      
+      // Normal search handling
+      handleSearchChange(value);
+    };
+
+    // Override the search change handler
+    if (inputRef?.current) {
+      const input = inputRef.current;
+      const originalHandler = input.oninput;
+      
+      input.oninput = (e) => {
+        const target = e.target as HTMLInputElement;
+        handleSearchChangeWithDebug(target.value);
+      };
+    }
+  }, [addDebugItems, handleSearchChange, inputRef]);
 
   return (
     <div className="relative mb-6">

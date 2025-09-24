@@ -123,6 +123,14 @@ export default function SalesStats() {
     if (!range?.from || !range?.to) return '/sales/totals'
     const fromIso = manilaDayStartUTCiso(range.from)
     const toIso = manilaNextDayStartUTCiso(range.to) // exclusive end: includes the whole `range.to` Manila day
+    
+    console.log('Sales URL calculation:', {
+      rangeFrom: range.from,
+      rangeTo: range.to,
+      fromIso,
+      toIso
+    });
+    
     return `/sales/totals?from=${encodeURIComponent(fromIso)}&to=${encodeURIComponent(toIso)}`
   }, [range?.from?.getTime(), range?.to?.getTime()])
 

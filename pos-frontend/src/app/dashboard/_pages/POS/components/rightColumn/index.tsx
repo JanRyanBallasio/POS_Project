@@ -105,9 +105,24 @@ export default function POSRight({ step, setStep, isMobile = false, onMobileBack
   // NEW: finalizeSale - POST /sales, refresh customers, select updated customer, then show receipt (Step 3)
   const finalizeSale = useCallback(async () => {
     if (isProcessingSale || cart.length === 0) return;
+
+    // Check if cart contains debug items
+    const hasDebugItems = cart.some(item =>
+      item.product.id.toString().startsWith('debug-')
+    );
+
     try {
       setIsProcessingSale(true);
 
+      if (hasDebugItems) {
+        // DEBUG MODE: Skip database save, just go to receipt
+        console.log('🔧 DEBUG MODE: Skipping database save for debug items');
+        console.log('🔧 DEBUG MODE: Proceeding to receipt generation');
+        setStep(3);
+        return;
+      }
+
+      // Normal flow for real products - save to database
       const salesPayload = {
         customer_id: selectedCustomer?.id || null,
         total_purchase: cartTotal,
