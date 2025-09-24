@@ -103,6 +103,21 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
     try {
       setIsProcessingSale(true);
 
+      // Check if any products are debug products (have string IDs like "debug-100")
+      const hasDebugProducts = cart.some(item => {
+        const productId = item.product.id;
+        return typeof productId === 'string' && productId.startsWith('debug-');
+      });
+
+      if (hasDebugProducts) {
+        // Skip database save for debug products - go directly to receipt
+        console.log("Debug products detected - skipping database save, proceeding to receipt");
+        setStep(3);
+        setIsProcessingSale(false);
+        return;
+      }
+
+      // Normal flow for real products - save to database
       const salesPayload = {
         customer_id: selectedCustomer?.id || null,
         total_purchase: cartTotal,
@@ -408,6 +423,11 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
     return () => document.removeEventListener('keydown', handleEnterKey);
   }, [step, isProcessingSale, finalizeSale, completeTransaction]);
 
+  const isDebugMode = cart.some(item => {
+    const productId = item.product.id;
+    return typeof productId === 'string' && productId.startsWith('debug-');
+  });
+
   return (
     <Card className="h-full flex flex-col" onClick={handleCardClick}>
       <CardContent className="flex-1 flex flex-col p-4 pb-0">
@@ -418,6 +438,11 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
             <h1>{cartTotal.toFixed(2)}</h1>
           </div>
         </div>
+        {isDebugMode && (
+          <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-2">
+            <strong>Debug Mode:</strong> This transaction will not be saved to the database.
+          </div>
+        )}
         <div className="flex-1 flex flex-col">
           {step === 1 && (
             <>
