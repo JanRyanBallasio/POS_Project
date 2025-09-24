@@ -192,11 +192,10 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
       setIsProcessingSale(true);
       
       // Check if we're in debug mode (you can add a toggle for this)
-      const isDebugMode = true; // Set to false when you have your actual printer
+      const isDebugMode = false; // Set to false when you have your actual printer
       
       // Send print job directly to backend
-      const response = await axios.post(`/api/direct-print${isDebugMode ? '?debug=true' : ''}`, payload);
-      
+      const response = await axios.post(`/direct-print${isDebugMode ? '?debug=true' : ''}`, payload);      
       if (response.data.success) {
         if (response.data.debug) {
           console.log('Receipt saved to file (debug mode):', response.data.filepath);
