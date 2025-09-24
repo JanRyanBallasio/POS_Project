@@ -14,7 +14,10 @@ interface ProductSearchProps {
   inputRef?: React.RefObject<HTMLInputElement>;
   isScannerInputRef?: React.MutableRefObject<boolean>;
   isLoading?: boolean;
-  onAddProduct?: () => void; // Add this prop
+  onAddProduct?: () => void;
+  // Add these new props
+  handleDebugProductSelect?: (debugCode: string) => void;
+  isDebugCheatCode?: (query: string) => boolean;
 }
 
 export default function ProductSearch({
@@ -28,7 +31,9 @@ export default function ProductSearch({
   inputRef,
   isScannerInputRef,
   isLoading,
-  onAddProduct, // Add this parameter
+  onAddProduct,
+  handleDebugProductSelect,
+  isDebugCheatCode,
 }: ProductSearchProps) {
   const isAutoSelecting = searchResults.length === 1 && searchQuery.trim().length >= 2;
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
@@ -63,7 +68,15 @@ export default function ProductSearch({
         if (highlightedIndex >= 0 && highlightedIndex < searchResults.length) {
           e.preventDefault();
           e.stopPropagation();
-          handleSearchSelect(searchResults[highlightedIndex]);
+          
+          const selectedProduct = searchResults[highlightedIndex];
+          
+          // Check if it's a debug product
+          if (isDebugCheatCode && handleDebugProductSelect && isDebugCheatCode(searchQuery)) {
+            handleDebugProductSelect(searchQuery);
+          } else {
+            handleSearchSelect(selectedProduct);
+          }
         }
       } else if (e.key === "Escape") {
         e.preventDefault();
@@ -78,7 +91,7 @@ export default function ProductSearch({
 
     inputEl.addEventListener("keydown", handleKeyDown);
     return () => inputEl.removeEventListener("keydown", handleKeyDown);
-  }, [searchResults, highlightedIndex, handleSearchSelect, clearSearch, inputRef]);
+  }, [searchResults, highlightedIndex, handleSearchSelect, clearSearch, inputRef, handleDebugProductSelect, isDebugCheatCode, searchQuery]);
 
   // Scroll highlighted item into view
   const scrollToHighlighted = () => {
@@ -146,12 +159,24 @@ export default function ProductSearch({
                   ? "bg-blue-100"
                   : "hover:bg-gray-50"
               }`}
-              onClick={() => handleSearchSelect(product)}
+              onClick={() => {
+                // Check if it's a debug product
+                if (isDebugCheatCode && handleDebugProductSelect && isDebugCheatCode(searchQuery)) {
+                  handleDebugProductSelect(searchQuery);
+                } else {
+                  handleSearchSelect(product);
+                }
+              }}
             >
               <div className="flex justify-between items-center">
                 <div className="min-w-0">
                   <div className="font-medium break-words whitespace-normal flex items-center gap-2">
                     {product.name}
+                    {isDebugCheatCode && isDebugCheatCode(searchQuery) && (
+                      <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
+                        DEBUG
+                      </span>
+                    )}
                   </div>
                   <div className="text-sm text-gray-500">
                     Barcode: {product.barcode}

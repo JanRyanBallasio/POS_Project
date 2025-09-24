@@ -39,28 +39,9 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
 
   const { setOpen, setBarcode } = useProductModal();
 
-  // Add this function
-  const handleAddProduct = () => {
-    setBarcode(searchQuery); // Pre-fill with the search query
-    setOpen(true);
-  };
-
   useCartKeyboard(selectedRowId);
 
   const productSearchInputRef = useRef<HTMLInputElement>(null!);
-
-  const {
-    searchQuery,
-    searchResults,
-    showSearchResults,
-    handleSearchChange,
-    clearSearch,
-    isScannerInputRef,
-    isLoading,
-  } = useProductSearch(handleSearchSelect, products, handleScanAndAddToCart);
-
-  const [showRegisterDialog, setShowRegisterDialog] = useState(false);
-  const [unregisteredBarcode, setUnregisteredBarcode] = useState<string | null>(null);
 
   // Utility: focus search bar (same as in CartTable)
   const focusSearchBar = useCallback(() => {
@@ -70,6 +51,88 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
       ps?.select?.();
     });
   }, []);
+
+  // Flag to prevent focusing search when user triggers "edit price"
+  const priceEditRequestedRef = useRef(false);
+
+  // CRITICAL: Listen for focusBarcodeScanner event from pos-screen.tsx
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleFocusBarcodeScanner = () => {
+      if (priceEditRequestedRef.current) return;
+      focusSearchBar();
+    };
+
+    window.addEventListener("focusBarcodeScanner", handleFocusBarcodeScanner);
+    return () => {
+      window.removeEventListener("focusBarcodeScanner", handleFocusBarcodeScanner);
+    };
+  }, [focusSearchBar]);
+
+  // Handle edit price request
+  useEffect(() => {
+    const onEditRequest = () => {
+      priceEditRequestedRef.current = true;
+      setTimeout(() => (priceEditRequestedRef.current = false), 600);
+    };
+    window.addEventListener("cart:edit-price", onEditRequest);
+    return () => window.removeEventListener("cart:edit-price", onEditRequest);
+  }, []);
+
+  // DECLARE FUNCTIONS FIRST before using them in useProductSearch
+  const handleSearchSelect = useCallback(
+    (product: any) => {
+      addProductToCart(product);
+      // clearSearch will be called by the useProductSearch hook
+      setTimeout(() => {
+        try {
+          productSearchInputRef.current?.focus();
+          productSearchInputRef.current?.select?.();
+        } catch {}
+      }, 100);
+    },
+    [addProductToCart]
+  );
+
+  const handleScanAndAddToCart = useCallback(
+    async (barcode: string) => {
+      try {
+        await scanAndAddToCart(barcode);
+        // clearSearch will be called by the useProductSearch hook
+        setTimeout(() => {
+          try {
+            productSearchInputRef.current?.focus();
+            productSearchInputRef.current?.select?.();
+          } catch {}
+        }, 100);
+      } catch (error) {
+        console.error("Scan error:", error);
+      }
+    },
+    [scanAndAddToCart]
+  );
+
+  const {
+    searchQuery,
+    searchResults,
+    showSearchResults,
+    handleSearchChange,
+    clearSearch,
+    isScannerInputRef,
+    isLoading,
+    handleDebugProductSelect,
+    isDebugCheatCode,
+  } = useProductSearch(handleSearchSelect, products, handleScanAndAddToCart);
+
+  const [showRegisterDialog, setShowRegisterDialog] = useState(false);
+  const [unregisteredBarcode, setUnregisteredBarcode] = useState<string | null>(null);
+
+  // Add this function
+  const handleAddProduct = () => {
+    setBarcode(searchQuery); // Pre-fill with the search query
+    setOpen(true);
+  };
 
   // Add effect to handle product added event
   useEffect(() => {
@@ -88,246 +151,95 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
     return () => window.removeEventListener("product:added", handleProductAdded);
   }, [clearSearch]);
 
-  // Flag to prevent focusing search when user triggers "edit price"
-  const priceEditRequestedRef = useRef(false);
-  useEffect(() => {
-    const onEditRequest = () => {
-      priceEditRequestedRef.current = true;
-      setTimeout(() => (priceEditRequestedRef.current = false), 600);
-    };
-    window.addEventListener("cart:edit-price", onEditRequest);
-    return () => window.removeEventListener("cart:edit-price", onEditRequest);
+  // Handle unregistered barcode
+  const handleUnregisteredBarcode = useCallback((barcode: string) => {
+    setUnregisteredBarcode(barcode);
+    setShowRegisterDialog(true);
   }, []);
 
-  // Focus search on step change
-  useEffect(() => {
-    if (step === 2 || step === 3) {
-      productSearchInputRef.current?.blur();
-      return;
-    }
+  // Handle register dialog close
+  const handleRegisterDialogClose = useCallback(() => {
+    setShowRegisterDialog(false);
+    setUnregisteredBarcode(null);
     setTimeout(() => {
       try {
         productSearchInputRef.current?.focus();
         productSearchInputRef.current?.select?.();
       } catch {}
     }, 100);
-  }, [step]);
-
-  // F2 shortcut → refocus search
-  useEffect(() => {
-    const handleShortcut = (e: KeyboardEvent) => {
-      if (step === 1 && e.key === "F2") {
-        e.preventDefault();
-        productSearchInputRef.current?.focus();
-        productSearchInputRef.current?.select?.();
-      }
-    };
-    window.addEventListener("keydown", handleShortcut);
-    return () => window.removeEventListener("keydown", handleShortcut);
-  }, [step]);
-
-  // Selection events
-  useEffect(() => {
-    const selectNext = () => {
-      if (!cart.length) return;
-      const idx = cart.findIndex((c) => c.id === selectedRowId);
-      const nextIdx = idx < 0 ? 0 : Math.min(cart.length - 1, idx + 1);
-      const id = cart[nextIdx]?.id;
-      if (id) selectRow(id);
-    };
-
-    const selectPrev = () => {
-      if (!cart.length) return;
-      const idx = cart.findIndex((c) => c.id === selectedRowId);
-      const prevIdx = idx <= 0 ? 0 : idx - 1;
-      const id = cart[prevIdx]?.id;
-      if (id) selectRow(id);
-    };
-
-    const onItemDeleted = (e: Event) => {
-      const detail = (e as CustomEvent).detail || {};
-      const nextId: string | null = detail.nextSelectedId ?? null;
-      if (nextId) {
-        selectRow(nextId);
-      } else if (cart.length > 0) {
-        selectRow(cart[0].id);
-      } else {
-        clearSelection();
-      }
-    };
-
-    window.addEventListener("cart:select-next", selectNext);
-    window.addEventListener("cart:select-prev", selectPrev);
-    window.addEventListener("cart:item-deleted", onItemDeleted);
-    return () => {
-      window.removeEventListener("cart:select-next", selectNext);
-      window.removeEventListener("cart:select-prev", selectPrev);
-      window.removeEventListener("cart:item-deleted", onItemDeleted);
-    };
-  }, [cart, selectedRowId, selectRow]);
-
-  // Cash input focus shortcut
-  useEffect(() => {
-    const onFocusCash = () => {
-      const el =
-        document.querySelector<HTMLInputElement>('[data-pos-cash-input="true"]') ||
-        document.querySelector<HTMLInputElement>('input[placeholder="0.00"]');
-      el?.focus();
-      el?.select?.();
-    };
-    window.addEventListener("cart:focus-cash", onFocusCash);
-    return () => window.removeEventListener("cart:focus-cash", onFocusCash);
   }, []);
 
-  async function handleScanAndAddToCart(barcode: string) {
-    const clean = (v: string | null | undefined) =>
-      v == null ? "" : String(v).replace(/[\u0000-\u001F\u007F-\u009F]/g, "").trim();
-    const normalizeBarcode = (bc: string) => bc.replace(/^0+/, "") || "0";
-    const cleaned = clean(barcode);
-    if (!cleaned || cleaned.length < 2) return;
-
-    const cleanedNormalized = normalizeBarcode(cleaned);
-    
-    console.log('Scanning barcode:', cleaned); // Add debug log
-
-    const foundProduct = products.find((p) => {
-      const productBarcode = clean(p?.barcode);
-      if (!productBarcode) return false;
-      return (
-        productBarcode === cleaned || normalizeBarcode(productBarcode) === cleanedNormalized
-      );
-    });
-
-    if (foundProduct) {
-      console.log('Product found locally:', foundProduct.name); // Add debug log
-      await scanAndAddToCart(cleaned, foundProduct);
-      return;
-    }
-
-    try {
-      console.log('Checking server for barcode:', cleaned); // Add debug log
-      const serverProduct = await productApi.getByBarcode(cleaned);
-      if (serverProduct) {
-        console.log('Product found on server:', serverProduct.name); // Add debug log
-        await scanAndAddToCart(cleaned, serverProduct);
-        return;
-      }
-    } catch (error) {
-      console.log('Server check failed:', error); // Add debug log
-    }
-
-    console.log('Product not found, showing register dialog for:', cleaned); // Add debug log
-    setUnregisteredBarcode(cleaned);
-    setShowRegisterDialog(true);
-  }
-
-  function handleRegisterProduct(barcode: string) {
+  // Handle register dialog confirm
+  const handleRegisterDialogConfirm = useCallback(() => {
     setShowRegisterDialog(false);
-    setBarcode(barcode);
-    setOpen(true);
-  }
-
-  function handleSearchSelect(product: any) {
-    try {
-      const addedId = addProductToCart(product);
-      clearSearch();
-      if (addedId) selectRow(addedId);
-
-      setTimeout(() => {
-        if (priceEditRequestedRef.current && addedId) {
-          window.dispatchEvent(
-            new CustomEvent("cart:edit-price", { detail: { id: addedId } })
-          );
-          priceEditRequestedRef.current = false;
-          return;
-        }
+    setUnregisteredBarcode(null);
+    setTimeout(() => {
+      try {
         productSearchInputRef.current?.focus();
         productSearchInputRef.current?.select?.();
-      }, 50);
-    } catch {
-      clearSearch();
-      setTimeout(() => {
-        productSearchInputRef.current?.focus();
-        productSearchInputRef.current?.select?.();
-      }, 50);
-    }
-  }
+      } catch {}
+    }, 100);
+  }, []);
 
   return (
-    <div className="relative w-full h-full">
-      <Card className="w-full h-full flex flex-col">
-        <CardContent className="p-6 flex-1 flex flex-col min-h-0">
+    <div className="flex flex-col h-full">
+      <Card className="flex-1 overflow-hidden">
+        <CardContent className="p-4 h-full flex flex-col">
           <ProductSearch
-            inputRef={productSearchInputRef}
             searchQuery={searchQuery}
             searchResults={searchResults}
             showSearchResults={showSearchResults}
             handleSearchChange={handleSearchChange}
             handleSearchSelect={handleSearchSelect}
             clearSearch={clearSearch}
-            disabled={step === 2 || step === 3}
+            disabled={step !== 1}
+            inputRef={productSearchInputRef}
             isScannerInputRef={isScannerInputRef}
             isLoading={isLoading}
             onAddProduct={handleAddProduct}
+            handleDebugProductSelect={handleDebugProductSelect}
+            isDebugCheatCode={isDebugCheatCode}
           />
           {isLoading && (
-            <div className="absolute top-full left-0 right-0 bg-white border rounded-md shadow-lg z-10 p-3 text-center text-gray-500">
+            <div className="text-center text-gray-500 py-4">
               Searching...
             </div>
           )}
-          <div className="rounded-md border flex-1 overflow-auto">
-            <CartTable
-              cart={cart}
-              selectedRowId={selectedRowId}
-              selectRow={selectRow}
-              updateCartItemQuantity={updateCartItemQuantity}
-              updateCartItemPrice={updateCartItemPrice}
-              deleteCartItem={deleteCartItem}
-              disabled={step === 2 || step === 3}
-            />
-          </div>
+          <CartTable
+            cart={cart}
+            selectedRowId={selectedRowId}
+            selectRow={selectRow}
+            updateCartItemQuantity={updateCartItemQuantity}
+            updateCartItemPrice={updateCartItemPrice}
+            deleteCartItem={deleteCartItem}
+            disabled={step !== 1}
+          />
         </CardContent>
       </Card>
-      <ProductRegisterModal />
+
+      {/* Unregistered Barcode Dialog */}
       <AlertDialog open={showRegisterDialog} onOpenChange={setShowRegisterDialog}>
-        <AlertDialogContent className="max-w-md">
+        <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-lg font-semibold text-red-600">
-              Product Not Found
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-base">
-              The scanned barcode <span className="font-bold">{unregisteredBarcode}</span> is not registered in the system.
-              <br /><br />
-              Would you like to register this product now?
+            <AlertDialogTitle>Product Not Found</AlertDialogTitle>
+            <AlertDialogDescription>
+              The barcode "{unregisteredBarcode}" is not registered in the system. 
+              Would you like to add this product?
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="gap-2">
-            <AlertDialogCancel 
-              onClick={() => {
-                setShowRegisterDialog(false);
-                setUnregisteredBarcode(null);
-                // Focus search bar after modal closes
-                setTimeout(() => {
-                  focusSearchBar();
-                }, 100); // Small delay to ensure modal is fully closed
-              }}
-              className="px-4 py-2"
-            >
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleRegisterDialogClose}>
               Cancel
             </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                if (unregisteredBarcode) {
-                  handleRegisterProduct(unregisteredBarcode);
-                }
-              }}
-              className="px-4 py-2 "
-            >
-              Register Product
+            <AlertDialogAction onClick={handleRegisterDialogConfirm}>
+              Add Product
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Product Register Modal */}
+      <ProductRegisterModal />
     </div>
   );
 }

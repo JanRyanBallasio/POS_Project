@@ -4,6 +4,49 @@ import Fuse from 'fuse.js';
 import debounce from "lodash.debounce";
 import axios from "@/lib/axios";
 
+// Add debug product creation function
+const createDebugProduct = (debugCode: string): Product => {
+  // Extract number from debug code (e.g., "debug100" -> 100)
+  const match = debugCode.match(/debug(\d+)/i);
+  const quantity = match ? parseInt(match[1]) : 1;
+  
+  return {
+    id: `debug-${quantity}`, // This will trigger debug mode in finalizeSale
+    name: `Debug Product ${quantity}`,
+    barcode: debugCode,
+    price: 10.00, // Default debug price
+    quantity: quantity,
+    category_id: 1, // Use default category ID 1 instead of null
+    unit: 'pcs'
+  };
+};
+
+// Add function to create multiple debug products for cart
+const createMultipleDebugProducts = (debugCode: string): Product[] => {
+  const match = debugCode.match(/debug(\d+)/i);
+  const quantity = match ? parseInt(match[1]) : 1;
+  
+  const products: Product[] = [];
+  for (let i = 0; i < quantity; i++) {
+    products.push({
+      id: `debug-${i + 1}`, // Each gets a unique debug ID
+      name: `Debug Product ${i + 1}`,
+      barcode: `${debugCode}-${i + 1}`,
+      price: 10.00,
+      quantity: 1, // Each row has quantity 1
+      category_id: 1, // Use default category ID 1 instead of null
+      unit: 'pcs'
+    });
+  }
+  
+  return products;
+};
+
+// Add debug cheat code detection
+const isDebugCheatCode = (query: string): boolean => {
+  return /^debug\d+$/i.test(query.trim());
+};
+
 export function useProductSearch(
   onSelect: (p: Product) => void, 
   allProducts: Product[] = [],
@@ -89,12 +132,38 @@ export function useProductSearch(
   // Add search result caching
   const searchCache = useRef<Map<string, Product[]>>(new Map());
 
+  // Add function to handle debug product selection
+  const handleDebugProductSelect = useCallback((debugCode: string) => {
+    const multipleProducts = createMultipleDebugProducts(debugCode);
+    
+    // Add each product to cart individually
+    multipleProducts.forEach(product => {
+      onSelectRef.current(product);
+    });
+    
+    // Clear search after adding
+    setSearchQuery("");
+    setSearchResults([]);
+    setShowSearchResults(false);
+  }, []);
+
   const searchProducts = useCallback(
     debounce(async (q: string) => {
       if (!q || q.trim().length < 2) {
         setSearchResults([]);
         setShowSearchResults(false);
         setIsLoading(false);
+        return;
+      }
+
+      // Check for debug cheat codes first
+      if (isDebugCheatCode(q)) {
+        const debugProduct = createDebugProduct(q);
+        setSearchResults([debugProduct]);
+        setShowSearchResults(true);
+        setIsLoading(false);
+        
+        // DON'T auto-add - wait for Enter key
         return;
       }
 
@@ -186,8 +255,8 @@ export function useProductSearch(
         setShowSearchResults(true);
         setIsLoading(false);
 
-        // Auto-add logic when there's only one result
-        if (results.length === 1) {
+        // Auto-add logic when there's only one result (but NOT for debug products)
+        if (results.length === 1 && !isDebugCheatCode(q)) {
           const result = results[0];
           const isExactBarcodeMatch = result.barcode && cleanedQuery.trim() === result.barcode.trim();
           const isExactNameMatch = result.name.toLowerCase().trim() === cleanedQuery.toLowerCase().trim();
@@ -258,5 +327,7 @@ export function useProductSearch(
     clearSearch,
     isScannerInputRef,
     isLoading,
+    handleDebugProductSelect,
+    isDebugCheatCode,
   };
 }
