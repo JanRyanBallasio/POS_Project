@@ -3,6 +3,9 @@ const cors = require('cors');
 const defaultOrigins = [
   'http://localhost:3000',
   'http://127.0.0.1:3000',
+  "tauri://localhost",   // important for packaged app
+  "https://tauri.localhost",
+  "http://tauri.localhost"
 ];
 
 // you can set ALLOWED_ORIGINS as a comma-separated env var

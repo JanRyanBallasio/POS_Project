@@ -1,5 +1,13 @@
 const jwtUtils = require('../utils/jwt');
 
+// TEMPORARY: Development auth bypass for local testing (e.g., Tauri .exe)
+// This makes all routes behave as PUBLIC and not require a token.
+// IMPORTANT: To re-enable authentication, switch `module.exports` at the bottom
+// to export the real `auth` function instead of `devBypass`.
+const devBypass = (req, res, next) => {
+  return next();
+};
+
 const auth = (req, res, next) => {
   try {
     let token = null;
@@ -61,11 +69,8 @@ const auth = (req, res, next) => {
   }
 };
 
-// DEVELOPMENT: authentication disabled so the POS can be accessed directly.
-// REVERT THIS BEFORE DEPLOYING TO PRODUCTION.
-// module.exports = (req, res, next) => {
-//   return next();
-// };
+// DEVELOPMENT MODE: export the bypass so all routes are public
+module.exports = process.env.NODE_ENV === 'development' || process.env.DISABLE_AUTH === 'true' ? devBypass : auth;
 
-// At the end of the file, export the real auth handler instead of the global bypass:
-module.exports = auth;
+// To RE-ENABLE authentication later, change the line above to:
+// module.exports = auth;

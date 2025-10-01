@@ -91,22 +91,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   }, [storeUpdateCartItemPrice]);
 
   const addOrIncrement = useCallback((product: Product): string => {
-    const now = Date.now();
-    const productKey = product.barcode || product.id?.toString() || product.name;
-
-    const lastTime = lastScanTimeRef.current.get(productKey);
-    if (lastTime && now - lastTime < 1000) {
-      const existing = cart.find((item) => productEqual(item.product, product));
-      if (existing) {
-        setLastAddedItemId(existing.id);
-        lastScanTimeRef.current.set(productKey, now);
-        return existing.id;
-      }
-    }
-    lastScanTimeRef.current.set(productKey, now);
-
+    // ✅ Simple and clean - let the store handle everything
     return storeAddProductToCart(product);
-  }, [cart, storeAddProductToCart, setLastAddedItemId]);
+  }, [storeAddProductToCart]);
 
   const addProductToCart = useCallback((product: Product): string => {
     return addOrIncrement(product);
@@ -141,21 +128,12 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           addOrIncrement(product);
           setScanError(null);
         } else {
-          const placeholder: Product = {
-            id: `pending-${cleanedBarcode}`,
-            name: "Loading product...",
-            barcode: cleanedBarcode,
-            price: 0,
-            quantity: 0,
-            category_id: 0,
-            __placeholder: true,
-          };
-          addOrIncrement(placeholder);
-
+          // ✅ FIXED: Don't add placeholder or open modal directly
+          // Instead, dispatch an event to trigger the confirmation dialog
           try {
-            setContextBarcode?.(cleanedBarcode);
-            if (openModal) openModal("addProduct");
-            else setProductModalOpen?.(true);
+            window.dispatchEvent(new CustomEvent("unregistered-barcode", {
+              detail: { barcode: cleanedBarcode }
+            }));
           } catch { }
           setScanError(`Product not found: ${cleanedBarcode}`);
         }
@@ -171,7 +149,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         setIsScanning(false);
       }
     },
-    [pendingScans, openModal, setProductModalOpen, setContextBarcode, addOrIncrement, setScanError, setIsScanning]
+    [pendingScans, addOrIncrement, setScanError, setIsScanning]
   );
 
   useEffect(() => {

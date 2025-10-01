@@ -41,25 +41,26 @@ function generateESCPOSReceipt(data) {
   commands += '\x1B\x61\x00'; // ESC a 0 - Left align
   
   // Add separator
-  commands += '================================\n';
+  commands += '--------------------------------\n';
   
   // Customer and date info
   commands += `Customer: ${data.customer?.name || "N/A"}\n`;
   commands += `Date: ${dateStr}\n`;
   commands += '--------------------------------\n';
   
-  // Table header
-  commands += 'Item                QTY  Price  Amount\n';
+  // Table header with Price column
+  commands += '# Description        Qty Price Amount\n';
   commands += '--------------------------------\n';
   
-  // Add all items (this will handle all 100+ items without cutoff)
-  data.items.forEach((item) => {
-    const desc = item.desc.length > 20 ? item.desc.substring(0, 17) + "..." : item.desc;
+  // Add all items with Price column
+  data.items.forEach((item, index) => {
+    const desc = item.desc.length > 15 ? item.desc.substring(0, 12) + "..." : item.desc;
     const qty = item.qty.toString().padStart(3);
     const price = item.price ? item.price.toFixed(2) : (item.amount / item.qty).toFixed(2);
-    const amount = item.amount.toFixed(2).padStart(7);
+    const priceStr = `P${price}`.padStart(6);
+    const amount = `P${item.amount.toFixed(2)}`.padStart(7);
     
-    commands += `${desc.padEnd(20)} ${qty} ${price.padStart(6)} ${amount}\n`;
+    commands += `${(index + 1).toString().padStart(2)} ${desc.padEnd(15)} ${qty} ${priceStr} ${amount}\n`;
   });
   
   // Totals
@@ -73,16 +74,177 @@ function generateESCPOSReceipt(data) {
   
   // Footer
   commands += '\x1B\x61\x01'; // Center align
-  commands += 'THANK YOU - GATANG KA MANEN!\n\n';
-  commands += 'CUSTOMER COPY\n';
+  commands += 'CUSTOMER COPY - NOT AN OFFICIAL RECEIPT\n\n';
+  commands += 'THANK YOU - GATANG KA MANEN!\n';
   commands += '\x1B\x61\x00'; // Left align
-  commands += '================================\n\n';
+  commands += '--------------------------------\n\n';
   
   // Feed paper and cut (ZY609 compatible)
   commands += '\x1B\x64\x03'; // ESC d 3 - Feed 3 lines
   commands += '\x1D\x56\x00'; // GS V 0 - Full cut
   
   return commands;
+}
+
+// NEW: Generate HTML receipt (better for large receipts)
+function generateHTMLReceipt(data) {
+  const dateStr = new Date().toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long", 
+    day: "2-digit",
+  });
+
+  let itemsHTML = '';
+  data.items.forEach((item, index) => {
+    const desc = item.desc.length > 20 ? item.desc.substring(0, 17) + "..." : item.desc;
+    const price = item.price ? item.price.toFixed(2) : (item.amount / item.qty).toFixed(2);
+    
+    itemsHTML += `
+      <tr>
+        <td>${index + 1}</td>
+        <td>${desc}</td>
+        <td>${item.qty}</td>
+        <td>P${price}</td>
+        <td>P${item.amount.toFixed(2)}</td>
+      </tr>
+    `;
+  });
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Receipt</title>
+      <style>
+        @media print {
+          body { margin: 0; padding: 0; }
+          .no-print { display: none; }
+        }
+        body {
+          font-family: 'Courier New', monospace;
+          font-size: 12px;
+          line-height: 1.2;
+          margin: 0;
+          padding: 10px;
+          width: 80mm;
+          background: white;
+        }
+        .header { 
+          text-align: center; 
+          font-weight: bold; 
+          margin-bottom: 10px; 
+          font-size: 14px;
+        }
+        .separator { 
+          border-top: 1px dashed #000; 
+          margin: 5px 0; 
+          height: 1px;
+        }
+        table { 
+          width: 100%; 
+          border-collapse: collapse; 
+          margin: 5px 0;
+        }
+        th, td { 
+          padding: 2px; 
+          text-align: left; 
+          font-size: 11px;
+        }
+        th {
+          font-weight: bold;
+        }
+        .right { text-align: right; }
+        .center { text-align: center; }
+        .footer { 
+          margin-top: 20px; 
+          text-align: center; 
+          font-weight: bold;
+        }
+        .customer-info {
+          display: flex;
+          justify-content: space-between;
+          margin: 5px 0;
+        }
+        .summary-section {
+          margin: 10px 0;
+        }
+        .summary-line {
+          display: flex;
+          justify-content: space-between;
+          margin: 2px 0;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div>YZY STORE</div>
+        <div>Eastern Slide, Tuding</div>
+      </div>
+      
+      <div class="separator"></div>
+      
+      <div class="customer-info">
+        <span>Customer:</span>
+        <span>${data.customer?.name || "N/A"}</span>
+      </div>
+      <div class="customer-info">
+        <span>Date:</span>
+        <span>${dateStr}</span>
+      </div>
+      
+      <div class="separator"></div>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Description</th>
+            <th>Qty</th>
+            <th>Price</th>
+            <th>Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${itemsHTML}
+        </tbody>
+      </table>
+      
+      <div class="separator"></div>
+      
+      <div class="summary-section">
+        <div class="summary-line">
+          <span>Total:</span>
+          <span>P${data.cartTotal.toFixed(2)}</span>
+        </div>
+        <div class="summary-line">
+          <span>Amount:</span>
+          <span>P${data.amount.toFixed(2)}</span>
+        </div>
+        <div class="summary-line">
+          <span>Change:</span>
+          <span>P${data.change.toFixed(2)}</span>
+        </div>
+      </div>
+      
+      <div class="separator"></div>
+      
+      <div class="summary-line">
+        <span>Customer Points:</span>
+        <span>${data.points || 0}</span>
+      </div>
+      
+      <div class="separator"></div>
+      
+      <div class="footer">
+        <div>CUSTOMER COPY - NOT AN OFFICIAL RECEIPT</div>
+        <div>THANK YOU - GATANG KA MANEN!</div>
+      </div>
+      
+      <div class="separator"></div>
+    </body>
+    </html>
+  `;
 }
 
 // Function to save receipt to file for debugging
@@ -306,6 +468,75 @@ exports.printReceipt = async function (req, res) {
     console.error("Direct print error:", err);
     return res.status(500).json({ 
       error: "Direct print failed", 
+      details: String(err) 
+    });
+  }
+};
+
+// NEW: Generate HTML receipt for print preview
+exports.generateHTMLReceipt = async function (req, res) {
+  try {
+    const raw = req.body || {};
+    
+    const data = {
+      customer: raw.customer || { name: "N/A" },
+      cartTotal: Number(raw.cartTotal || 0),
+      amount: Number(raw.amount || 0),
+      change: Number(raw.change || 0),
+      points: raw.points || 0,
+      items: Array.isArray(raw.items) ? raw.items : [],
+    };
+
+    // Generate HTML receipt using existing function
+    const htmlReceipt = generateHTMLReceipt(data);
+    
+    res.json({
+      success: true,
+      html: htmlReceipt,
+      itemCount: data.items.length,
+      totalAmount: data.cartTotal
+    });
+    
+  } catch (err) {
+    console.error("HTML generation error:", err);
+    res.status(500).json({ 
+      error: "HTML generation failed", 
+      details: String(err) 
+    });
+  }
+};
+
+// NEW: Print via Tauri (unlimited items)
+exports.printReceiptTauri = async function (req, res) {
+  try {
+    const raw = req.body || {};
+    
+    const data = {
+      customer: raw.customer || { name: "N/A" },
+      cartTotal: Number(raw.cartTotal || 0),
+      amount: Number(raw.amount || 0),
+      change: Number(raw.change || 0),
+      points: raw.points || 0,
+      items: Array.isArray(raw.items) ? raw.items : [],
+    };
+
+    // Generate HTML receipt
+    const htmlReceipt = generateHTMLReceipt(data);
+    
+    // Return HTML for Tauri to handle
+    res.json({
+      success: true,
+      message: "Receipt ready for printing",
+      html: htmlReceipt,
+      itemCount: data.items.length,
+      totalAmount: data.cartTotal,
+      unlimited: true // No cutoff issues
+    });
+    
+  } catch (err) {
+    console.error("Tauri print error:", err);
+    res.status(500).json({ 
+      error: "Tauri print failed", 
       details: String(err) 
     });
   }

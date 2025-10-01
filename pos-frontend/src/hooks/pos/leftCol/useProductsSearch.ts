@@ -173,6 +173,26 @@ export function useProductSearch(
         setSearchResults(searchCache.current.get(cacheKey)!);
         setShowSearchResults(true);
         setIsLoading(false);
+        
+        // ✅ Allow auto-add even for cached results
+        const cachedResults = searchCache.current.get(cacheKey)!;
+        if (cachedResults.length === 1 && !isDebugCheatCode(q)) {
+          const result = cachedResults[0];
+          const isExactBarcodeMatch = result.barcode && q.trim() === result.barcode.trim();
+          const isExactNameMatch = result.name.toLowerCase().trim() === q.toLowerCase().trim();
+          
+          if (isScannerInputRef.current || isExactBarcodeMatch || isExactNameMatch) {
+            setTimeout(() => {
+              onSelectRef.current(result);
+              if (isScannerInputRef.current) {
+                setSearchQuery("");
+                setSearchResults([]);
+                setShowSearchResults(false);
+                lastProcessedBarcodeRef.current = ""; // Reset processed barcode
+              }
+            }, 100);
+          }
+        }
         return;
       }
 
@@ -198,13 +218,6 @@ export function useProductSearch(
         // Clean up barcode input if it looks like repeated input
         if (isScannerInputRef.current || /^\d+$/.test(q)) {
           cleanedQuery = cleanBarcodeInput(q);
-          
-          // Prevent processing the same barcode multiple times
-          if (cleanedQuery === lastProcessedBarcodeRef.current && isScannerInputRef.current) {
-            setIsLoading(false);
-            return;
-          }
-          lastProcessedBarcodeRef.current = cleanedQuery;
         }
 
         // Use client-side search if we have products loaded
