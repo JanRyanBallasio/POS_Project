@@ -1,3 +1,4 @@
+// pos-frontend/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, useCallback } from "react";
@@ -8,21 +9,35 @@ import CustomerSearch from "./CustomerSearch";
 import PaymentSummary from "./PaymentSummary";
 import Receipt from "./Receipt";
 import AddCustomerModal from "./AddCustomerModal";
-import type { Customer } from "@/hooks/pos/rightCol/useCustomerTagging";
+import { usePrint } from "@/hooks/printing/usePrint";
 import axios from "@/lib/axios";
-// REMOVED: import { qz } from 'qz-tray';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
-interface POSRightColProps {
+export default function POSRight({
+  step,
+  setStep,
+}: {
   step: 1 | 2 | 3;
-  setStep: React.Dispatch<React.SetStateAction<1 | 2 | 3>>;
-}
-
-export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: (s: 1 | 2 | 3) => void }) {
+  setStep: (s: 1 | 2 | 3) => void;
+}) {
   const { cart, cartTotal, clearCart } = useCart();
   const [amount, setAmount] = useState("");
   const [change, setChange] = useState(0);
   const [addCustomerOpen, setAddCustomerOpen] = useState(false);
   const [isProcessingSale, setIsProcessingSale] = useState(false);
+
+  const { printReceipt, listPrinters } = usePrint();
+
+  const [printOpen, setPrintOpen] = useState(false);
+  const [printers, setPrinters] = useState<string[]>([]);
+  const [printerName, setPrinterName] = useState<string>("");
 
   useEffect(() => {
     const amountValue = parseFloat(amount) || 0;
@@ -40,7 +55,6 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
     setAllCustomers,
   } = useCustomerTagging();
 
-  // Calculator
   const handleNext = useCallback(() => {
     const amountValue = parseFloat(amount) || 0;
     if (amountValue >= cartTotal) {
@@ -51,7 +65,17 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
     }
   }, [amount, cartTotal, setStep]);
 
-  // EXISTING: handleNewTransaction currently posts and clears state (keep as "clear after receipt" for manual use)
+  useEffect(() => {
+    if (!printOpen) return;
+    (async () => {
+      try {
+        setPrinters(await listPrinters());
+      } catch {
+        setPrinters([]);
+      }
+    })();
+  }, [printOpen, listPrinters]);
+
   const handleNewTransaction = useCallback(async () => {
     if (isProcessingSale || cart.length === 0) return;
 
@@ -68,57 +92,54 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
         })),
       };
 
-      await axios.post('/sales', salesPayload);
+      await axios.post("/sales", salesPayload);
 
-      // Refresh customer data if needed (but don't keep them selected)
       try {
-        const customerResp = await axios.get('/customers');
+        const customerResp = await axios.get("/customers");
         if (customerResp.data?.success && Array.isArray(customerResp.data.data)) {
           setAllCustomers(customerResp.data.data);
         }
-      } catch (err) {
-        console.warn('Failed to refresh customer data:', err);
-      }
+      } catch {}
 
-      // Reset ALL state - including customer data - IMMEDIATELY
       clearCustomer();
       setStep(1);
       setAmount("");
       setChange(0);
       clearCart();
-
-      // Clear global flags immediately
       (window as any).customerSearchActive = false;
-
     } catch (err: any) {
-      const errorMessage = err.response?.data?.error || err.message || "Unknown error";
+      const errorMessage =
+        err.response?.data?.error || err.message || "Unknown error";
       alert("Error saving sale: " + errorMessage);
     } finally {
       setIsProcessingSale(false);
     }
-  }, [cart, selectedCustomer, cartTotal, clearCustomer, clearCart, setAllCustomers]);
+  }, [
+    cart,
+    selectedCustomer,
+    cartTotal,
+    clearCustomer,
+    clearCart,
+    setAllCustomers,
+    isProcessingSale,
+  ]);
 
-  // NEW: finalizeSale - POST /sales, refresh customers, select updated customer, then show receipt (Step 3)
   const finalizeSale = useCallback(async () => {
     if (isProcessingSale || cart.length === 0) return;
     try {
       setIsProcessingSale(true);
 
-      // Check if any products are debug products (have string IDs like "debug-100")
-      const hasDebugProducts = cart.some(item => {
+      const hasDebugProducts = cart.some((item) => {
         const productId = item.product.id;
-        return typeof productId === 'string' && productId.startsWith('debug-');
+        return typeof productId === "string" && productId.startsWith("debug-");
       });
 
       if (hasDebugProducts) {
-        // Skip database save for debug products - go directly to receipt
-        console.log("Debug products detected - skipping database save, proceeding to receipt");
         setStep(3);
         setIsProcessingSale(false);
         return;
       }
 
-      // Normal flow for real products - save to database
       const salesPayload = {
         customer_id: selectedCustomer?.id || null,
         total_purchase: cartTotal,
@@ -129,13 +150,14 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
         })),
       };
 
-      const resp = await axios.post('/sales', salesPayload);
+      const resp = await axios.post("/sales", salesPayload);
       const payload = resp?.data;
 
-      // OPTIMIZATION: Simplify customer update logic
       if (payload?.data?.customer) {
         setAllCustomers((prev: any[] = []) => {
-          const idx = prev.findIndex((p) => String(p.id) === String(payload.data.customer.id));
+          const idx = prev.findIndex(
+            (p) => String(p.id) === String(payload.data.customer.id)
+          );
           if (idx >= 0) {
             const copy = [...prev];
             copy[idx] = payload.data.customer;
@@ -148,14 +170,22 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
 
       setStep(3);
     } catch (err: any) {
-      const errorMessage = err.response?.data?.error || err.message || "Unknown error";
+      const errorMessage =
+        err.response?.data?.error || err.message || "Unknown error";
       alert("Error finalizing sale: " + errorMessage);
     } finally {
       setIsProcessingSale(false);
     }
-  }, [cart, selectedCustomer, cartTotal, setAllCustomers, selectCustomer, setStep, isProcessingSale]);
+  }, [
+    cart,
+    selectedCustomer,
+    cartTotal,
+    setAllCustomers,
+    selectCustomer,
+    setStep,
+    isProcessingSale,
+  ]);
 
-  // NEW: completeTransaction (close receipt) — clear cart/customer and reset UI
   const completeTransaction = useCallback(() => {
     try {
       clearCustomer();
@@ -164,80 +194,14 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
       setChange(0);
       clearCart();
       (window as any).customerSearchActive = false;
-    } catch (err) {
-      console.warn("completeTransaction error:", err);
-    }
+    } catch {}
   }, [clearCustomer, setStep, setAmount, setChange, clearCart]);
 
-  // NEW: Generate ESC/POS receipt (no browser, no cut-off issues)
-  const generateESCPOSReceipt = (data: any) => {
-    const dateStr = new Date().toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "2-digit",
-    });
+  const openPrintDialog = useCallback(() => {
+    setPrintOpen(true);
+  }, []);
 
-    let receipt = '';
-
-    // Initialize printer
-    receipt += '\x1B\x40'; // ESC @ - Initialize
-
-    // Center align and bold for header
-    receipt += '\x1B\x61\x01'; // ESC a 1 - Center align
-    receipt += '\x1B\x45\x01'; // ESC E 1 - Bold on
-    receipt += 'YZY STORE\n';
-    receipt += 'Eastern Slide, Tuding\n';
-    receipt += '\x1B\x45\x00'; // ESC E 0 - Bold off
-    receipt += '\x1B\x61\x00'; // ESC a 0 - Left align
-
-    // Add separator
-    receipt += '--------------------------------\n';
-
-    // Customer and date info
-    receipt += `Customer: ${data.customer?.name || "N/A"}\n`;
-    receipt += `Date: ${dateStr}\n`;
-    receipt += '--------------------------------\n';
-
-    // Table header
-    receipt += '# Description        Qty Price Amount\n';
-    receipt += '--------------------------------\n';
-
-    // Add all items
-    data.items.forEach((item: any, index: number) => {
-      const desc = item.desc.length > 15 ? item.desc.substring(0, 12) + "..." : item.desc;
-      const qty = item.qty.toString().padStart(3);
-      const price = item.price ? item.price.toFixed(2) : (item.amount / item.qty).toFixed(2);
-      const priceStr = `P${price}`.padStart(6);
-      const amount = `P${item.amount.toFixed(2)}`.padStart(7);
-
-      receipt += `${(index + 1).toString().padStart(2)} ${desc.padEnd(15)} ${qty} ${priceStr} ${amount}\n`;
-    });
-
-    // Totals
-    receipt += '--------------------------------\n';
-    receipt += `Total:                    P${data.cartTotal.toFixed(2)}\n`;
-    receipt += `Amount:                   P${data.amount.toFixed(2)}\n`;
-    receipt += `Change:                   P${data.change.toFixed(2)}\n`;
-    receipt += '--------------------------------\n';
-    receipt += `Customer Points: ${data.points || 0}\n`;
-    receipt += '--------------------------------\n\n';
-
-    // Footer
-    receipt += '\x1B\x61\x01'; // Center align
-    receipt += 'CUSTOMER COPY - NOT AN OFFICIAL RECEIPT\n\n';
-    receipt += 'THANK YOU - GATANG KA MANEN!\n';
-    receipt += '\x1B\x61\x00'; // Left align
-    receipt += '--------------------------------\n\n';
-
-    // AUTO-CUT
-    receipt += '\x1B\x64\x01'; // ESC d 1 - Feed only 1 line
-    receipt += '\x1D\x56\x00'; // GS V 0 - Full cut (auto-cut)
-
-    return receipt;
-  };
-
-  // UPDATED: Use direct ESC/POS printing (no browser, no cut-off issues)
-  const handleTauriPrint = useCallback(async () => {
+  const confirmPrint = useCallback(async () => {
     if (isProcessingSale) return;
 
     const items = cart.map((item) => ({
@@ -246,223 +210,147 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
       amount: Number(((item.product?.price || 0) * item.quantity).toFixed(2)),
     }));
 
-    const data = {
-      customer: selectedCustomer || { name: "N/A" },
-      cartTotal: Number(cartTotal || 0),
-      amount: Number(parseFloat(amount) || cartTotal || 0),
-      change: Number(change || 0),
-      items,
-    };
-
     try {
       setIsProcessingSale(true);
-      // OPTION B: Guaranteed auto‑cut via direct ESC/POS
-      const escposReceipt = generateESCPOSReceipt(data);
-      const { usePrint } = await import('@/hooks/printing/usePrint');
-      const { printDirect } = usePrint();
-      await printDirect(escposReceipt, data.items.length);
-
-
-      console.log(`Opened print preview. Items: ${data.items.length}`);
-    } catch (err: any) {
-      console.error('Print preview error:', err);
-      alert(`Print preview failed: ${err.message || 'Unknown error'}`);
+      await printReceipt({
+        store: { name: "YZY STORE", address1: "Eastern Slide, Tuding" },
+        customer: selectedCustomer || { name: "N/A" },
+        cartTotal: Number(cartTotal || 0),
+        amount: Number(parseFloat(amount) || cartTotal || 0),
+        change: Number(change || 0),
+        points: Number(selectedCustomer?.points ?? 0),
+        items,
+        printerName: printerName || null,
+      });
+      setPrintOpen(false);
+    } catch (e: any) {
+      alert(e?.message || String(e));
     } finally {
       setIsProcessingSale(false);
     }
-  }, [cart, selectedCustomer, cartTotal, amount, change, isProcessingSale]);
+  }, [
+    isProcessingSale,
+    cart,
+    selectedCustomer,
+    cartTotal,
+    amount,
+    change,
+    printerName,
+    printReceipt,
+  ]);
 
-  // Called when a new customer has been added from the AddCustomerModal
-  const handleCustomerAdded = useCallback(
-    (customer: any) => {
-      try {
-        // Add new customer to local list and select them
-        setAllCustomers((prev: any[] = []) => [...prev, customer]);
-        setAddCustomerOpen(false);
-        // selectCustomer comes from useCustomerTagging
-        if (typeof selectCustomer === "function") selectCustomer(customer);
-      } catch (err) {
-        console.warn("handleCustomerAdded error:", err);
-      }
-    },
-    [setAllCustomers, selectCustomer]
-  );
-
-  // Card click handler
-  const handleCardClick = useCallback(() => {
-    // Card click functionality can be added here if needed
-  }, []);
-
-  // NEW: centralized step-advance handler used by keyboard listeners
   const handlePosNext = useCallback(() => {
-    if (isProcessingSale) {
-      return;
-    }
+    if (isProcessingSale) return;
 
     if (step === 2) {
-      // Immediately finalize the transaction (will POST /sales, update customer points, then show receipt)
       void finalizeSale();
       return;
     }
 
     if (step === 3) {
-      // Do not re-submit the sale here — finalizeSale already submitted on Step 2.
       completeTransaction();
       return;
     }
 
-    if ((window as any).customerSearchActive) {
-      return;
-    }
+    if ((window as any).customerSearchActive) return;
 
-    const activeElement = document.activeElement;
-    const isCustomerSearch = activeElement && (
-      (activeElement as HTMLElement).getAttribute('data-customer-search') === 'true' ||
-      (activeElement as HTMLInputElement).placeholder?.toLowerCase().includes('search name') ||
-      (activeElement as HTMLElement).closest('[data-customer-search]') !== null
-    );
+    const activeElement = document.activeElement as HTMLElement | null;
+    const isCustomerSearch =
+      activeElement &&
+      ((activeElement.getAttribute("data-customer-search") === "true") ||
+        (activeElement as HTMLInputElement).placeholder?.toLowerCase().includes("search name") ||
+        !!activeElement.closest("[data-customer-search]"));
 
-    if (isCustomerSearch) {
-      return;
-    }
+    if (isCustomerSearch) return;
 
     if (step === 1) {
-      // use existing validation function for step 1
       handleNext();
       return;
     }
 
     if (step === 3) {
-      // Do not re-submit the sale here — finalizeSale already submitted on Step 2.
       completeTransaction();
       return;
     }
   }, [step, isProcessingSale, finalizeSale, handleNext, completeTransaction, setStep]);
 
-  // Handle Ctrl+Enter / pos:next-step (backwards compatible)
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    window.addEventListener('pos:next-step', handlePosNext);
+    if (typeof window === "undefined") return;
+    window.addEventListener("pos:next-step", handlePosNext);
     return () => {
-      window.removeEventListener('pos:next-step', handlePosNext);
+      window.removeEventListener("pos:next-step", handlePosNext);
     };
   }, [handlePosNext, step]);
 
-  // Listen for pos:step-1-back (Ctrl+B) — when on Step 2, go back to Step 1
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const onStep1Back = (e: Event) => {
-      if (step === 2) {
-        setStep(1);
-      }
+    const onStep1Back = () => {
+      if (step === 2) setStep(1);
     };
     window.addEventListener("pos:step-1-back", onStep1Back);
     return () => window.removeEventListener("pos:step-1-back", onStep1Back);
   }, [step, setStep]);
 
-  // Listen for customer:add (Ctrl+Shift+C) — open AddCustomerModal
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const onCustomerAdd = (e: Event) => {
-      setAddCustomerOpen(true);
-    };
+    const onCustomerAdd = () => setAddCustomerOpen(true);
     window.addEventListener("customer:add", onCustomerAdd);
     return () => window.removeEventListener("customer:add", onCustomerAdd);
   }, [setAddCustomerOpen]);
 
-  // Global keyboard shortcut for Step 3: Shift+P -> print receipt
   useEffect(() => {
     if (typeof window === "undefined") return;
     const onKey = (e: KeyboardEvent) => {
-      // Only respond on Step 3, only Shift+P (no Ctrl/Alt)
-      if (step === 3 && e.shiftKey && !e.ctrlKey && !e.altKey && e.key.toLowerCase() === "p") {
+      if (
+        step === 3 &&
+        e.shiftKey &&
+        !e.ctrlKey &&
+        !e.altKey &&
+        e.key.toLowerCase() === "p"
+      ) {
         e.preventDefault();
         e.stopPropagation();
-        handleTauriPrint(); // Use Tauri printing
+        setPrintOpen(true);
       }
     };
     document.addEventListener("keydown", onKey, { capture: true });
     return () => document.removeEventListener("keydown", onKey, { capture: true });
-  }, [step, handleTauriPrint]);
+  }, [step]);
 
-  // Step-specific listeners (step-1 / step-2)
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const handleStep1Complete = (e: Event) => {
-      if (step !== 1) return;
-      handlePosNext();
-    };
-
-    const handleStep2Complete = (e: Event) => {
-      if (step !== 2) return;
-      handlePosNext();
-    };
-
-    const handleStep3Complete = (e: Event) => {
-      if (step !== 3) return;
-      // Do NOT re-submit the sale from Step 3; just close/reset the UI.
-      completeTransaction();
-    };
-
-    window.addEventListener('pos:step-1-complete', handleStep1Complete);
-    window.addEventListener('pos:step-2-complete', handleStep2Complete);
-    window.addEventListener('pos:step-3-complete', handleStep3Complete);
-    return () => {
-      window.removeEventListener('pos:step-1-complete', handleStep1Complete);
-      window.removeEventListener('pos:step-2-complete', handleStep2Complete);
-      window.removeEventListener('pos:step-3-complete', handleStep3Complete);
-    };
-  }, [step, handlePosNext, completeTransaction]);
-
-  // Handle Enter key for finishing transaction in Steps 2 and 3
-  useEffect(() => {
+    if (typeof window === "undefined") return;
     const handleEnterKey = (e: KeyboardEvent) => {
-      // Only handle Enter in Steps 2 and 3
       if (step !== 2 && step !== 3) return;
-
-      // Don't handle Enter if customer search is active
       if ((window as any).customerSearchActive) return;
-
-      // Don't handle Enter if we're processing
       if (isProcessingSale) return;
-
-      // Only handle Enter if no modifier keys are pressed
       if (e.ctrlKey || e.shiftKey || e.altKey) return;
 
-      // Check if we're focused on an input field
       const activeElement = document.activeElement as HTMLElement;
-      if (activeElement && (
-        activeElement.tagName === 'INPUT' ||
-        activeElement.tagName === 'TEXTAREA' ||
-        activeElement.contentEditable === 'true'
-      )) {
+      if (
+        activeElement &&
+        (activeElement.tagName === "INPUT" ||
+          activeElement.tagName === "TEXTAREA" ||
+          activeElement.contentEditable === "true")
+      ) {
         return;
       }
 
       e.preventDefault();
-
-      if (step === 2) {
-        // In Step 2, finish the transaction (finalize sale)
-        void finalizeSale();
-      } else if (step === 3) {
-        // In Step 3, close the transaction (complete transaction)
-        completeTransaction();
-      }
+      if (step === 2) void finalizeSale();
+      else if (step === 3) completeTransaction();
     };
 
-    document.addEventListener('keydown', handleEnterKey);
-    return () => document.removeEventListener('keydown', handleEnterKey);
+    document.addEventListener("keydown", handleEnterKey);
+    return () => document.removeEventListener("keydown", handleEnterKey);
   }, [step, isProcessingSale, finalizeSale, completeTransaction]);
 
-  const isDebugMode = cart.some(item => {
+  const isDebugMode = cart.some((item) => {
     const productId = item.product.id;
-    return typeof productId === 'string' && productId.startsWith('debug-');
+    return typeof productId === "string" && productId.startsWith("debug-");
   });
 
   return (
-    <Card className="h-full flex flex-col" onClick={handleCardClick}>
+    <Card className="h-full flex flex-col">
       <CardContent className="flex-1 flex flex-col p-4 pb-0">
         <h1 className="text-xl font-medium">Total</h1>
         <div className="w-full py-3 mb-2">
@@ -471,11 +359,13 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
             <h1>{cartTotal.toFixed(2)}</h1>
           </div>
         </div>
+
         {isDebugMode && (
           <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-2">
             <strong>Debug Mode:</strong> This transaction will not be saved to the database.
           </div>
         )}
+
         <div className="flex-1 flex flex-col">
           {step === 1 && (
             <>
@@ -497,6 +387,7 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
               </CardFooter>
             </>
           )}
+
           {step === 2 && (
             <>
               <PaymentSummary amount={amount} cartTotal={cartTotal} change={change} />
@@ -510,16 +401,19 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
                 clearCustomer={clearCustomer}
                 onAddCustomer={() => setAddCustomerOpen(true)}
                 onCustomerSelected={() => {
-                  // When customer is selected and Enter is pressed, finish transaction
-                  if (selectedCustomer) {
-                    void finalizeSale();
-                  }
+                  if (selectedCustomer) void finalizeSale();
                 }}
               />
               <AddCustomerModal
                 open={addCustomerOpen}
                 onOpenChange={setAddCustomerOpen}
-                onCustomerAdded={handleCustomerAdded}
+                onCustomerAdded={(customer: any) => {
+                  try {
+                    setAllCustomers((prev: any[] = []) => [...prev, customer]);
+                    setAddCustomerOpen(false);
+                    if (typeof selectCustomer === "function") selectCustomer(customer);
+                  } catch {}
+                }}
               />
               <CardFooter className="px-4 pb-4 pt-4 flex flex-col gap-3">
                 <Button
@@ -540,13 +434,14 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
               </CardFooter>
             </>
           )}
+
           {step === 3 && (
             <>
               <Receipt selectedCustomer={selectedCustomer} cartTotal={cartTotal} />
               <CardFooter className="px-4 pb-4 pt-4 flex flex-col gap-2">
                 <Button
                   className="w-full h-14 text-xl font-medium"
-                  onClick={handleTauriPrint} // Use Tauri printing
+                  onClick={openPrintDialog}
                   disabled={isProcessingSale}
                 >
                   {isProcessingSale ? "Processing..." : "Print Receipt"}
@@ -564,6 +459,40 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
           )}
         </div>
       </CardContent>
+
+      <Dialog open={printOpen} onOpenChange={setPrintOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Select printer</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-2">
+            <Label htmlFor="printer">Printer</Label>
+            <select
+              id="printer"
+              value={printerName}
+              onChange={(e) => setPrinterName(e.target.value)}
+              className="w-full border rounded px-2 py-2"
+            >
+              <option value="">Default printer</option>
+              {printers.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setPrintOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={confirmPrint} disabled={isProcessingSale}>
+              Print
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

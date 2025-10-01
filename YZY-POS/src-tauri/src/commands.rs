@@ -1,3 +1,4 @@
+// YZY-POS/src-tauri/src/commands.rs
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use reqwest::Client;
@@ -15,7 +16,6 @@ pub struct Sale {
     pub metadata: Option<Value>,
 }
 
-/// Example: GET sales by date
 #[tauri::command]
 pub async fn get_sales_data(date: String) -> Result<Vec<Sale>, String> {
     let supabase_url =
@@ -24,7 +24,6 @@ pub async fn get_sales_data(date: String) -> Result<Vec<Sale>, String> {
         env::var("SUPABASE_KEY").map_err(|_| "Missing SUPABASE_KEY".to_string())?;
 
     let client = Client::new();
-
     let url = format!(
         "{}/rest/v1/sales?select=*&date=eq.{}",
         supabase_url.trim_end_matches('/'),
@@ -64,13 +63,8 @@ pub async fn get_sale_items(from: Option<String>, to: Option<String>) -> Result<
 
     let mut url = format!("{}/rest/v1/sales_items?select=category,quantity", supabase_url.trim_end_matches('/'));
     let mut filters = vec![];
-
-    if let Some(f) = from {
-        filters.push(format!("date=gte.{}", f));
-    }
-    if let Some(t) = to {
-        filters.push(format!("date=lte.{}", t));
-    }
+    if let Some(f) = from { filters.push(format!("date=gte.{}", f)); }
+    if let Some(t) = to { filters.push(format!("date=lte.{}", t)); }
     if !filters.is_empty() {
         url.push('&');
         url.push_str(&filters.join("&"));
@@ -93,15 +87,13 @@ pub async fn get_sale_items(from: Option<String>, to: Option<String>) -> Result<
     Ok(rows)
 }
 
-// Single authoritative direct ESC/POS printing command (Windows/macOS/Linux)
+// Kept for compatibility; frontend now posts to backend /print/receipt.
 #[command]
 pub async fn print_receipt_direct(
     receipt_data: String,
     item_count: u32,
-    printer_name: Option<String>,   // Windows only; ignored on macOS/Linux
+    printer_name: Option<String>,
 ) -> Result<String, String> {
-    println!("Direct printing receipt with {} items", item_count);
-
     let timestamp = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap()
@@ -116,23 +108,63 @@ pub async fn print_receipt_direct(
     let full_path = current_dir.join(&temp_file);
     let full_path_str = full_path.to_string_lossy().to_string();
 
-    println!("Attempting to print file: {}", full_path_str);
-
     let result = if cfg!(target_os = "windows") {
-        if let Some(name) = printer_name.clone() {
-            let ps = format!(
-              "Get-Content -Path '{}' -Encoding Byte -ReadCount 0 | Out-Printer -Name '{}'",
-              full_path_str.replace('\'', "''"),
-              name.replace('\'', "''")
-            );
-            Command::new("powershell")
-                .args(["-NoProfile", "-Command", &ps])
-                .output()
+        let mut ps = r#"$ErrorActionPreference = 'Stop'
+$path = '__PATH__'
+$bytes = [System.IO.File]::ReadAllBytes($path)
+Add-Type -Language CSharp -TypeDefinition @"
+using System;
+using System.Runtime.InteropServices;
+public class RawPrinterHelper {
+  [StructLayout(LayoutKind.Sequential)]
+  public class DOCINFOA {
+    [MarshalAs(UnmanagedType.LPStr)] public string pDocName;
+    [MarshalAs(UnmanagedType.LPStr)] public string pOutputFile;
+    [MarshalAs(UnmanagedType.LPStr)] public string pDatatype;
+  }
+  [DllImport("winspool.drv", SetLastError=true)]
+  public static extern bool OpenPrinter(string pPrinterName, out IntPtr phPrinter, IntPtr pDefault);
+  [DllImport("winspool.drv", SetLastError=true)]
+  public static extern bool StartDocPrinter(IntPtr hPrinter, int level, DOCINFOA di);
+  [DllImport("winspool.drv", SetLastError=true)]
+  public static extern bool StartPagePrinter(IntPtr hPrinter);
+  [DllImport("winspool.drv", SetLastError=true)]
+  public static extern bool WritePrinter(IntPtr hPrinter, byte[] pBytes, int dwCount, out int dwWritten);
+  [DllImport("winspool.drv", SetLastError=true)]
+  public static extern bool EndPagePrinter(IntPtr hPrinter);
+  [DllImport("winspool.drv", SetLastError=true)]
+  public static extern bool EndDocPrinter(IntPtr hPrinter);
+  [DllImport("winspool.drv", SetLastError=true)]
+  public static extern bool ClosePrinter(IntPtr hPrinter);
+}
+public class RawPrint {
+  public static void SendBytes(string printerName, byte[] bytes) {
+    IntPtr h;
+    if (!RawPrinterHelper.OpenPrinter(printerName, out h, IntPtr.Zero)) throw new Exception("OpenPrinter failed");
+    var di = new RawPrinterHelper.DOCINFOA() { pDocName = "ESC/POS", pDatatype = "RAW" };
+    if (!RawPrinterHelper.StartDocPrinter(h, 1, di)) throw new Exception("StartDocPrinter failed");
+    if (!RawPrinterHelper.StartPagePrinter(h)) throw new Exception("StartPagePrinter failed");
+    int written;
+    if (!RawPrinterHelper.WritePrinter(h, bytes, bytes.Length, out written)) throw new Exception("WritePrinter failed");
+    RawPrinterHelper.EndPagePrinter(h);
+    RawPrinterHelper.EndDocPrinter(h);
+    RawPrinterHelper.ClosePrinter(h);
+  }
+}
+"@
+$target = __PRINTER_EXPR__
+if (-not $target) { throw 'No target printer'; }
+[RawPrint]::SendBytes($target, $bytes)
+"#.to_string();
+
+        let safe_path = full_path_str.replace('\'', "''");
+        let printer_expr = if let Some(name) = printer_name.clone() {
+            format!("'{}'", name.replace('\'', "''"))
         } else {
-            Command::new("cmd")
-                .args(["/C", "copy", "/B", &full_path_str, "PRN"])
-                .output()
-        }
+            String::from("(Get-CimInstance Win32_Printer | Where-Object {$_.Default -eq $true}).Name")
+        };
+        ps = ps.replace("__PATH__", &safe_path).replace("__PRINTER_EXPR__", &printer_expr);
+        Command::new("powershell").args(["-NoProfile","-ExecutionPolicy","Bypass","-Command",&ps]).output()
     } else if cfg!(target_os = "macos") {
         Command::new("lpr").arg(&full_path_str).output()
     } else {
@@ -141,31 +173,36 @@ pub async fn print_receipt_direct(
 
     match result {
         Ok(output) => {
-            println!("Print command output: {:?}", output);
             if output.status.success() {
-                cleanup_temp_file(&temp_file);
-                Ok(format!(
-                    "Receipt sent to printer successfully! Items: {}",
-                    item_count
-                ))
+                let _ = std::fs::remove_file(&temp_file);
+                Ok(format!("Receipt sent. Items: {}", item_count))
             } else {
                 let stderr = String::from_utf8_lossy(&output.stderr);
                 let stdout = String::from_utf8_lossy(&output.stdout);
-                println!("Print command failed - stderr: {}, stdout: {}", stderr, stdout);
-                Err(format!("Print command failed: {} (stdout: {})", stderr, stdout))
+                Err(format!("Print failed: {} (stdout: {})", stderr, stdout))
             }
         }
-        Err(e) => {
-            println!("Print command error: {}", e);
-            Err(format!("Print command failed: {}", e))
-        }
+        Err(e) => Err(format!("Print command failed: {}", e))
     }
 }
 
-fn cleanup_temp_file(temp_file: &str) {
-    let file_path = temp_file.to_string();
-    tokio::spawn(async move {
-        tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
-        let _ = std::fs::remove_file(&file_path);
-    });
+#[tauri::command]
+pub async fn list_printers() -> Result<Vec<String>, String> {
+    if cfg!(target_os = "windows") {
+        let ps = "Get-CimInstance Win32_Printer | Select-Object -ExpandProperty Name";
+        let out = Command::new("powershell").args(["-NoProfile","-Command",ps]).output().map_err(|e| format!("Failed to run PowerShell: {}", e))?;
+        if !out.status.success() { return Err(String::from_utf8_lossy(&out.stderr).to_string()); }
+        let names = String::from_utf8_lossy(&out.stdout).lines().map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect::<Vec<_>>();
+        Ok(names)
+    } else { Ok(vec![]) }
+}
+
+#[tauri::command]
+pub async fn get_default_printer_name() -> Result<String, String> {
+    if cfg!(target_os = "windows") {
+        let ps = "(Get-CimInstance Win32_Printer | Where-Object {$_.Default -eq $true}).Name";
+        let out = Command::new("powershell").args(["-NoProfile","-Command",ps]).output().map_err(|e| format!("Failed to run PowerShell: {}", e))?;
+        if !out.status.success() { return Err(String::from_utf8_lossy(&out.stderr).to_string()); }
+        Ok(String::from_utf8_lossy(&out.stdout).trim().to_string())
+    } else { Ok(String::new()) }
 }

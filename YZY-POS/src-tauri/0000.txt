@@ -9,4 +9,4 @@
 
    
 
-  
+  "frontendDist": "../pos-frontend/out",
