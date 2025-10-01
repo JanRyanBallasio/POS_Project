@@ -157,6 +157,21 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
     setShowRegisterDialog(true);
   }, []);
 
+  // ✅ FIXED: Listen for unregistered barcode events from cart-context
+  useEffect(() => {
+    const handleUnregisteredBarcodeEvent = (e: Event) => {
+      const detail = (e as CustomEvent)?.detail;
+      if (detail?.barcode) {
+        handleUnregisteredBarcode(detail.barcode);
+      }
+    };
+
+    window.addEventListener("unregistered-barcode", handleUnregisteredBarcodeEvent);
+    return () => {
+      window.removeEventListener("unregistered-barcode", handleUnregisteredBarcodeEvent);
+    };
+  }, [handleUnregisteredBarcode]);
+
   // Handle register dialog close
   const handleRegisterDialogClose = useCallback(() => {
     setShowRegisterDialog(false);
@@ -169,9 +184,13 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
     }, 100);
   }, []);
 
-  // Handle register dialog confirm
+  // ✅ FIXED: Handle register dialog confirm - now opens the modal
   const handleRegisterDialogConfirm = useCallback(() => {
     setShowRegisterDialog(false);
+    if (unregisteredBarcode) {
+      setBarcode(unregisteredBarcode);
+      setOpen(true);
+    }
     setUnregisteredBarcode(null);
     setTimeout(() => {
       try {
@@ -179,7 +198,7 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
         productSearchInputRef.current?.select?.();
       } catch {}
     }, 100);
-  }, []);
+  }, [unregisteredBarcode, setBarcode, setOpen]);
 
   return (
     <div className="flex flex-col h-full">

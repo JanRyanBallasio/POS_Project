@@ -1,28 +1,20 @@
-"use client";
+import DashboardClient from "./DashboardClient";
 
-import { use } from "react";
-import MainDashboard from "../_pages/POS/pos-screen";
-import ProductsPage from "../_pages/Products/productsScreen";
-import DashboardScreen from "../_pages/Dashboard/dashboardScreen";
-import StockMovementScreen from "../_pages/StockMovements/stockMScreen";
+export const dynamicParams = false;
 
-export default function SiteDashboardPage({
-  params,
-}: {
+export function generateStaticParams() {
+  return [
+    { site: "main" },
+    { site: "db" },
+    { site: "products" },
+    { site: "stock" },
+  ];
+}
+
+// 👇 Notice the "async" and "props: { params }"
+export default async function SiteDashboardPage(props: {
   params: Promise<{ site: string }>;
 }) {
-  const { site } = use(params);
-
-  switch (site) {
-    case "main":
-      return <MainDashboard />;
-    case "db":
-      return <DashboardScreen />;
-    case "products":
-      return <ProductsPage />;
-    case "stock":
-      return <StockMovementScreen />;
-    default:
-      return <div>{site}</div>;
-  }
+  const { site } = await props.params;
+  return <DashboardClient site={site} />;
 }
