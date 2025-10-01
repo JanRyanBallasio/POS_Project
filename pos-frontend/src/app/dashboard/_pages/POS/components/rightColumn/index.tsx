@@ -190,29 +190,139 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
 
     try {
       setIsProcessingSale(true);
-      
-      // Check if we're in debug mode (you can add a toggle for this)
-      const isDebugMode = false; // Set to false when you have your actual printer
-      
-      // Send print job directly to backend
-      const response = await axios.post(`/direct-print${isDebugMode ? '?debug=true' : ''}`, payload);      
+
+      // Get HTML from backend for print preview
+      const response = await axios.post('/generate-html', payload);
+
       if (response.data.success) {
-        if (response.data.debug) {
-          console.log('Receipt saved to file (debug mode):', response.data.filepath);
-          alert(`Receipt saved to file (debug mode)!\nItems: ${response.data.itemCount}\nTotal: P${response.data.totalAmount}\nFile: ${response.data.filepath}`);
-        } else {
-          console.log('Receipt printed successfully to ZY609 printer');
-          alert(`Receipt printed successfully!\nItems: ${response.data.itemCount}\nTotal: P${response.data.totalAmount}`);
-        }
+        // Create hidden iframe for printing (no popup required)
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'absolute';
+        iframe.style.left = '-9999px';
+        iframe.style.top = '-9999px';
+        iframe.style.width = '800px';
+        iframe.style.height = '600px';
+
+        document.body.appendChild(iframe);
+
+        // Write HTML to iframe
+        iframe.contentDocument?.write(response.data.html);
+        iframe.contentDocument?.close();
+
+        // Wait for content to load, then print
+        iframe.onload = () => {
+          setTimeout(() => {
+            iframe.contentWindow?.print();
+            // Remove iframe after printing
+            setTimeout(() => {
+              document.body.removeChild(iframe);
+            }, 1000);
+          }, 500);
+        };
+
+        console.log(`Receipt preview opened! Items: ${response.data.itemCount}`);
+      } else {
+        throw new Error(response.data.error || 'HTML generation failed');
+      }
+
+    } catch (err: any) {
+      console.error('Print preview error:', err);
+      const errorMessage = err.response?.data?.error || err.message || "Unknown error";
+      alert(`Print preview failed: ${errorMessage}`);
+    } finally {
+      setIsProcessingSale(false);
+    }
+  }, [cart, selectedCustomer, cartTotal, amount, change, isProcessingSale]);
+
+  // NEW: Tauri printing function (unlimited items)
+  const handleTauriPrint = useCallback(async () => {
+    if (isProcessingSale) return;
+
+    const items = cart.map((item) => ({
+      desc: item.product?.name ?? item.product?.barcode ?? "Item",
+      qty: Number(item.quantity || 0),
+      amount: Number(((item.product?.price || 0) * item.quantity).toFixed(2)),
+    }));
+
+    const payload = {
+      customer: selectedCustomer || { name: "N/A" },
+      cartTotal: Number(cartTotal || 0),
+      amount: Number(parseFloat(amount) || cartTotal || 0),
+      change: Number(change || 0),
+      items,
+    };
+
+    try {
+      setIsProcessingSale(true);
+
+      // Get HTML from backend
+      const response = await axios.post('/tauri-print', payload);
+
+      if (response.data.success) {
+        // Use Tauri to print (no browser limitations)
+        await qz.print({}, [response.data.html]);
+         console.log(`Receipt printed successfully! Items: ${response.data.itemCount}`);
+        alert(`Receipt printed successfully!\nItems: ${response.data.itemCount}\nTotal: P${response.data.totalAmount}`);
       } else {
         throw new Error(response.data.error || 'Print failed');
       }
-        
+
     } catch (err: any) {
-      console.error('Direct print error:', err);
+      console.error('Tauri print error:', err);
       const errorMessage = err.response?.data?.error || err.message || "Unknown error";
-      const suggestion = err.response?.data?.suggestion || "";
-      alert(`Print failed: ${errorMessage}\n\n${suggestion}`);
+      alert(`Print failed: ${errorMessage}`);
+    } finally {
+      setIsProcessingSale(false);
+    }
+  }, [cart, selectedCustomer, cartTotal, amount, change, isProcessingSale]);
+
+  // NEW: Browser printing with pagination for large receipts
+  const handleBrowserPrint = useCallback(async () => {
+    if (isProcessingSale) return;
+
+    const items = cart.map((item) => ({
+      desc: item.product?.name ?? item.product?.barcode ?? "Item",
+      qty: Number(item.quantity || 0),
+      amount: Number(((item.product?.price || 0) * item.quantity).toFixed(2)),
+    }));
+
+    const payload = {
+      customer: selectedCustomer || { name: "N/A" },
+      cartTotal: Number(cartTotal || 0),
+      amount: Number(parseFloat(amount) || cartTotal || 0),
+      change: Number(change || 0),
+      items,
+    };
+
+    try {
+      setIsProcessingSale(true);
+
+      const response = await axios.post('/tauri-print', payload);
+
+      if (response.data.success) {
+        // Browser printing (works everywhere, no limitations)
+        const printWindow = window.open('', '_blank', 'width=800,height=600');
+        if (printWindow) {
+          printWindow.document.write(response.data.html);
+          printWindow.document.close();
+          printWindow.onload = () => {
+            setTimeout(() => {
+              printWindow.print();
+              setTimeout(() => printWindow.close(), 1000);
+            }, 500);
+          };
+        }
+
+        console.log(`Receipt printed successfully! Items: ${response.data.itemCount}`);
+        alert(`Receipt printed successfully!\nItems: ${response.data.itemCount}\nTotal: P${response.data.totalAmount}`);
+      } else {
+        throw new Error(response.data.error || 'Print failed');
+      }
+
+    } catch (err: any) {
+      console.error('Print error:', err);
+      const errorMessage = err.response?.data?.error || err.message || "Unknown error";
+      alert(`Print failed: ${errorMessage}`);
     } finally {
       setIsProcessingSale(false);
     }
@@ -222,7 +332,7 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
   const generateReceiptText = (data: any) => {
     const dateStr = new Date().toLocaleDateString("en-US", {
       year: "numeric",
-      month: "long", 
+      month: "long",
       day: "2-digit",
     });
 
@@ -246,7 +356,7 @@ Item                QTY  Price  Amount
       // Fix: Calculate price from amount and qty if price is undefined
       const price = item.price ? item.price.toFixed(2) : (item.amount / item.qty).toFixed(2);
       const amount = item.amount.toFixed(2).padStart(7);
-      
+
       receipt += `${desc.padEnd(20)} ${qty} ${price.padStart(6)} ${amount}\n`;
     });
 
@@ -409,12 +519,12 @@ CUSTOMER COPY
       if (step === 3 && e.shiftKey && !e.ctrlKey && !e.altKey && e.key.toLowerCase() === "p") {
         e.preventDefault();
         e.stopPropagation();
-        handlePrintReceipt();
+        handleTauriPrint(); // Changed from handlePrintReceipt
       }
     };
     document.addEventListener("keydown", onKey, { capture: true });
     return () => document.removeEventListener("keydown", onKey, { capture: true });
-  }, [step, handlePrintReceipt]);
+  }, [step, handleTauriPrint]);
 
   // Step-specific listeners (step-1 / step-2)
   useEffect(() => {
@@ -576,7 +686,7 @@ CUSTOMER COPY
               <CardFooter className="px-4 pb-4 pt-4 flex flex-col gap-2">
                 <Button
                   className="w-full h-14 text-xl font-medium"
-                  onClick={handlePrintReceipt}
+                  onClick={handlePrintReceipt} // Use print preview
                   disabled={isProcessingSale}
                 >
                   {isProcessingSale ? "Processing..." : "Print Receipt"}

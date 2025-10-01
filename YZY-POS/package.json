@@ -1,0 +1,25 @@
+{
+  "name": "yzy-pos",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "clean": "node ./scripts/clean-build.cjs",
+    "tauri:build": "npm run clean && tauri build",
+    "tauri:clean": "taskkill /f /im yzy-pos.exe 2>nul; node ./scripts/clean-build.cjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.58.0",
+    "@tauri-apps/api": "^2.8.0",
+    "@tauri-apps/plugin-opener": "^2"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.8.4",
+    "typescript": "~5.6.2",
+    "vite": "^6.0.3"
+  }
+}
