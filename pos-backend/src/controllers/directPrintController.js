@@ -3,7 +3,6 @@ const escposUSB = require('escpos-usb');
 const escposNetwork = require('escpos-network');
 const fs = require('fs');
 const path = require('path');
-const puppeteer = require("puppeteer");
 
 // ZY609 Printer Configuration
 const ZY609_CONFIG = {
@@ -98,7 +97,7 @@ function generateESCPOSReceipt(data) {
   return commands;
 }
 
-// NEW: Generate HTML receipt (better for large receipts)
+// Generate HTML receipt for Tauri print preview
 function generateHTMLReceipt(data) {
   const dateStr = new Date().toLocaleDateString("en-US", {
     year: "numeric",
@@ -485,7 +484,7 @@ exports.printReceipt = async function (req, res) {
   }
 };
 
-// NEW: Generate HTML receipt for print preview
+// Generate HTML receipt for print preview
 exports.generateHTMLReceipt = async function (req, res) {
   try {
     const raw = req.body || {};
@@ -518,7 +517,7 @@ exports.generateHTMLReceipt = async function (req, res) {
   }
 };
 
-// NEW: Print via Tauri (unlimited items)
+// Enhanced print via Tauri with better error handling
 exports.printReceiptTauri = async function (req, res) {
   try {
     const raw = req.body || {};
@@ -542,13 +541,56 @@ exports.printReceiptTauri = async function (req, res) {
       html: htmlReceipt,
       itemCount: data.items.length,
       totalAmount: data.cartTotal,
-      unlimited: true // No cutoff issues
+      unlimited: true, // No cutoff issues
+      printMethod: "tauri" // Indicate this is for Tauri printing
     });
     
   } catch (err) {
     console.error("Tauri print error:", err);
     res.status(500).json({ 
       error: "Tauri print failed", 
+      details: String(err) 
+    });
+  }
+};
+
+// NEW: Enhanced print endpoint with multiple fallbacks
+exports.printReceiptEnhanced = async function (req, res) {
+  try {
+    const raw = req.body || {};
+    
+    const data = {
+      customer: raw.customer || { name: "N/A" },
+      cartTotal: Number(raw.cartTotal || 0),
+      amount: Number(raw.amount || 0),
+      change: Number(raw.change || 0),
+      points: raw.points || 0,
+      items: Array.isArray(raw.items) ? raw.items : [],
+    };
+
+    // Generate both HTML and ESC/POS receipts
+    const htmlReceipt = generateHTMLReceipt(data);
+    const escposCommands = generateESCPOSReceipt(data);
+    
+    res.json({
+      success: true,
+      message: "Receipt ready for printing",
+      html: htmlReceipt,
+      escpos: escposCommands,
+      itemCount: data.items.length,
+      totalAmount: data.cartTotal,
+      printOptions: {
+        tauri: true,
+        qzTray: true,
+        browser: true,
+        directPrint: true
+      }
+    });
+    
+  } catch (err) {
+    console.error("Enhanced print error:", err);
+    res.status(500).json({ 
+      error: "Enhanced print failed", 
       details: String(err) 
     });
   }
@@ -603,10 +645,11 @@ exports.listPrinters = async function (req, res) {
   }
 };
 
+exports.buildHTMLReceipt = generateHTMLReceipt;
+
 exports.generatePDF = async function (req, res) {
   try {
     const raw = req.body || {};
-    
     const data = {
       customer: raw.customer || { name: "N/A" },
       cartTotal: Number(raw.cartTotal || 0),
@@ -616,95 +659,29 @@ exports.generatePDF = async function (req, res) {
       items: Array.isArray(raw.items) ? raw.items : [],
     };
 
-    // Use the same HTML template as other functions
     const html = generateHTMLReceipt(data);
 
-    // PDF generation logic (moved from receiptPdfController.js)
-    const browser = await getBrowser();
-    const page = await browser.newPage();
-    
-    const widthPx = Math.round(80 * 3.78);
-    await page.setViewport({ width: widthPx, height: 800 });
-    await page.setContent(html, { waitUntil: "networkidle0" });
-    
-    const paperHeightPx = await page.evaluate(() => {
-      const el = document.getElementById('receipt') || document.querySelector('.paper') || document.body;
-      const rect = el.getBoundingClientRect();
-      const style = window.getComputedStyle(el);
-      const mt = parseFloat(style.marginTop || 0);
-      const mb = parseFloat(style.marginBottom || 0);
-      return Math.ceil(rect.height + mt + mb);
+    const receiptsDir = require('path').join(__dirname, '../../receipts');
+    const fs = require('fs');
+    if (!fs.existsSync(receiptsDir)) {
+      fs.mkdirSync(receiptsDir, { recursive: true });
+    }
+    const filename = `receipt_${Date.now()}.html`;
+    const filepath = require('path').join(receiptsDir, filename);
+    fs.writeFileSync(filepath, html, 'utf8');
+
+    res.json({
+      success: true,
+      message: "Receipt HTML generated (save/print as needed)",
+      html,
+      filepath
     });
-    
-    const pxToMm = 25.4 / 96;
-    let heightMm = Math.ceil(paperHeightPx * pxToMm) + 2;
-    
-    const MIN_HEIGHT_MM = 40;
-    const MAX_HEIGHT_MM = 4000;
-    if (heightMm < MIN_HEIGHT_MM) heightMm = MIN_HEIGHT_MM;
-    if (heightMm > MAX_HEIGHT_MM) heightMm = MAX_HEIGHT_MM;
-
-    const pdfBuffer = await page.pdf({
-      printBackground: true,
-      width: "80mm",
-      height: `${heightMm}mm`,
-      margin: { top: "0mm", bottom: "0mm", left: "0mm", right: "0mm" },
-      preferCSSPageSize: true,
-      displayHeaderFooter: false,
-      scale: 1.0,
-      format: undefined,
-      tagged: false,
-    });
-
-    await page.close();
-
-    const filename = `receipt-${Date.now()}.pdf`;
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
-    res.setHeader("Content-Length", Buffer.byteLength(pdfBuffer));
-    res.setHeader("Access-Control-Expose-Headers", "Content-Disposition,Content-Length");
-    return res.send(pdfBuffer);
-    
   } catch (err) {
-    console.error("PDF generation error:", err);
-    return res.status(500).json({ error: "PDF generation failed", details: String(err) });
+    console.error("generatePDF error:", err);
+    res.status(500).json({
+      success: false,
+      error: "Failed to generate PDF",
+      details: String(err)
+    });
   }
 };
-
-// Add browser management functions at the top
-let browserPromise = null;
-async function getBrowser() {
-  if (!browserPromise) {
-    browserPromise = (async () => {
-      const baseOpts = {
-        args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
-        headless: true,
-      };
-
-      const envPath = process.env.PUPPETEER_EXECUTABLE_PATH;
-      const candidates = [
-        envPath,
-        "/usr/bin/chromium-browser",
-        "/usr/bin/chromium",
-        "/usr/bin/google-chrome",
-        "/usr/bin/google-chrome-stable",
-        "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-      ].filter(Boolean);
-
-      for (const exe of candidates) {
-        if (!exe) continue;
-        try {
-          const opts = Object.assign({}, baseOpts, { executablePath: exe });
-          const b = await puppeteer.launch(opts);
-          console.log("Puppeteer: launched successfully with", exe);
-          return b;
-        } catch (err) {
-          console.error("Puppeteer: launch failed with", exe, "-", err && err.message ? err.message : err);
-        }
-      }
-
-      return await puppeteer.launch(baseOpts);
-    })();
-  }
-  return browserPromise;
-}

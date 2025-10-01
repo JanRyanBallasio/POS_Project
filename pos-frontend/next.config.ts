@@ -6,7 +6,6 @@ const nextConfig: NextConfig = {
   output: "export",
   assetPrefix: isProd ? "" : undefined,
   reactStrictMode: true,
-  swcMinify: true,
   productionBrowserSourceMaps: !isProd,
   images: {
     unoptimized: true,
