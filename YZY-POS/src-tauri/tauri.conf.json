@@ -6,7 +6,7 @@
   "build": {
     "beforeBuildCommand": "powershell -ExecutionPolicy Bypass -File ./src-tauri/tauri-build.ps1",
     "beforeDevCommand": "npm run dev --prefix ../pos-frontend",
-    "frontendDist": "../pos-frontend/out",
+    "frontendDist": "../../pos-frontend/out",
     "devUrl": "http://localhost:3000"
   },
   "app": {

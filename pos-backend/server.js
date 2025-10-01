@@ -1,3 +1,4 @@
+// pos-backend/server.js
 require('dotenv').config();
 console.log('Loaded env - NODE_ENV =', process.env.NODE_ENV);
 
@@ -16,13 +17,12 @@ const salesRoutes = require('./src/routes/salesRoutes');
 const salesItemsRoutes = require('./src/routes/salesItemsRoutes');
 const customerRoutes = require('./src/routes/customerRoutes');
 const stockTransactionRoutes = require('./src/routes/stockTransactionRoutes');
-const receiptRoutes = require("./src/routes/receiptRoutes");
-const authRoutes = require('./src/routes/auth.routes'); // UNCOMMENTED: use central auth router
+const authRoutes = require('./src/routes/auth.routes');
 const directPrintRoutes = require("./src/routes/directPrintRoutes");
+const printRoutes = require('./src/routes/printRoutes'); 
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-// FIXED: Bind to all interfaces (0.0.0.0) to allow external access 
 const HOST = '0.0.0.0';
 
 // Middleware
@@ -31,45 +31,38 @@ app.use(customCors);
 app.use(express.json());
 app.use(cookieParser());
 
-// Add debugging middleware AFTER app is defined
+// Debug
 app.use((req, res, next) => {
-  console.log(`${req.method} ${req.path} - Origin: ${req.headers.origin} - Auth header: ${req.headers.authorization ? 'Present' : 'Missing'}`);
+  console.log(`${req.method} ${req.path} - Origin: ${req.headers.origin} - Auth: ${req.headers.authorization ? 'Present' : 'Missing'}`);
   next();
 });
 
-// Public Auth routes
-app.use('/api/auth', authRoutes); // REPLACE dev-stub with real auth routes
-
-// FIXED: Mount direct print routes as completely public (no auth required)
+// Public routes
+app.use('/api/auth', authRoutes);
 app.use('/api', directPrintRoutes);
 
-// Protect API routes (require valid access token)
+// Protected routes
 app.use('/api/users', auth, userRoutes);
 app.use('/api/customers', auth, customerRoutes);
-app.use('/api/products', productRoutes); // productRoutes already applies auth at router level
+app.use('/api/products', productRoutes); // already protects inside
 app.use('/api/categories', auth, categoryRoutes);
 app.use('/api/positions', auth, positionRoutes);
 app.use('/api/sales', auth, salesRoutes);
 app.use('/api/sales-items', auth, salesItemsRoutes);
 app.use('/api/stock-transactions', auth, stockTransactionRoutes);
-app.use('/api', auth, receiptRoutes);
-// app.use('/api/auth', authRoutes); // remove this duplicate
 
-// 404 fallback (optional)
-app.use((req, res, next) => {
+// NEW: printing endpoint (no auth or add auth if required)
+app.use('/print', printRoutes);
+
+app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Not found' });
 });
 
-// Error handler
 app.use((error, req, res, next) => {
   console.error('Error:', error);
-  res.status(500).json({
-    success: false,
-    message: 'Internal server error'
-  });
+  res.status(500).json({ success: false, message: 'Internal server error' });
 });
 
-// FIXED: Listen on HOST (0.0.0.0) to allow external access
 app.listen(PORT, HOST, () => {
   console.log(`Server running on http://${HOST}:${PORT}`);
 });

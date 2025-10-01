@@ -1,73 +1,44 @@
-import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
-import { invoke } from '@tauri-apps/api/core';
-// NEW: QZ Tray helpers
-import { initQZ, setPrinterByName, printRaw as qzPrintRaw, getDefaultPrinter } from '@/lib/qz';
-
-type PrintData = {
+// pos-frontend/src/hooks/printing/usePrint.ts
+export type PrintItem = { desc: string; qty: number; price?: number; amount: number };
+export type PrintPayload = {
   store?: { name?: string; address1?: string; address2?: string };
   customer?: { name?: string | null };
   cartTotal: number;
   amount: number;
   change: number;
   points?: number;
-  items: Array<{ desc: string; qty: number; price?: number; amount: number }>;
+  items: PrintItem[];
+  printerName?: string | null; // optional override; default printer if omitted
 };
 
-function genId() {
-  return `pr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
-function persistPrintPayload(id: string, data: PrintData) {
-  localStorage.setItem(`print:${id}`, JSON.stringify(data));
-}
-
-function removePrintPayload(id: string) {
-  try { localStorage.removeItem(`print:${id}`); } catch { }
+function getBase() {
+  if (typeof window === 'undefined') return 'http://localhost:5000';
+  const origin = window.location.origin || '';
+  return origin.includes('localhost') ? 'http://localhost:5000' : origin;
 }
 
 export function usePrint() {
-  const openPrintPreview = async (data: PrintData) => {
-    const id = genId();
-    persistPrintPayload(id, data);
+  const base = getBase();
 
-    const label = `print-preview-${id}`;
-    const win = new WebviewWindow(label, {
-      title: 'Print Preview',
-      url: `/print/receipt?id=${id}`,
-      width: 420,
-      height: 800,
-      resizable: true,
-      center: true,
-      visible: true,
-
+  const printReceipt = async (data: PrintPayload) => {
+    const res = await fetch(`${base.replace(/\/$/, '')}/print/receipt`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
     });
-    win.once('tauri://created', () => console.log('Print preview window created:', label));
-    win.once('tauri://error', (e) => {
-      console.error('Failed to create print preview window:', e);
-      alert('Failed to open print preview window. Check Tauri capabilities.');
-    });
-    win.once('tauri://destroyed', () => removePrintPayload(id));
-    return win;
+    if (!res.ok) {
+      const t = await res.text().catch(() => '');
+      throw new Error(`Print failed: ${res.status} ${t}`);
+    }
+    return res.json();
   };
 
-  // Existing native direct printing via Tauri command (fallback)
-  const printDirect = async (escposData: string, itemCount: number, printerName?: string) => {
-    await invoke('print_receipt_direct', {
-      receipt_data: escposData,
-      item_count: itemCount,
-      printer_name: printerName ?? null,
-    });
+  const listPrinters = async (): Promise<string[]> => {
+    const res = await fetch(`${base.replace(/\/$/, '')}/print/printers`);
+    if (!res.ok) return [];
+    const j = await res.json().catch(() => ({} as any));
+    return Array.isArray(j.printers) ? j.printers : [];
   };
 
-  // NEW: QZ Tray direct raw printing
-  const printViaQZ = async (escposData: string, preferredPrinter?: string) => {
-    await initQZ();
-    const target = preferredPrinter || (await getDefaultPrinter()) || '';
-    await setPrinterByName(target);
-    // Convert string to Uint8Array for raw ESC/POS
-    const buf = new TextEncoder().encode(escposData);
-    await qzPrintRaw(buf);
-  };
-
-  return { openPrintPreview, printDirect, printViaQZ };
+  return { printReceipt, listPrinters };
 }
