@@ -56,7 +56,7 @@ export default function CartTable({
         lastAutoSelectedId.current = lastAddedItemId;
         try {
           selectRow(lastAddedItemId);
-        } catch {}
+        } catch { }
         return;
       }
       attempts++;
@@ -100,6 +100,7 @@ export default function CartTable({
   }, []);
 
   // --- Listen for custom cart events ---
+  // --- Listen for custom cart events ---
   useEffect(() => {
     function handleIncrementQty(e: Event) {
       const id = (e as CustomEvent).detail?.id;
@@ -135,18 +136,46 @@ export default function CartTable({
       }
     }
 
+    // NEW: Selection navigation (disabled if search dropdown is open or component is disabled)
+    const searchInput = () =>
+      document.querySelector<HTMLInputElement>('[data-product-search="true"]');
+    const searchOpen = () => searchInput()?.getAttribute('data-search-open') === 'true';
+
+    function handleSelectNext() {
+      if (disabled || searchOpen()) return;
+      const currentId = selectedRowId ?? cart[0]?.id ?? null;
+      if (!currentId) return;
+      const idx = cart.findIndex(it => it.id === currentId);
+      const nextIdx = Math.min(cart.length - 1, idx + 1);
+      const nextId = cart[nextIdx]?.id;
+      if (nextId) selectRow(nextId);
+    }
+    function handleSelectPrev() {
+      if (disabled || searchOpen()) return;
+      const currentId = selectedRowId ?? cart[0]?.id ?? null;
+      if (!currentId) return;
+      const idx = cart.findIndex(it => it.id === currentId);
+      const prevIdx = Math.max(0, idx - 1);
+      const prevId = cart[prevIdx]?.id;
+      if (prevId) selectRow(prevId);
+    }
+
     window.addEventListener("cart:increment-qty", handleIncrementQty);
     window.addEventListener("cart:decrement-qty", handleDecrementQty);
     window.addEventListener("cart:edit-price", handleEditPrice);
     window.addEventListener("cart:delete-item", handleDeleteItem);
+    window.addEventListener("cart:select-next", handleSelectNext);
+    window.addEventListener("cart:select-prev", handleSelectPrev);
 
     return () => {
       window.removeEventListener("cart:increment-qty", handleIncrementQty);
       window.removeEventListener("cart:decrement-qty", handleDecrementQty);
       window.removeEventListener("cart:edit-price", handleEditPrice);
       window.removeEventListener("cart:delete-item", handleDeleteItem);
+      window.removeEventListener("cart:select-next", handleSelectNext);
+      window.removeEventListener("cart:select-prev", handleSelectPrev);
     };
-  }, [cart, updateCartItemQuantity, selectRow, deleteCartItem, focusSearchBar]);
+  }, [cart, updateCartItemQuantity, selectRow, deleteCartItem, focusSearchBar, disabled, selectedRowId]);
 
   // --- PriceCell ---
   const PriceCell: React.FC<{ item: CartItem }> = ({ item }) => {
@@ -230,7 +259,7 @@ export default function CartTable({
           if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
             return;
           }
-          
+
           // If focus is being lost to the body or null, prevent it and refocus
           if (!target || target === document.body) {
             e.preventDefault();
@@ -244,7 +273,7 @@ export default function CartTable({
 
         const input = inputRef.current;
         input.addEventListener('blur', handleFocusLoss);
-        
+
         return () => {
           input.removeEventListener('blur', handleFocusLoss);
         };
@@ -253,7 +282,7 @@ export default function CartTable({
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const newValue = e.target.value;
-      
+
       // Allow empty string, numbers, and valid decimal patterns
       if (newValue === '' || newValue === '.' || /^\d*\.?\d*$/.test(newValue)) {
         setInputValue(newValue);
@@ -268,10 +297,10 @@ export default function CartTable({
 
     const handleBlur = () => {
       setIsEditing(false);
-      
+
       let finalValue: number;
       let displayValue: string;
-      
+
       // Validate and normalize the value on blur
       if (inputValue === '' || inputValue === '.') {
         finalValue = 1;
@@ -287,11 +316,11 @@ export default function CartTable({
           displayValue = numValue % 1 === 0 ? numValue.toString() : numValue.toFixed(2).replace(/\.?0+$/, '');
         }
       }
-      
+
       // Update both the display and the actual value
       setInputValue(displayValue);
       onChange(finalValue);
-      
+
       // Call the original onBlur handler
       onBlur();
     };
@@ -302,7 +331,7 @@ export default function CartTable({
         handleBlur();
         return;
       }
-      
+
       // Allow: backspace, delete, tab, escape, decimal point, and numbers
       if (
         [8, 9, 27, 46, 110, 190].indexOf(e.keyCode) !== -1 ||
@@ -353,11 +382,11 @@ export default function CartTable({
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead className="text-lg font-semibold py-3">Barcode</TableHead>
-          <TableHead className="text-lg font-semibold py-3">Name</TableHead>
-          <TableHead className="text-lg font-semibold py-3">Price</TableHead>
-          <TableHead className="text-lg font-semibold py-3">Quantity</TableHead>
-          <TableHead className="text-lg font-semibold py-3">Actions</TableHead>
+          <TableHead className="text-sm md:text-base font-semibold py-3">Barcode</TableHead>
+          <TableHead className="text-sm md:text-base font-semibold py-3">Name</TableHead>
+          <TableHead className="text-sm md:text-base font-semibold py-3">Price</TableHead>
+          <TableHead className="text-sm md:text-base font-semibold py-3">Quantity</TableHead>
+          <TableHead className="text-sm md:text-base font-semibold py-3">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>

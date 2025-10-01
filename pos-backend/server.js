@@ -39,7 +39,8 @@ app.use((req, res, next) => {
 
 // Public routes
 app.use('/api/auth', authRoutes);
-app.use('/api', directPrintRoutes);
+// ✅ Remove conflicting directPrintRoutes - we only want printRoutes
+// app.use('/api', directPrintRoutes);
 
 // Protected routes
 app.use('/api/users', auth, userRoutes);
@@ -51,7 +52,7 @@ app.use('/api/sales', auth, salesRoutes);
 app.use('/api/sales-items', auth, salesItemsRoutes);
 app.use('/api/stock-transactions', auth, stockTransactionRoutes);
 
-// NEW: printing endpoint (no auth or add auth if required)
+// ✅ Main printing endpoint (no auth required for simplicity)
 app.use('/print', printRoutes);
 
 app.use((req, res) => {

@@ -109,19 +109,28 @@ pub async fn print_receipt_direct(
     let full_path_str = full_path.to_string_lossy().to_string();
 
     let result = if cfg!(target_os = "windows") {
-        let mut ps = r#"$ErrorActionPreference = 'Stop'
-$path = '__PATH__'
+        // Simplified PowerShell command - always use default printer
+        let printer_expr = if let Some(name) = printer_name {
+            format!("'{}'", name.replace('\'', "''"))
+        } else {
+            // Use default printer directly
+            String::from("(Get-CimInstance Win32_Printer | Where-Object {$_.Default -eq $true}).Name")
+        };
+
+        let ps = format!(
+            r#"$ErrorActionPreference = 'Stop'
+$path = '{}'
 $bytes = [System.IO.File]::ReadAllBytes($path)
 Add-Type -Language CSharp -TypeDefinition @"
 using System;
 using System.Runtime.InteropServices;
-public class RawPrinterHelper {
+public class RawPrinterHelper {{
   [StructLayout(LayoutKind.Sequential)]
-  public class DOCINFOA {
+  public class DOCINFOA {{
     [MarshalAs(UnmanagedType.LPStr)] public string pDocName;
     [MarshalAs(UnmanagedType.LPStr)] public string pOutputFile;
     [MarshalAs(UnmanagedType.LPStr)] public string pDatatype;
-  }
+  }}
   [DllImport("winspool.drv", SetLastError=true)]
   public static extern bool OpenPrinter(string pPrinterName, out IntPtr phPrinter, IntPtr pDefault);
   [DllImport("winspool.drv", SetLastError=true)]
@@ -136,12 +145,12 @@ public class RawPrinterHelper {
   public static extern bool EndDocPrinter(IntPtr hPrinter);
   [DllImport("winspool.drv", SetLastError=true)]
   public static extern bool ClosePrinter(IntPtr hPrinter);
-}
-public class RawPrint {
-  public static void SendBytes(string printerName, byte[] bytes) {
+}}
+public class RawPrint {{
+  public static void SendBytes(string printerName, byte[] bytes) {{
     IntPtr h;
     if (!RawPrinterHelper.OpenPrinter(printerName, out h, IntPtr.Zero)) throw new Exception("OpenPrinter failed");
-    var di = new RawPrinterHelper.DOCINFOA() { pDocName = "ESC/POS", pDatatype = "RAW" };
+    var di = new RawPrinterHelper.DOCINFOA() {{ pDocName = "ESC/POS", pDatatype = "RAW" }};
     if (!RawPrinterHelper.StartDocPrinter(h, 1, di)) throw new Exception("StartDocPrinter failed");
     if (!RawPrinterHelper.StartPagePrinter(h)) throw new Exception("StartPagePrinter failed");
     int written;
@@ -149,22 +158,19 @@ public class RawPrint {
     RawPrinterHelper.EndPagePrinter(h);
     RawPrinterHelper.EndDocPrinter(h);
     RawPrinterHelper.ClosePrinter(h);
-  }
-}
+  }}
+}}
 "@
-$target = __PRINTER_EXPR__
-if (-not $target) { throw 'No target printer'; }
-[RawPrint]::SendBytes($target, $bytes)
-"#.to_string();
+$target = {}
+if (-not $target) {{ throw 'No target printer'; }}
+[RawPrint]::SendBytes($target, $bytes)"#,
+            full_path_str.replace('\'', "''"),
+            printer_expr
+        );
 
-        let safe_path = full_path_str.replace('\'', "''");
-        let printer_expr = if let Some(name) = printer_name.clone() {
-            format!("'{}'", name.replace('\'', "''"))
-        } else {
-            String::from("(Get-CimInstance Win32_Printer | Where-Object {$_.Default -eq $true}).Name")
-        };
-        ps = ps.replace("__PATH__", &safe_path).replace("__PRINTER_EXPR__", &printer_expr);
-        Command::new("powershell").args(["-NoProfile","-ExecutionPolicy","Bypass","-Command",&ps]).output()
+        Command::new("powershell")
+            .args(["-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-Command", &ps])
+            .output()
     } else if cfg!(target_os = "macos") {
         Command::new("lpr").arg(&full_path_str).output()
     } else {
@@ -175,7 +181,7 @@ if (-not $target) { throw 'No target printer'; }
         Ok(output) => {
             if output.status.success() {
                 let _ = std::fs::remove_file(&temp_file);
-                Ok(format!("Receipt sent. Items: {}", item_count))
+                Ok(format!("Receipt sent to default printer. Items: {}", item_count))
             } else {
                 let stderr = String::from_utf8_lossy(&output.stderr);
                 let stdout = String::from_utf8_lossy(&output.stdout);
@@ -184,25 +190,4 @@ if (-not $target) { throw 'No target printer'; }
         }
         Err(e) => Err(format!("Print command failed: {}", e))
     }
-}
-
-#[tauri::command]
-pub async fn list_printers() -> Result<Vec<String>, String> {
-    if cfg!(target_os = "windows") {
-        let ps = "Get-CimInstance Win32_Printer | Select-Object -ExpandProperty Name";
-        let out = Command::new("powershell").args(["-NoProfile","-Command",ps]).output().map_err(|e| format!("Failed to run PowerShell: {}", e))?;
-        if !out.status.success() { return Err(String::from_utf8_lossy(&out.stderr).to_string()); }
-        let names = String::from_utf8_lossy(&out.stdout).lines().map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect::<Vec<_>>();
-        Ok(names)
-    } else { Ok(vec![]) }
-}
-
-#[tauri::command]
-pub async fn get_default_printer_name() -> Result<String, String> {
-    if cfg!(target_os = "windows") {
-        let ps = "(Get-CimInstance Win32_Printer | Where-Object {$_.Default -eq $true}).Name";
-        let out = Command::new("powershell").args(["-NoProfile","-Command",ps]).output().map_err(|e| format!("Failed to run PowerShell: {}", e))?;
-        if !out.status.success() { return Err(String::from_utf8_lossy(&out.stderr).to_string()); }
-        Ok(String::from_utf8_lossy(&out.stdout).trim().to_string())
-    } else { Ok(String::new()) }
 }

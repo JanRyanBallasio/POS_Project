@@ -596,16 +596,16 @@ __turbopack_context__.s([
     ()=>Calculator
 ]);
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/route-modules/app-page/vendored/ssr/react-jsx-dev-runtime.js [app-ssr] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/route-modules/app-page/vendored/ssr/react.js [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/input.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/label.tsx [app-ssr] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/route-modules/app-page/vendored/ssr/react.js [app-ssr] (ecmascript)");
 ;
 ;
 ;
 ;
 function Calculator({ amount, setAmount, cartTotal, cartIsEmpty = false }) {
     const cashInputRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRef"])(null);
-    // NEW: focus handler for global event
+    // Keep existing global focus behavior
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         const handleFocusCash = ()=>{
             try {
@@ -620,70 +620,140 @@ function Calculator({ amount, setAmount, cartTotal, cartIsEmpty = false }) {
     }, [
         cartIsEmpty
     ]);
-    const handleCalcButtonClick = (value)=>{
-        if (value === "C") {
-            setAmount("");
-        } else if (value === "⌫") {
-            setAmount(amount.slice(0, -1));
-        } else {
-            if (value === "." && amount.includes(".")) return;
-            setAmount(amount + value);
-        }
-    };
-    const handleInputChange = (e)=>{
+    const paid = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useMemo"])(()=>{
+        const n = parseFloat(String(amount || "0"));
+        return Number.isFinite(n) ? n : 0;
+    }, [
+        amount
+    ]);
+    const change = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useMemo"])(()=>paid - (cartTotal || 0), [
+        paid,
+        cartTotal
+    ]);
+    const enoughCash = change >= 0;
+    const showChange = String(amount ?? "").trim().length > 0;
+    const handleChange = (e)=>{
         setAmount(e.target.value);
     };
-    const handleInputKeyDown = (e)=>{
-        // Ctrl+Enter behavior remains (global handler in pos-screen also dispatches focus)
+    const handleKeyDown = (e)=>{
         if (e.ctrlKey && e.key === "Enter") {
             e.preventDefault();
             e.stopPropagation();
             return;
         }
-        // When Enter is pressed while the cash input is focused, advance POS step (step 1 complete)
         if (e.key === "Enter" && !e.ctrlKey) {
-            if (e.target === cashInputRef.current) {
-                e.preventDefault();
-                e.stopPropagation();
-                // Dispatch the step-1-specific event (cash input confirms step 1 -> step 2)
-                window.dispatchEvent(new CustomEvent("pos:step-1-complete"));
-            }
+            e.preventDefault();
+            e.stopPropagation();
+            window.dispatchEvent(new CustomEvent("pos:step-1-complete"));
         }
     };
-    // Add click handler to focus input when user clicks on it
-    const handleInputClick = (e)=>{
-        e.stopPropagation();
-        if (cashInputRef.current) {
-            cashInputRef.current.focus();
-        }
-    };
-    return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Fragment"], {
+    return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+        className: "w-full",
         children: [
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Label"], {
-                className: "text-lg mb-2 font-medium",
-                children: "Cash"
+                htmlFor: "pos-cash",
+                className: "block mb-2 text-sm md:text-base font-medium text-gray-700",
+                children: "Cash Payment"
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/Calculator.tsx",
-                lineNumber: 79,
+                lineNumber: 63,
                 columnNumber: 7
             }, this),
-            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
-                ref: cashInputRef,
-                "data-pos-cash-input": "true",
-                className: "h-20 !text-5xl text-right font-medium mb-6 border-2 border-gray-300 shadow-sm placeholder:text-5xl placeholder:font-medium placeholder:text-gray-400",
-                value: amount,
-                onChange: handleInputChange,
-                onKeyDown: handleInputKeyDown,
-                onClick: handleInputClick,
-                placeholder: "0.00",
-                disabled: cartIsEmpty
-            }, void 0, false, {
+            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                className: "relative",
+                children: [
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                        className: "pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-400 font-semibold",
+                        children: "₱"
+                    }, void 0, false, {
+                        fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/Calculator.tsx",
+                        lineNumber: 67,
+                        columnNumber: 9
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
+                        id: "pos-cash",
+                        ref: cashInputRef,
+                        "data-pos-cash-input": "true",
+                        value: amount,
+                        onChange: handleChange,
+                        onKeyDown: handleKeyDown,
+                        placeholder: "0.00",
+                        disabled: cartIsEmpty,
+                        className: [
+                            "h-12 md:h-14 pl-8",
+                            "text-base md:text-lg",
+                            "text-left font-medium tabular-nums",
+                            "border-2 border-gray-200 bg-gray-50",
+                            "focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-0",
+                            "placeholder:text-gray-400",
+                            "rounded-xl"
+                        ].join(" "),
+                        inputMode: "decimal"
+                    }, void 0, false, {
+                        fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/Calculator.tsx",
+                        lineNumber: 70,
+                        columnNumber: 9
+                    }, this)
+                ]
+            }, void 0, true, {
                 fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/Calculator.tsx",
-                lineNumber: 80,
+                lineNumber: 66,
                 columnNumber: 7
+            }, this),
+            showChange && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                className: "mt-4",
+                children: [
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Label"], {
+                        className: "block mb-2 text-sm md:text-base font-medium text-gray-700",
+                        children: "Change"
+                    }, void 0, false, {
+                        fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/Calculator.tsx",
+                        lineNumber: 95,
+                        columnNumber: 11
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        className: [
+                            "h-12 md:h-14 rounded-xl border-2 bg-white",
+                            "flex items-center justify-between px-4"
+                        ].join(" "),
+                        children: [
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                className: "text-sm md:text-base text-gray-600",
+                                children: "₱"
+                            }, void 0, false, {
+                                fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/Calculator.tsx",
+                                lineNumber: 104,
+                                columnNumber: 13
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                className: [
+                                    "tabular-nums font-semibold text-base md:text-lg",
+                                    enoughCash ? "text-green-600" : "text-red-600"
+                                ].join(" "),
+                                children: Math.abs(change).toFixed(2)
+                            }, void 0, false, {
+                                fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/Calculator.tsx",
+                                lineNumber: 105,
+                                columnNumber: 13
+                            }, this)
+                        ]
+                    }, void 0, true, {
+                        fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/Calculator.tsx",
+                        lineNumber: 98,
+                        columnNumber: 11
+                    }, this)
+                ]
+            }, void 0, true, {
+                fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/Calculator.tsx",
+                lineNumber: 94,
+                columnNumber: 9
             }, this)
         ]
-    }, void 0, true);
+    }, void 0, true, {
+        fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/Calculator.tsx",
+        lineNumber: 61,
+        columnNumber: 5
+    }, this);
 }
 }),
 "[project]/src/app/dashboard/_pages/POS/components/rightColumn/CustomerSearch.tsx [app-ssr] (ecmascript)", ((__turbopack_context__) => {
@@ -712,148 +782,122 @@ function CustomerSearch({ customerQuery, setCustomerQuery, filteredCustomers, se
     const customerInputRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRef"])(null);
     const [selectedIndex, setSelectedIndex] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(-1);
     const isAutoSelecting = filteredCustomers.length === 1 && customerQuery.trim().length >= 2 && !selectedCustomer;
-    // Reset selected index when filtered customers change
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         setSelectedIndex(-1);
     }, [
         filteredCustomers
     ]);
-    // Handle Ctrl+C shortcut to focus customer input
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         const handleCustomerShortcut = (e)=>{
-            if (e.ctrlKey && e.key.toLowerCase() === 'c') {
+            if (e.ctrlKey && e.key.toLowerCase() === "c") {
                 e.preventDefault();
                 e.stopPropagation();
-                if (customerInputRef.current) {
-                    customerInputRef.current.focus();
-                    customerInputRef.current.select();
-                }
+                customerInputRef.current?.focus();
+                customerInputRef.current?.select();
             }
         };
-        document.addEventListener('keydown', handleCustomerShortcut);
-        return ()=>document.removeEventListener('keydown', handleCustomerShortcut);
+        document.addEventListener("keydown", handleCustomerShortcut);
+        return ()=>document.removeEventListener("keydown", handleCustomerShortcut);
     }, []);
-    // Prevent clicks from bubbling up and losing focus
     const handleContainerClick = (e)=>{
         e.stopPropagation();
     };
-    const handleInputClick = (e)=>{
-        e.stopPropagation();
-        if (customerInputRef.current) {
-            customerInputRef.current.focus();
-        }
-    };
     const handleInputKeyDown = (e)=>{
         e.stopPropagation();
-        // Prevent any global keyboard shortcuts while typing in customer search
-        if (e.ctrlKey) {
-            // Allow Ctrl+C for focus shortcut
-            if (e.key.toLowerCase() === 'c') {
-                return;
-            }
-            // Block all other Ctrl combinations
+        if (e.ctrlKey && e.key.toLowerCase() !== "c") {
             e.preventDefault();
             return;
         }
-        // Handle arrow key navigation
-        if (e.key === 'ArrowDown') {
+        if (e.key === "ArrowDown") {
             e.preventDefault();
             if (filteredCustomers.length > 0) {
                 setSelectedIndex((prev)=>prev < filteredCustomers.length - 1 ? prev + 1 : 0);
             }
             return;
         }
-        if (e.key === 'ArrowUp') {
+        if (e.key === "ArrowUp") {
             e.preventDefault();
             if (filteredCustomers.length > 0) {
                 setSelectedIndex((prev)=>prev > 0 ? prev - 1 : filteredCustomers.length - 1);
             }
             return;
         }
-        // Handle Enter key
-        if (e.key === 'Enter') {
+        if (e.key === "Enter") {
             e.preventDefault();
-            // If we have a selected index, select that customer
             if (selectedIndex >= 0 && selectedIndex < filteredCustomers.length) {
                 handleCustomerSelect(filteredCustomers[selectedIndex]);
                 return;
             }
-            // If no index selected but we have customers, select the first one
             if (filteredCustomers.length > 0 && !selectedCustomer) {
                 handleCustomerSelect(filteredCustomers[0]);
                 return;
             }
-            // If customer is already selected, notify parent that Enter was pressed
             if (selectedCustomer) {
-                if (onCustomerSelected) {
-                    onCustomerSelected();
-                }
-                return;
+                onCustomerSelected?.();
             }
         }
-        // Handle Escape key to clear selection
-        if (e.key === 'Escape') {
+        if (e.key === "Escape") {
             e.preventDefault();
             setSelectedIndex(-1);
-            if (customerInputRef.current) {
-                customerInputRef.current.blur();
-            }
-            return;
+            customerInputRef.current?.blur();
         }
     };
-    const handleInputFocus = (e)=>{
+    const handleInputFocus = ()=>{
         window.customerSearchActive = true;
-        e.target.select();
+        customerInputRef.current?.select();
     };
-    const handleInputBlur = (e)=>{
-        // Delay blur to allow clicking on dropdown items
+    const handleInputBlur = ()=>{
         setTimeout(()=>{
             window.customerSearchActive = false;
         }, 150);
     };
     const handleInputChange = (e)=>{
-        console.log("📝 CustomerSearch: Input changed to:", e.target.value);
         e.stopPropagation();
         setCustomerQuery(e.target.value);
-        setSelectedIndex(-1); // Reset selection when typing
-        if (selectedCustomer) {
-            clearCustomer(); // Clear selection if user edits input
-        }
+        setSelectedIndex(-1);
+        if (selectedCustomer) clearCustomer();
     };
     const handleCustomerSelect = (customer)=>{
         selectCustomer(customer);
         setSelectedIndex(-1);
         window.customerSearchActive = false;
-        if (customerInputRef.current) {
-            customerInputRef.current.blur();
-        }
+        customerInputRef.current?.blur();
     };
+    // Limit visible results to 5
+    const visibleResults = filteredCustomers.slice(0, 4);
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
         className: "w-full mb-4",
         onClick: handleContainerClick,
         "data-customer-search": "true",
         children: [
-            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Label"], {
-                htmlFor: id,
-                className: "mb-2 block",
+            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                className: "flex items-center justify-between mb-2",
                 children: [
-                    "Customer Name ",
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Label"], {
+                        htmlFor: id,
+                        className: "uppercase tracking-wide text-sm font-semibold",
+                        children: "Customer Name"
+                    }, void 0, false, {
+                        fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/CustomerSearch.tsx",
+                        lineNumber: 150,
+                        columnNumber: 9
+                    }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                        className: "text-sm text-gray-500",
+                        className: "text-xs text-gray-400",
                         children: "(Ctrl+C)"
                     }, void 0, false, {
                         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/CustomerSearch.tsx",
-                        lineNumber: 179,
-                        columnNumber: 23
+                        lineNumber: 156,
+                        columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/CustomerSearch.tsx",
-                lineNumber: 178,
+                lineNumber: 149,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                className: "flex items-center gap-2",
+                className: "flex items-center gap-2 relative",
                 children: [
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                         className: "relative flex-1",
@@ -864,134 +908,103 @@ function CustomerSearch({ customerQuery, setCustomerQuery, filteredCustomers, se
                                     className: "w-4 h-4"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/CustomerSearch.tsx",
-                                    lineNumber: 184,
+                                    lineNumber: 164,
                                     columnNumber: 13
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/CustomerSearch.tsx",
-                                lineNumber: 183,
+                                lineNumber: 163,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
                                 ref: customerInputRef,
                                 id: id,
                                 className: "pl-9 pr-10",
-                                placeholder: "Search Name (Ctrl+C to focus)",
+                                placeholder: "Search Name",
                                 value: customerQuery,
                                 onChange: handleInputChange,
                                 onKeyDown: handleInputKeyDown,
                                 onFocus: handleInputFocus,
                                 onBlur: handleInputBlur,
-                                onClick: handleInputClick,
                                 autoComplete: "off",
                                 "data-customer-search": "true"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/CustomerSearch.tsx",
-                                lineNumber: 186,
+                                lineNumber: 166,
                                 columnNumber: 11
                             }, this),
                             isAutoSelecting && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$circle$2d$check$2d$big$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__CheckCircle$3e$__["CheckCircle"], {
-                                className: "absolute right-2 top-1/2 transform -translate-y-1/2 text-green-500 animate-pulse",
+                                className: "absolute right-2 top-1/2 -translate-y-1/2 text-green-500 animate-pulse",
                                 size: 16
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/CustomerSearch.tsx",
-                                lineNumber: 201,
-                                columnNumber: 13
-                            }, this),
-                            customerQuery && !selectedCustomer && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                className: "absolute z-10 left-0 right-0 bg-white border rounded shadow max-h-40 overflow-y-auto top-full mt-1",
-                                children: [
-                                    filteredCustomers.length === 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        className: "p-2 text-gray-500 text-center",
-                                        children: "No results"
-                                    }, void 0, false, {
-                                        fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/CustomerSearch.tsx",
-                                        lineNumber: 209,
-                                        columnNumber: 17
-                                    }, this),
-                                    filteredCustomers.map((customer, index)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                            className: `p-2 hover:bg-gray-100 cursor-pointer flex justify-between ${selectedIndex === index ? 'bg-blue-100 border-blue-200' : isAutoSelecting ? 'bg-green-50 border-green-200' : ''}`,
-                                            onClick: ()=>handleCustomerSelect(customer),
-                                            children: [
-                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                    className: "flex items-center gap-2",
-                                                    children: [
-                                                        customer.name,
-                                                        isAutoSelecting && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                            className: "text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full",
-                                                            children: "Auto-selecting..."
-                                                        }, void 0, false, {
-                                                            fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/CustomerSearch.tsx",
-                                                            lineNumber: 228,
-                                                            columnNumber: 23
-                                                        }, this)
-                                                    ]
-                                                }, void 0, true, {
-                                                    fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/CustomerSearch.tsx",
-                                                    lineNumber: 225,
-                                                    columnNumber: 19
-                                                }, this),
-                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                    className: "text-xs text-gray-500 ml-2",
-                                                    children: [
-                                                        customer.points,
-                                                        " pts"
-                                                    ]
-                                                }, void 0, true, {
-                                                    fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/CustomerSearch.tsx",
-                                                    lineNumber: 233,
-                                                    columnNumber: 19
-                                                }, this)
-                                            ]
-                                        }, customer.id, true, {
-                                            fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/CustomerSearch.tsx",
-                                            lineNumber: 214,
-                                            columnNumber: 17
-                                        }, this))
-                                ]
-                            }, void 0, true, {
-                                fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/CustomerSearch.tsx",
-                                lineNumber: 207,
+                                lineNumber: 180,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/CustomerSearch.tsx",
-                        lineNumber: 182,
+                        lineNumber: 162,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
                         type: "button",
-                        onClick: (e)=>{
-                            e.stopPropagation();
-                            onAddCustomer();
-                        },
-                        className: "ml-2",
-                        children: [
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$plus$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Plus$3e$__["Plus"], {
-                                className: "w-4 h-4 mr-1"
-                            }, void 0, false, {
-                                fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/CustomerSearch.tsx",
-                                lineNumber: 249,
-                                columnNumber: 11
-                            }, this),
-                            " Add"
-                        ]
-                    }, void 0, true, {
+                        onClick: ()=>onAddCustomer(),
+                        className: "ml-2 rounded-lg",
+                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$plus$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Plus$3e$__["Plus"], {
+                            className: "w-4 h-4 mr-1"
+                        }, void 0, false, {
+                            fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/CustomerSearch.tsx",
+                            lineNumber: 193,
+                            columnNumber: 11
+                        }, this)
+                    }, void 0, false, {
                         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/CustomerSearch.tsx",
-                        lineNumber: 241,
+                        lineNumber: 188,
                         columnNumber: 9
+                    }, this),
+                    customerQuery && !selectedCustomer && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        className: "   absolute left-0 right-0 top-full mt-2   bg-white border rounded-xl shadow-lg   z-50   max-h-72 overflow-auto   ",
+                        children: visibleResults.length === 0 ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                            className: "px-3 py-2 text-sm text-gray-500 text-center",
+                            children: "No results"
+                        }, void 0, false, {
+                            fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/CustomerSearch.tsx",
+                            lineNumber: 208,
+                            columnNumber: 15
+                        }, this) : visibleResults.map((customer, index)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
+                                type: "button",
+                                onClick: ()=>handleCustomerSelect(customer),
+                                className: `w-full text-left px-4 py-3 text-sm 
+                              ${selectedIndex === index ? "bg-blue-50" : "hover:bg-gray-50"}`,
+                                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                    className: "block truncate",
+                                    children: customer.name
+                                }, void 0, false, {
+                                    fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/CustomerSearch.tsx",
+                                    lineNumber: 223,
+                                    columnNumber: 19
+                                }, this)
+                            }, customer.id, false, {
+                                fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/CustomerSearch.tsx",
+                                lineNumber: 213,
+                                columnNumber: 17
+                            }, this))
+                    }, void 0, false, {
+                        fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/CustomerSearch.tsx",
+                        lineNumber: 199,
+                        columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/CustomerSearch.tsx",
-                lineNumber: 181,
+                lineNumber: 160,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/CustomerSearch.tsx",
-        lineNumber: 177,
+        lineNumber: 144,
         columnNumber: 5
     }, this);
 }
@@ -1006,62 +1019,29 @@ __turbopack_context__.s([
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/route-modules/app-page/vendored/ssr/react-jsx-dev-runtime.js [app-ssr] (ecmascript)");
 ;
 function PaymentSummary({ amount, cartTotal, change }) {
-    // Safely parse amount -> treat empty/invalid as 0
+    // normalize amount
     let paid = parseFloat(String(amount || "0"));
     if (!Number.isFinite(paid) || isNaN(paid)) paid = 0;
-    return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Fragment"], {
+    const enough = paid >= cartTotal;
+    return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+        className: " mt-2",
         children: [
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                className: "py-5 border-t border-b",
+                className: "flex items-center justify-between text-base md:text-md leading-6",
                 children: [
-                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        className: "flex justify-between text-xl mb-3",
-                        children: [
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                children: "Amount Paid:"
-                            }, void 0, false, {
-                                fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/PaymentSummary.tsx",
-                                lineNumber: 22,
-                                columnNumber: 11
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                className: "font-medium",
-                                children: [
-                                    "₱ ",
-                                    paid.toFixed(2)
-                                ]
-                            }, void 0, true, {
-                                fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/PaymentSummary.tsx",
-                                lineNumber: 23,
-                                columnNumber: 11
-                            }, this)
-                        ]
-                    }, void 0, true, {
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                        className: "text-gray-600",
+                        children: "Amount Paid:"
+                    }, void 0, false, {
                         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/PaymentSummary.tsx",
-                        lineNumber: 21,
+                        lineNumber: 24,
                         columnNumber: 9
                     }, this),
-                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        className: "flex justify-between text-xl mb-3",
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                        className: "tabular-nums font-medium",
                         children: [
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                children: "Total:"
-                            }, void 0, false, {
-                                fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/PaymentSummary.tsx",
-                                lineNumber: 26,
-                                columnNumber: 11
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                className: "font-medium",
-                                children: [
-                                    "₱ ",
-                                    cartTotal.toFixed(2)
-                                ]
-                            }, void 0, true, {
-                                fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/PaymentSummary.tsx",
-                                lineNumber: 27,
-                                columnNumber: 11
-                            }, this)
+                            "₱",
+                            paid.toFixed(2)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/PaymentSummary.tsx",
@@ -1071,37 +1051,81 @@ function PaymentSummary({ amount, cartTotal, change }) {
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/PaymentSummary.tsx",
-                lineNumber: 20,
+                lineNumber: 23,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                className: "flex justify-between text-3xl font-bold pt-5",
+                className: "flex items-center justify-between text-base md:text-md leading-6 mt-3",
                 children: [
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                        children: "Change:"
+                        className: "text-gray-600",
+                        children: "Total:"
                     }, void 0, false, {
                         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/PaymentSummary.tsx",
-                        lineNumber: 31,
+                        lineNumber: 30,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                        className: "tabular-nums font-medium",
                         children: [
-                            "₱ ",
-                            change.toFixed(2)
+                            "₱",
+                            cartTotal.toFixed(2)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/PaymentSummary.tsx",
-                        lineNumber: 32,
+                        lineNumber: 31,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/PaymentSummary.tsx",
-                lineNumber: 30,
+                lineNumber: 29,
+                columnNumber: 7
+            }, this),
+            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("hr", {
+                className: "my-4 border-gray-200"
+            }, void 0, false, {
+                fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/PaymentSummary.tsx",
+                lineNumber: 34,
+                columnNumber: 7
+            }, this),
+            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                className: "flex items-center justify-between text-base md:text-lg",
+                children: [
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                        className: "text-gray-600",
+                        children: "Change:"
+                    }, void 0, false, {
+                        fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/PaymentSummary.tsx",
+                        lineNumber: 38,
+                        columnNumber: 9
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                        className: [
+                            "tabular-nums font-semibold",
+                            enough ? "text-green-600" : "text-red-600"
+                        ].join(" "),
+                        children: [
+                            "₱",
+                            change.toFixed(2)
+                        ]
+                    }, void 0, true, {
+                        fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/PaymentSummary.tsx",
+                        lineNumber: 39,
+                        columnNumber: 9
+                    }, this)
+                ]
+            }, void 0, true, {
+                fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/PaymentSummary.tsx",
+                lineNumber: 37,
                 columnNumber: 7
             }, this)
         ]
-    }, void 0, true);
+    }, void 0, true, {
+        fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/PaymentSummary.tsx",
+        lineNumber: 21,
+        columnNumber: 5
+    }, this);
 }
 }),
 "[project]/src/app/dashboard/_pages/POS/components/rightColumn/Receipt.tsx [app-ssr] (ecmascript)", ((__turbopack_context__) => {
@@ -1441,6 +1465,49 @@ function AddCustomerModal({ open, onOpenChange, onCustomerAdded }) {
     }, this);
 }
 }),
+"[project]/src/hooks/printing/usePrint.ts [app-ssr] (ecmascript)", ((__turbopack_context__) => {
+"use strict";
+
+__turbopack_context__.s([
+    "usePrint",
+    ()=>usePrint
+]);
+// Check if running in Tauri
+function isTauri() {
+    return "undefined" !== 'undefined' && window.__TAURI__;
+}
+// Get backend URL for Tauri app
+function getBackendUrl() {
+    if (isTauri()) //TURBOPACK unreachable
+    ;
+    // For web, use the existing logic
+    return 'http://localhost:5000';
+}
+function usePrint() {
+    // ✅ Add connection test function
+    const testConnection = async ()=>{
+        try {
+            const res = await fetch(`${getBackendUrl()}/print/test`);
+            if (!res.ok) throw new Error(`Connection test failed: ${res.status}`);
+            return await res.json();
+        } catch (error) {
+            throw new Error(`Cannot connect to print server: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    };
+    const printReceipt = async (data)=>{
+        if (isTauri()) //TURBOPACK unreachable
+        ;
+        else {
+            // Web browser fallback
+            throw new Error("Printing not supported in web browser");
+        }
+    };
+    return {
+        printReceipt,
+        testConnection
+    };
+}
+}),
 "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx [app-ssr] (ecmascript)", ((__turbopack_context__) => {
 "use strict";
 
@@ -1460,6 +1527,10 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_pages$2f$POS$2f$components$2f$rightColumn$2f$Receipt$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/app/dashboard/_pages/POS/components/rightColumn/Receipt.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_pages$2f$POS$2f$components$2f$rightColumn$2f$AddCustomerModal$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/app/dashboard/_pages/POS/components/rightColumn/AddCustomerModal.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$axios$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/lib/axios.ts [app-ssr] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$printing$2f$usePrint$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/hooks/printing/usePrint.ts [app-ssr] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/dialog.tsx [app-ssr] (ecmascript)");
+;
+;
 ;
 ;
 ;
@@ -1478,6 +1549,10 @@ function POSRight({ step, setStep }) {
     const [change, setChange] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(0);
     const [addCustomerOpen, setAddCustomerOpen] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(false);
     const [isProcessingSale, setIsProcessingSale] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(false);
+    // Simplified print dialog state - just confirmation
+    const [printOpen, setPrintOpen] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(false);
+    const [isPrinting, setIsPrinting] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(false);
+    const { printReceipt } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$printing$2f$usePrint$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["usePrint"])(); // Remove listPrinters
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         const amountValue = parseFloat(amount) || 0;
         setChange(amountValue - cartTotal);
@@ -1485,8 +1560,10 @@ function POSRight({ step, setStep }) {
         amount,
         cartTotal
     ]);
+    const openPrintDialog = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(()=>{
+        setPrintOpen(true);
+    }, []);
     const { customerQuery, setCustomerQuery, filteredCustomers, selectedCustomer, selectCustomer, clearCustomer, allCustomers, setAllCustomers } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$pos$2f$rightCol$2f$useCustomerTagging$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCustomerTagging"])();
-    // Calculator
     const handleNext = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(()=>{
         const amountValue = parseFloat(amount) || 0;
         if (amountValue >= cartTotal) {
@@ -1500,7 +1577,6 @@ function POSRight({ step, setStep }) {
         cartTotal,
         setStep
     ]);
-    // EXISTING: handleNewTransaction currently posts and clears state (keep as "clear after receipt" for manual use)
     const handleNewTransaction = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(async ()=>{
         if (isProcessingSale || cart.length === 0) return;
         try {
@@ -1514,23 +1590,18 @@ function POSRight({ step, setStep }) {
                         price: item.product.price
                     }))
             };
-            await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$axios$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"].post('/sales', salesPayload);
-            // Refresh customer data if needed (but don't keep them selected)
+            await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$axios$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"].post("/sales", salesPayload);
             try {
-                const customerResp = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$axios$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"].get('/customers');
+                const customerResp = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$axios$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"].get("/customers");
                 if (customerResp.data?.success && Array.isArray(customerResp.data.data)) {
                     setAllCustomers(customerResp.data.data);
                 }
-            } catch (err) {
-                console.warn('Failed to refresh customer data:', err);
-            }
-            // Reset ALL state - including customer data - IMMEDIATELY
+            } catch  {}
             clearCustomer();
             setStep(1);
             setAmount("");
             setChange(0);
             clearCart();
-            // Clear global flags immediately
             window.customerSearchActive = false;
         } catch (err) {
             const errorMessage = err.response?.data?.error || err.message || "Unknown error";
@@ -1544,26 +1615,22 @@ function POSRight({ step, setStep }) {
         cartTotal,
         clearCustomer,
         clearCart,
-        setAllCustomers
+        setAllCustomers,
+        isProcessingSale
     ]);
-    // NEW: finalizeSale - POST /sales, refresh customers, select updated customer, then show receipt (Step 3)
     const finalizeSale = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(async ()=>{
         if (isProcessingSale || cart.length === 0) return;
         try {
             setIsProcessingSale(true);
-            // Check if any products are debug products (have string IDs like "debug-100")
             const hasDebugProducts = cart.some((item)=>{
                 const productId = item.product.id;
-                return typeof productId === 'string' && productId.startsWith('debug-');
+                return typeof productId === "string" && productId.startsWith("debug-");
             });
             if (hasDebugProducts) {
-                // Skip database save for debug products - go directly to receipt
-                console.log("Debug products detected - skipping database save, proceeding to receipt");
                 setStep(3);
                 setIsProcessingSale(false);
                 return;
             }
-            // Normal flow for real products - save to database
             const salesPayload = {
                 customer_id: selectedCustomer?.id || null,
                 total_purchase: cartTotal,
@@ -1573,9 +1640,8 @@ function POSRight({ step, setStep }) {
                         price: item.product.price
                     }))
             };
-            const resp = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$axios$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"].post('/sales', salesPayload);
+            const resp = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$axios$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"].post("/sales", salesPayload);
             const payload = resp?.data;
-            // OPTIMIZATION: Simplify customer update logic
             if (payload?.data?.customer) {
                 setAllCustomers((prev = [])=>{
                     const idx = prev.findIndex((p)=>String(p.id) === String(payload.data.customer.id));
@@ -1609,7 +1675,6 @@ function POSRight({ step, setStep }) {
         setStep,
         isProcessingSale
     ]);
-    // NEW: completeTransaction (close receipt) — clear cart/customer and reset UI
     const completeTransaction = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(()=>{
         try {
             clearCustomer();
@@ -1618,9 +1683,7 @@ function POSRight({ step, setStep }) {
             setChange(0);
             clearCart();
             window.customerSearchActive = false;
-        } catch (err) {
-            console.warn("completeTransaction error:", err);
-        }
+        } catch  {}
     }, [
         clearCustomer,
         setStep,
@@ -1628,155 +1691,22 @@ function POSRight({ step, setStep }) {
         setChange,
         clearCart
     ]);
-    // NEW: Generate ESC/POS receipt (no browser, no cut-off issues)
-    const generateESCPOSReceipt = (data)=>{
-        const dateStr = new Date().toLocaleDateString("en-US", {
-            year: "numeric",
-            month: "long",
-            day: "2-digit"
-        });
-        let receipt = '';
-        // Initialize printer
-        receipt += '\x1B\x40'; // ESC @ - Initialize
-        // Center align and bold for header
-        receipt += '\x1B\x61\x01'; // ESC a 1 - Center align
-        receipt += '\x1B\x45\x01'; // ESC E 1 - Bold on
-        receipt += 'YZY STORE\n';
-        receipt += 'Eastern Slide, Tuding\n';
-        receipt += '\x1B\x45\x00'; // ESC E 0 - Bold off
-        receipt += '\x1B\x61\x00'; // ESC a 0 - Left align
-        // Add separator
-        receipt += '--------------------------------\n';
-        // Customer and date info
-        receipt += `Customer: ${data.customer?.name || "N/A"}\n`;
-        receipt += `Date: ${dateStr}\n`;
-        receipt += '--------------------------------\n';
-        // Table header
-        receipt += '# Description        Qty Price Amount\n';
-        receipt += '--------------------------------\n';
-        // Add all items
-        data.items.forEach((item, index)=>{
-            const desc = item.desc.length > 15 ? item.desc.substring(0, 12) + "..." : item.desc;
-            const qty = item.qty.toString().padStart(3);
-            const price = item.price ? item.price.toFixed(2) : (item.amount / item.qty).toFixed(2);
-            const priceStr = `P${price}`.padStart(6);
-            const amount = `P${item.amount.toFixed(2)}`.padStart(7);
-            receipt += `${(index + 1).toString().padStart(2)} ${desc.padEnd(15)} ${qty} ${priceStr} ${amount}\n`;
-        });
-        // Totals
-        receipt += '--------------------------------\n';
-        receipt += `Total:                    P${data.cartTotal.toFixed(2)}\n`;
-        receipt += `Amount:                   P${data.amount.toFixed(2)}\n`;
-        receipt += `Change:                   P${data.change.toFixed(2)}\n`;
-        receipt += '--------------------------------\n';
-        receipt += `Customer Points: ${data.points || 0}\n`;
-        receipt += '--------------------------------\n\n';
-        // Footer
-        receipt += '\x1B\x61\x01'; // Center align
-        receipt += 'CUSTOMER COPY - NOT AN OFFICIAL RECEIPT\n\n';
-        receipt += 'THANK YOU - GATANG KA MANEN!\n';
-        receipt += '\x1B\x61\x00'; // Left align
-        receipt += '--------------------------------\n\n';
-        // AUTO-CUT
-        receipt += '\x1B\x64\x01'; // ESC d 1 - Feed only 1 line
-        receipt += '\x1D\x56\x00'; // GS V 0 - Full cut (auto-cut)
-        return receipt;
-    };
-    // UPDATED: Use direct ESC/POS printing (no browser, no cut-off issues)
-    const handleTauriPrint = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(async ()=>{
-        if (isProcessingSale) return;
-        const items = cart.map((item)=>({
-                desc: item.product?.name ?? item.product?.barcode ?? "Item",
-                qty: Number(item.quantity || 0),
-                amount: Number(((item.product?.price || 0) * item.quantity).toFixed(2))
-            }));
-        const data = {
-            customer: selectedCustomer || {
-                name: "N/A"
-            },
-            cartTotal: Number(cartTotal || 0),
-            amount: Number(parseFloat(amount) || cartTotal || 0),
-            change: Number(change || 0),
-            items
-        };
-        try {
-            setIsProcessingSale(true);
-            await printReceipt({
-                store: {
-                    name: 'YZY STORE',
-                    address1: 'Eastern Slide, Tuding'
-                },
-                customer: data.customer,
-                cartTotal: data.cartTotal,
-                amount: data.amount,
-                change: data.change,
-                points: 0,
-                items: data.items
-            });
-        } finally{
-            setIsProcessingSale(false);
-        }
-    }, [
-        cart,
-        selectedCustomer,
-        cartTotal,
-        amount,
-        change,
-        isProcessingSale
-    ]);
-    // Called when a new customer has been added from the AddCustomerModal
-    const handleCustomerAdded = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])((customer)=>{
-        try {
-            // Add new customer to local list and select them
-            setAllCustomers((prev = [])=>[
-                    ...prev,
-                    customer
-                ]);
-            setAddCustomerOpen(false);
-            // selectCustomer comes from useCustomerTagging
-            if (typeof selectCustomer === "function") selectCustomer(customer);
-        } catch (err) {
-            console.warn("handleCustomerAdded error:", err);
-        }
-    }, [
-        setAllCustomers,
-        selectCustomer
-    ]);
-    // Card click handler
-    const handleCardClick = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(()=>{
-    // Card click functionality can be added here if needed
-    }, []);
-    // NEW: centralized step-advance handler used by keyboard listeners
     const handlePosNext = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(()=>{
-        if (isProcessingSale) {
-            return;
-        }
+        if (isProcessingSale) return;
         if (step === 2) {
-            // Immediately finalize the transaction (will POST /sales, update customer points, then show receipt)
             void finalizeSale();
             return;
         }
         if (step === 3) {
-            // Do not re-submit the sale here — finalizeSale already submitted on Step 2.
             completeTransaction();
             return;
         }
-        if (window.customerSearchActive) {
-            return;
-        }
+        if (window.customerSearchActive) return;
         const activeElement = document.activeElement;
-        const isCustomerSearch = activeElement && (activeElement.getAttribute('data-customer-search') === 'true' || activeElement.placeholder?.toLowerCase().includes('search name') || activeElement.closest('[data-customer-search]') !== null);
-        if (isCustomerSearch) {
-            return;
-        }
+        const isCustomerSearch = activeElement && (activeElement.getAttribute("data-customer-search") === "true" || activeElement.placeholder?.toLowerCase().includes("search name") || !!activeElement.closest("[data-customer-search]"));
+        if (isCustomerSearch) return;
         if (step === 1) {
-            // use existing validation function for step 1
             handleNext();
-            return;
-        }
-        if (step === 3) {
-            // Do not re-submit the sale here — finalizeSale already submitted on Step 2.
-            completeTransaction();
             return;
         }
     }, [
@@ -1787,7 +1717,6 @@ function POSRight({ step, setStep }) {
         completeTransaction,
         setStep
     ]);
-    // Handle Ctrl+Enter / pos:next-step (backwards compatible)
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         if ("TURBOPACK compile-time truthy", 1) return;
         //TURBOPACK unreachable
@@ -1796,7 +1725,6 @@ function POSRight({ step, setStep }) {
         handlePosNext,
         step
     ]);
-    // Listen for pos:step-1-back (Ctrl+B) — when on Step 2, go back to Step 1
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         if ("TURBOPACK compile-time truthy", 1) return;
         //TURBOPACK unreachable
@@ -1806,7 +1734,6 @@ function POSRight({ step, setStep }) {
         step,
         setStep
     ]);
-    // Listen for customer:add (Ctrl+Shift+C) — open AddCustomerModal
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         if ("TURBOPACK compile-time truthy", 1) return;
         //TURBOPACK unreachable
@@ -1815,303 +1742,480 @@ function POSRight({ step, setStep }) {
     }, [
         setAddCustomerOpen
     ]);
-    // Global keyboard shortcut for Step 3: Shift+P -> print receipt
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         if ("TURBOPACK compile-time truthy", 1) return;
         //TURBOPACK unreachable
         ;
-        const onKey = undefined;
-    }, [
-        step,
-        handleTauriPrint
-    ]);
-    // Step-specific listeners (step-1 / step-2)
-    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
-        if ("TURBOPACK compile-time truthy", 1) return;
-        //TURBOPACK unreachable
-        ;
-        const handleStep1Complete = undefined;
-        const handleStep2Complete = undefined;
-        const handleStep3Complete = undefined;
-    }, [
-        step,
-        handlePosNext,
-        completeTransaction
-    ]);
-    // Handle Enter key for finishing transaction in Steps 2 and 3
-    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
-        const handleEnterKey = (e)=>{
-            // Only handle Enter in Steps 2 and 3
-            if (step !== 2 && step !== 3) return;
-            // Don't handle Enter if customer search is active
-            if (window.customerSearchActive) return;
-            // Don't handle Enter if we're processing
-            if (isProcessingSale) return;
-            // Only handle Enter if no modifier keys are pressed
-            if (e.ctrlKey || e.shiftKey || e.altKey) return;
-            // Check if we're focused on an input field
-            const activeElement = document.activeElement;
-            if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.contentEditable === 'true')) {
-                return;
-            }
-            e.preventDefault();
-            if (step === 2) {
-                // In Step 2, finish the transaction (finalize sale)
-                void finalizeSale();
-            } else if (step === 3) {
-                // In Step 3, close the transaction (complete transaction)
-                completeTransaction();
-            }
-        };
-        document.addEventListener('keydown', handleEnterKey);
-        return ()=>document.removeEventListener('keydown', handleEnterKey);
+        const handleEnterKey = undefined;
     }, [
         step,
         isProcessingSale,
         finalizeSale,
         completeTransaction
     ]);
+    // When the print dialog opens, fetch printers
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
+        if (!printOpen) return;
+    // No longer fetching printers, as we are always using default
+    }, [
+        printOpen
+    ]);
+    const confirmPrint = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(async ()=>{
+        if (isProcessingSale || isPrinting) return;
+        const items = cart.map((item)=>({
+                desc: item.product?.name ?? item.product?.barcode ?? "Item",
+                qty: Number(item.quantity || 0),
+                price: Number(item.product?.price || 0),
+                amount: Number(((item.product?.price || 0) * item.quantity).toFixed(2))
+            }));
+        try {
+            setIsPrinting(true);
+            await printReceipt({
+                store: {
+                    name: "YZY STORE",
+                    address1: "Eastern Slide, Tuding"
+                },
+                customer: selectedCustomer || {
+                    name: "N/A"
+                },
+                cartTotal: Number(cartTotal || 0),
+                amount: Number(parseFloat(amount) || cartTotal || 0),
+                change: Number(change || 0),
+                points: Number(selectedCustomer?.points ?? 0),
+                items,
+                printerName: null
+            });
+            setPrintOpen(false);
+            alert("Receipt printed successfully!");
+        } catch (e) {
+            alert(`Print failed: ${e?.message || String(e)}`);
+        } finally{
+            setIsPrinting(false);
+        }
+    }, [
+        isProcessingSale,
+        isPrinting,
+        cart,
+        selectedCustomer,
+        cartTotal,
+        amount,
+        change,
+        printReceipt
+    ]);
     const isDebugMode = cart.some((item)=>{
         const productId = item.product.id;
-        return typeof productId === 'string' && productId.startsWith('debug-');
+        return typeof productId === "string" && productId.startsWith("debug-");
     });
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Card"], {
         className: "h-full flex flex-col",
-        onClick: handleCardClick,
-        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardContent"], {
-            className: "flex-1 flex flex-col p-4 pb-0",
-            children: [
-                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("h1", {
-                    className: "text-xl font-medium",
-                    children: "Total"
-                }, void 0, false, {
-                    fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                    lineNumber: 468,
-                    columnNumber: 9
-                }, this),
-                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                    className: "w-full py-3 mb-2",
-                    children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        className: "flex justify-between text-5xl font-medium",
+        children: [
+            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardContent"], {
+                className: "flex-1 flex flex-col p-4 pb-0",
+                children: [
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        className: "text-center mb-4",
                         children: [
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("h1", {
-                                children: "₱"
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                className: "text-sm md:text-base text-gray-600",
+                                children: "Total"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                lineNumber: 471,
+                                lineNumber: 329,
+                                columnNumber: 11
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                className: "mt-1 flex items-baseline justify-center gap-1 tabular-nums",
+                                children: [
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                        className: "text-2xl md:text-3xl font-bold",
+                                        children: "₱"
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
+                                        lineNumber: 331,
+                                        columnNumber: 13
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                        className: "text-4xl md:text-5xl font-extrabold leading-none",
+                                        children: cartTotal.toFixed(2)
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
+                                        lineNumber: 332,
+                                        columnNumber: 13
+                                    }, this)
+                                ]
+                            }, void 0, true, {
+                                fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
+                                lineNumber: 330,
+                                columnNumber: 11
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                className: "mt-1 text-xs text-gray-500",
+                                children: [
+                                    cart.length,
+                                    " ",
+                                    cart.length === 1 ? "item" : "items"
+                                ]
+                            }, void 0, true, {
+                                fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
+                                lineNumber: 336,
+                                columnNumber: 11
+                            }, this)
+                        ]
+                    }, void 0, true, {
+                        fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
+                        lineNumber: 328,
+                        columnNumber: 9
+                    }, this),
+                    isDebugMode && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        className: "bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-2",
+                        children: [
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("strong", {
+                                children: "Debug Mode:"
+                            }, void 0, false, {
+                                fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
+                                lineNumber: 343,
                                 columnNumber: 13
                             }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("h1", {
-                                children: cartTotal.toFixed(2)
+                            " This transaction will not be saved to the database."
+                        ]
+                    }, void 0, true, {
+                        fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
+                        lineNumber: 342,
+                        columnNumber: 11
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        className: "flex-1 flex flex-col",
+                        children: [
+                            step === 1 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Fragment"], {
+                                children: [
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_pages$2f$POS$2f$components$2f$rightColumn$2f$Calculator$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
+                                        amount: amount,
+                                        setAmount: setAmount,
+                                        cartTotal: cartTotal,
+                                        cartIsEmpty: cart.length === 0
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
+                                        lineNumber: 350,
+                                        columnNumber: 15
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                        className: "w-full grid grid-cols-3 gap-3 mt-3",
+                                        children: [
+                                            [
+                                                50,
+                                                100,
+                                                200,
+                                                500,
+                                                1000
+                                            ].map((v)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                    className: "col-span-1",
+                                                    children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
+                                                        type: "button",
+                                                        onClick: ()=>setAmount(String(v)),
+                                                        className: "block w-full h-10 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-medium text-center",
+                                                        children: [
+                                                            "₱",
+                                                            v
+                                                        ]
+                                                    }, void 0, true, {
+                                                        fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
+                                                        lineNumber: 361,
+                                                        columnNumber: 21
+                                                    }, this)
+                                                }, v, false, {
+                                                    fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
+                                                    lineNumber: 360,
+                                                    columnNumber: 19
+                                                }, this)),
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                className: "col-span-1",
+                                                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
+                                                    type: "button",
+                                                    onClick: ()=>setAmount(String(cartTotal.toFixed(2))),
+                                                    className: "block w-full h-10 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-medium text-center",
+                                                    children: "Exact"
+                                                }, void 0, false, {
+                                                    fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
+                                                    lineNumber: 372,
+                                                    columnNumber: 19
+                                                }, this)
+                                            }, void 0, false, {
+                                                fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
+                                                lineNumber: 371,
+                                                columnNumber: 17
+                                            }, this)
+                                        ]
+                                    }, void 0, true, {
+                                        fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
+                                        lineNumber: 358,
+                                        columnNumber: 15
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                        className: "flex-1"
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
+                                        lineNumber: 383,
+                                        columnNumber: 15
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardFooter"], {
+                                        className: "px-0 pb-4 pt-4",
+                                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
+                                            className: "w-full h-12 md:h-14 text-base md:text-lg  bg-[#0B1220] text-white hover:bg-[#0b1220]/90",
+                                            onClick: handleNext,
+                                            disabled: cart.length === 0 || !amount || parseFloat(amount) < cartTotal || isProcessingSale,
+                                            children: "Next"
+                                        }, void 0, false, {
+                                            fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
+                                            lineNumber: 385,
+                                            columnNumber: 17
+                                        }, this)
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
+                                        lineNumber: 384,
+                                        columnNumber: 15
+                                    }, this)
+                                ]
+                            }, void 0, true),
+                            step === 2 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Fragment"], {
+                                children: [
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_pages$2f$POS$2f$components$2f$rightColumn$2f$PaymentSummary$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
+                                        amount: amount,
+                                        cartTotal: cartTotal,
+                                        change: change
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
+                                        lineNumber: 398,
+                                        columnNumber: 15
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                        className: "flex-1"
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
+                                        lineNumber: 399,
+                                        columnNumber: 15
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_pages$2f$POS$2f$components$2f$rightColumn$2f$CustomerSearch$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
+                                        customerQuery: customerQuery,
+                                        setCustomerQuery: setCustomerQuery,
+                                        filteredCustomers: filteredCustomers,
+                                        selectedCustomer: selectedCustomer,
+                                        selectCustomer: selectCustomer,
+                                        clearCustomer: clearCustomer,
+                                        onAddCustomer: ()=>setAddCustomerOpen(true),
+                                        onCustomerSelected: ()=>{
+                                            if (selectedCustomer) void finalizeSale();
+                                        }
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
+                                        lineNumber: 400,
+                                        columnNumber: 15
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_pages$2f$POS$2f$components$2f$rightColumn$2f$AddCustomerModal$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
+                                        open: addCustomerOpen,
+                                        onOpenChange: setAddCustomerOpen,
+                                        onCustomerAdded: (customer)=>{
+                                            try {
+                                                setAllCustomers((prev = [])=>[
+                                                        ...prev,
+                                                        customer
+                                                    ]);
+                                                setAddCustomerOpen(false);
+                                                if (typeof selectCustomer === "function") selectCustomer(customer);
+                                            } catch  {}
+                                        }
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
+                                        lineNumber: 412,
+                                        columnNumber: 15
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardFooter"], {
+                                        className: "px-0 pb-4 pt-4 flex flex-col gap-3",
+                                        children: [
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
+                                                className: "w-full h-12 text-base font-medium",
+                                                variant: "outline",
+                                                onClick: ()=>setStep(1),
+                                                disabled: isProcessingSale,
+                                                children: "Back"
+                                            }, void 0, false, {
+                                                fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
+                                                lineNumber: 424,
+                                                columnNumber: 17
+                                            }, this),
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
+                                                className: "w-full h-12 text-base font-medium",
+                                                onClick: ()=>void finalizeSale(),
+                                                disabled: isProcessingSale,
+                                                children: "Finish Transaction"
+                                            }, void 0, false, {
+                                                fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
+                                                lineNumber: 432,
+                                                columnNumber: 17
+                                            }, this)
+                                        ]
+                                    }, void 0, true, {
+                                        fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
+                                        lineNumber: 423,
+                                        columnNumber: 15
+                                    }, this)
+                                ]
+                            }, void 0, true),
+                            step === 3 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Fragment"], {
+                                children: [
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_pages$2f$POS$2f$components$2f$rightColumn$2f$Receipt$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
+                                        selectedCustomer: selectedCustomer,
+                                        cartTotal: cartTotal
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
+                                        lineNumber: 445,
+                                        columnNumber: 15
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardFooter"], {
+                                        className: "px-4 pb-4 pt-4 flex flex-col gap-2",
+                                        children: [
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
+                                                className: "w-full h-14 text-xl font-medium",
+                                                onClick: openPrintDialog,
+                                                disabled: isProcessingSale,
+                                                children: isProcessingSale ? "Processing..." : "Print Receipt"
+                                            }, void 0, false, {
+                                                fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
+                                                lineNumber: 447,
+                                                columnNumber: 17
+                                            }, this),
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
+                                                className: "w-full h-14 text-xl font-medium",
+                                                variant: "outline",
+                                                onClick: completeTransaction,
+                                                disabled: isProcessingSale,
+                                                children: "Close"
+                                            }, void 0, false, {
+                                                fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
+                                                lineNumber: 454,
+                                                columnNumber: 17
+                                            }, this)
+                                        ]
+                                    }, void 0, true, {
+                                        fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
+                                        lineNumber: 446,
+                                        columnNumber: 15
+                                    }, this)
+                                ]
+                            }, void 0, true)
+                        ]
+                    }, void 0, true, {
+                        fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
+                        lineNumber: 347,
+                        columnNumber: 9
+                    }, this)
+                ]
+            }, void 0, true, {
+                fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
+                lineNumber: 326,
+                columnNumber: 7
+            }, this),
+            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Dialog"], {
+                open: printOpen,
+                onOpenChange: setPrintOpen,
+                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DialogContent"], {
+                    className: "sm:max-w-md",
+                    children: [
+                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DialogHeader"], {
+                            children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DialogTitle"], {
+                                children: "Print Receipt"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
                                 lineNumber: 472,
                                 columnNumber: 13
                             }, this)
-                        ]
-                    }, void 0, true, {
-                        fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                        lineNumber: 470,
-                        columnNumber: 11
-                    }, this)
-                }, void 0, false, {
-                    fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                    lineNumber: 469,
-                    columnNumber: 9
-                }, this),
-                isDebugMode && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                    className: "bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-2",
-                    children: [
-                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("strong", {
-                            children: "Debug Mode:"
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                            lineNumber: 477,
-                            columnNumber: 13
+                            lineNumber: 471,
+                            columnNumber: 11
                         }, this),
-                        " This transaction will not be saved to the database."
-                    ]
-                }, void 0, true, {
-                    fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                    lineNumber: 476,
-                    columnNumber: 11
-                }, this),
-                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                    className: "flex-1 flex flex-col",
-                    children: [
-                        step === 1 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Fragment"], {
+                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                            className: "space-y-4",
                             children: [
-                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_pages$2f$POS$2f$components$2f$rightColumn$2f$Calculator$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
-                                    amount: amount,
-                                    setAmount: setAmount,
-                                    cartTotal: cartTotal,
-                                    cartIsEmpty: cart.length === 0
+                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                                    className: "text-center text-gray-600",
+                                    children: "Print receipt to default printer?"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                    lineNumber: 483,
-                                    columnNumber: 15
+                                    lineNumber: 476,
+                                    columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                    className: "flex-1"
-                                }, void 0, false, {
-                                    fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                    lineNumber: 489,
-                                    columnNumber: 15
-                                }, this),
-                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardFooter"], {
-                                    className: "px-4 pb-4 pt-4 flex flex-col gap-3",
-                                    children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
-                                        className: "w-full h-14 text-xl font-medium",
-                                        onClick: handleNext,
-                                        disabled: cart.length === 0 || !amount || parseFloat(amount) < cartTotal,
-                                        children: "Next"
-                                    }, void 0, false, {
+                                    className: "bg-blue-50 p-3 rounded-lg",
+                                    children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                                        className: "text-sm text-blue-800",
+                                        children: [
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("strong", {
+                                                children: "Note:"
+                                            }, void 0, false, {
+                                                fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
+                                                lineNumber: 481,
+                                                columnNumber: 17
+                                            }, this),
+                                            " Receipt will be sent to your default printer automatically."
+                                        ]
+                                    }, void 0, true, {
                                         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                        lineNumber: 491,
-                                        columnNumber: 17
+                                        lineNumber: 480,
+                                        columnNumber: 15
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
+                                    lineNumber: 479,
+                                    columnNumber: 13
+                                }, this)
+                            ]
+                        }, void 0, true, {
+                            fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
+                            lineNumber: 475,
+                            columnNumber: 11
+                        }, this),
+                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DialogFooter"], {
+                            className: "gap-2",
+                            children: [
+                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
+                                    variant: "outline",
+                                    onClick: ()=>setPrintOpen(false),
+                                    children: "Cancel"
+                                }, void 0, false, {
+                                    fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
+                                    lineNumber: 487,
+                                    columnNumber: 13
+                                }, this),
+                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
+                                    onClick: confirmPrint,
+                                    disabled: isPrinting,
+                                    children: isPrinting ? "Printing..." : "Print Receipt"
+                                }, void 0, false, {
+                                    fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
                                     lineNumber: 490,
-                                    columnNumber: 15
+                                    columnNumber: 13
                                 }, this)
                             ]
-                        }, void 0, true),
-                        step === 2 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Fragment"], {
-                            children: [
-                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_pages$2f$POS$2f$components$2f$rightColumn$2f$PaymentSummary$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
-                                    amount: amount,
-                                    cartTotal: cartTotal,
-                                    change: change
-                                }, void 0, false, {
-                                    fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                    lineNumber: 503,
-                                    columnNumber: 15
-                                }, this),
-                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                    className: "flex-1"
-                                }, void 0, false, {
-                                    fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                    lineNumber: 504,
-                                    columnNumber: 15
-                                }, this),
-                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_pages$2f$POS$2f$components$2f$rightColumn$2f$CustomerSearch$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
-                                    customerQuery: customerQuery,
-                                    setCustomerQuery: setCustomerQuery,
-                                    filteredCustomers: filteredCustomers,
-                                    selectedCustomer: selectedCustomer,
-                                    selectCustomer: selectCustomer,
-                                    clearCustomer: clearCustomer,
-                                    onAddCustomer: ()=>setAddCustomerOpen(true),
-                                    onCustomerSelected: ()=>{
-                                        // When customer is selected and Enter is pressed, finish transaction
-                                        if (selectedCustomer) {
-                                            void finalizeSale();
-                                        }
-                                    }
-                                }, void 0, false, {
-                                    fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                    lineNumber: 505,
-                                    columnNumber: 15
-                                }, this),
-                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_pages$2f$POS$2f$components$2f$rightColumn$2f$AddCustomerModal$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
-                                    open: addCustomerOpen,
-                                    onOpenChange: setAddCustomerOpen,
-                                    onCustomerAdded: handleCustomerAdded
-                                }, void 0, false, {
-                                    fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                    lineNumber: 520,
-                                    columnNumber: 15
-                                }, this),
-                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardFooter"], {
-                                    className: "px-4 pb-4 pt-4 flex flex-col gap-3",
-                                    children: [
-                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
-                                            className: "w-full h-14 text-xl font-medium",
-                                            variant: "outline",
-                                            onClick: ()=>setStep(1),
-                                            disabled: isProcessingSale,
-                                            children: "Back"
-                                        }, void 0, false, {
-                                            fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                            lineNumber: 526,
-                                            columnNumber: 17
-                                        }, this),
-                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
-                                            className: "w-full h-14 text-xl font-medium",
-                                            onClick: ()=>void finalizeSale(),
-                                            disabled: isProcessingSale,
-                                            children: "Finish Transaction"
-                                        }, void 0, false, {
-                                            fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                            lineNumber: 534,
-                                            columnNumber: 17
-                                        }, this)
-                                    ]
-                                }, void 0, true, {
-                                    fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                    lineNumber: 525,
-                                    columnNumber: 15
-                                }, this)
-                            ]
-                        }, void 0, true),
-                        step === 3 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Fragment"], {
-                            children: [
-                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_pages$2f$POS$2f$components$2f$rightColumn$2f$Receipt$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
-                                    selectedCustomer: selectedCustomer,
-                                    cartTotal: cartTotal
-                                }, void 0, false, {
-                                    fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                    lineNumber: 546,
-                                    columnNumber: 15
-                                }, this),
-                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardFooter"], {
-                                    className: "px-4 pb-4 pt-4 flex flex-col gap-2",
-                                    children: [
-                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
-                                            className: "w-full h-14 text-xl font-medium",
-                                            onClick: handleTauriPrint,
-                                            disabled: isProcessingSale,
-                                            children: isProcessingSale ? "Processing..." : "Print Receipt"
-                                        }, void 0, false, {
-                                            fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                            lineNumber: 548,
-                                            columnNumber: 17
-                                        }, this),
-                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
-                                            className: "w-full h-14 text-xl font-medium",
-                                            variant: "outline",
-                                            onClick: completeTransaction,
-                                            disabled: isProcessingSale,
-                                            children: "Close"
-                                        }, void 0, false, {
-                                            fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                            lineNumber: 555,
-                                            columnNumber: 17
-                                        }, this)
-                                    ]
-                                }, void 0, true, {
-                                    fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                    lineNumber: 547,
-                                    columnNumber: 15
-                                }, this)
-                            ]
-                        }, void 0, true)
+                        }, void 0, true, {
+                            fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
+                            lineNumber: 486,
+                            columnNumber: 11
+                        }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                    lineNumber: 480,
+                    lineNumber: 470,
                     columnNumber: 9
                 }, this)
-            ]
-        }, void 0, true, {
-            fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-            lineNumber: 467,
-            columnNumber: 7
-        }, this)
-    }, void 0, false, {
+            }, void 0, false, {
+                fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
+                lineNumber: 469,
+                columnNumber: 7
+            }, this)
+        ]
+    }, void 0, true, {
         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-        lineNumber: 466,
+        lineNumber: 325,
         columnNumber: 5
     }, this);
 }
@@ -2660,6 +2764,7 @@ function CartTable({ cart, selectedRowId, selectRow, updateCartItemQuantity, upd
         });
     }, []);
     // --- Listen for custom cart events ---
+    // --- Listen for custom cart events ---
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         function handleIncrementQty(e) {
             const id = e.detail?.id;
@@ -2694,22 +2799,49 @@ function CartTable({ cart, selectedRowId, selectRow, updateCartItemQuantity, upd
                 focusSearchBar();
             }
         }
+        // NEW: Selection navigation (disabled if search dropdown is open or component is disabled)
+        const searchInput = ()=>document.querySelector('[data-product-search="true"]');
+        const searchOpen = ()=>searchInput()?.getAttribute('data-search-open') === 'true';
+        function handleSelectNext() {
+            if (disabled || searchOpen()) return;
+            const currentId = selectedRowId ?? cart[0]?.id ?? null;
+            if (!currentId) return;
+            const idx = cart.findIndex((it)=>it.id === currentId);
+            const nextIdx = Math.min(cart.length - 1, idx + 1);
+            const nextId = cart[nextIdx]?.id;
+            if (nextId) selectRow(nextId);
+        }
+        function handleSelectPrev() {
+            if (disabled || searchOpen()) return;
+            const currentId = selectedRowId ?? cart[0]?.id ?? null;
+            if (!currentId) return;
+            const idx = cart.findIndex((it)=>it.id === currentId);
+            const prevIdx = Math.max(0, idx - 1);
+            const prevId = cart[prevIdx]?.id;
+            if (prevId) selectRow(prevId);
+        }
         window.addEventListener("cart:increment-qty", handleIncrementQty);
         window.addEventListener("cart:decrement-qty", handleDecrementQty);
         window.addEventListener("cart:edit-price", handleEditPrice);
         window.addEventListener("cart:delete-item", handleDeleteItem);
+        window.addEventListener("cart:select-next", handleSelectNext);
+        window.addEventListener("cart:select-prev", handleSelectPrev);
         return ()=>{
             window.removeEventListener("cart:increment-qty", handleIncrementQty);
             window.removeEventListener("cart:decrement-qty", handleDecrementQty);
             window.removeEventListener("cart:edit-price", handleEditPrice);
             window.removeEventListener("cart:delete-item", handleDeleteItem);
+            window.removeEventListener("cart:select-next", handleSelectNext);
+            window.removeEventListener("cart:select-prev", handleSelectPrev);
         };
     }, [
         cart,
         updateCartItemQuantity,
         selectRow,
         deleteCartItem,
-        focusSearchBar
+        focusSearchBar,
+        disabled,
+        selectedRowId
     ]);
     // --- PriceCell ---
     const PriceCell = ({ item })=>{
@@ -2765,7 +2897,7 @@ function CartTable({ cart, selectedRowId, selectRow, updateCartItemQuantity, upd
             disabled: disabled
         }, void 0, false, {
             fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-            lineNumber: 177,
+            lineNumber: 206,
             columnNumber: 7
         }, this);
     };
@@ -2881,7 +3013,7 @@ function CartTable({ cart, selectedRowId, selectRow, updateCartItemQuantity, upd
             placeholder: "1"
         }, void 0, false, {
             fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-            lineNumber: 326,
+            lineNumber: 355,
             columnNumber: 7
         }, this);
     };
@@ -2895,17 +3027,17 @@ function CartTable({ cart, selectedRowId, selectRow, updateCartItemQuantity, upd
                     children: "🛒 Scan or search to add products"
                 }, void 0, false, {
                     fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                    lineNumber: 346,
+                    lineNumber: 375,
                     columnNumber: 11
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                lineNumber: 345,
+                lineNumber: 374,
                 columnNumber: 9
             }, this)
         }, void 0, false, {
             fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-            lineNumber: 344,
+            lineNumber: 373,
             columnNumber: 7
         }, this);
     }
@@ -2915,54 +3047,54 @@ function CartTable({ cart, selectedRowId, selectRow, updateCartItemQuantity, upd
                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableRow"], {
                     children: [
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableHead"], {
-                            className: "text-lg font-semibold py-3",
+                            className: "text-sm md:text-base font-semibold py-3",
                             children: "Barcode"
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                            lineNumber: 356,
+                            lineNumber: 385,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableHead"], {
-                            className: "text-lg font-semibold py-3",
+                            className: "text-sm md:text-base font-semibold py-3",
                             children: "Name"
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                            lineNumber: 357,
+                            lineNumber: 386,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableHead"], {
-                            className: "text-lg font-semibold py-3",
+                            className: "text-sm md:text-base font-semibold py-3",
                             children: "Price"
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                            lineNumber: 358,
+                            lineNumber: 387,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableHead"], {
-                            className: "text-lg font-semibold py-3",
+                            className: "text-sm md:text-base font-semibold py-3",
                             children: "Quantity"
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                            lineNumber: 359,
+                            lineNumber: 388,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableHead"], {
-                            className: "text-lg font-semibold py-3",
+                            className: "text-sm md:text-base font-semibold py-3",
                             children: "Actions"
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                            lineNumber: 360,
+                            lineNumber: 389,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                    lineNumber: 355,
+                    lineNumber: 384,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                lineNumber: 354,
+                lineNumber: 383,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableBody"], {
@@ -2980,7 +3112,7 @@ function CartTable({ cart, selectedRowId, selectRow, updateCartItemQuantity, upd
                                 children: item.product.barcode || "N/A"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                                lineNumber: 378,
+                                lineNumber: 407,
                                 columnNumber: 15
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableCell"], {
@@ -2993,25 +3125,25 @@ function CartTable({ cart, selectedRowId, selectRow, updateCartItemQuantity, upd
                                             className: "h-4 w-4 animate-spin"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                                            lineNumber: 391,
+                                            lineNumber: 420,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                             children: "Fetching product…"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                                            lineNumber: 392,
+                                            lineNumber: 421,
                                             columnNumber: 21
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                                    lineNumber: 390,
+                                    lineNumber: 419,
                                     columnNumber: 19
                                 }, this) : item.product.name
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                                lineNumber: 385,
+                                lineNumber: 414,
                                 columnNumber: 15
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableCell"], {
@@ -3020,12 +3152,12 @@ function CartTable({ cart, selectedRowId, selectRow, updateCartItemQuantity, upd
                                     item: item
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                                    lineNumber: 400,
+                                    lineNumber: 429,
                                     columnNumber: 17
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                                lineNumber: 399,
+                                lineNumber: 428,
                                 columnNumber: 15
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableCell"], {
@@ -3048,7 +3180,7 @@ function CartTable({ cart, selectedRowId, selectRow, updateCartItemQuantity, upd
                                             itemId: item.id
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                                            lineNumber: 405,
+                                            lineNumber: 434,
                                             columnNumber: 19
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -3056,18 +3188,18 @@ function CartTable({ cart, selectedRowId, selectRow, updateCartItemQuantity, upd
                                             children: item.product.unit || "pcs"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                                            lineNumber: 419,
+                                            lineNumber: 448,
                                             columnNumber: 19
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                                    lineNumber: 404,
+                                    lineNumber: 433,
                                     columnNumber: 17
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                                lineNumber: 403,
+                                lineNumber: 432,
                                 columnNumber: 15
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableCell"], {
@@ -3084,30 +3216,30 @@ function CartTable({ cart, selectedRowId, selectRow, updateCartItemQuantity, upd
                                     children: "Delete"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                                    lineNumber: 426,
+                                    lineNumber: 455,
                                     columnNumber: 17
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                                lineNumber: 425,
+                                lineNumber: 454,
                                 columnNumber: 15
                             }, this)
                         ]
                     }, item.id, true, {
                         fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                        lineNumber: 368,
+                        lineNumber: 397,
                         columnNumber: 13
                     }, this);
                 })
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                lineNumber: 363,
+                lineNumber: 392,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-        lineNumber: 353,
+        lineNumber: 382,
         columnNumber: 5
     }, this);
 }
@@ -3165,6 +3297,13 @@ function ProductSearch({ searchQuery, searchResults, showSearchResults, handleSe
                     } else {
                         handleSearchSelect(selectedProduct);
                     }
+                    // Close dropdown after selection
+                    clearSearch();
+                    // Keep UX snappy: refocus the input
+                    requestAnimationFrame(()=>{
+                        inputEl.focus();
+                        inputEl.select?.();
+                    });
                 }
             } else if (e.key === "Escape") {
                 e.preventDefault();
@@ -3214,7 +3353,7 @@ function ProductSearch({ searchQuery, searchResults, showSearchResults, handleSe
                         size: 20
                     }, void 0, false, {
                         fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/ProductSearch.tsx",
-                        lineNumber: 119,
+                        lineNumber: 127,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -3229,7 +3368,7 @@ function ProductSearch({ searchQuery, searchResults, showSearchResults, handleSe
                         disabled: disabled
                     }, void 0, false, {
                         fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/ProductSearch.tsx",
-                        lineNumber: 123,
+                        lineNumber: 131,
                         columnNumber: 9
                     }, this),
                     isAutoSelecting && !isScannerInputRef?.current && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$circle$2d$check$2d$big$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__CheckCircle$3e$__["CheckCircle"], {
@@ -3237,13 +3376,13 @@ function ProductSearch({ searchQuery, searchResults, showSearchResults, handleSe
                         size: 20
                     }, void 0, false, {
                         fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/ProductSearch.tsx",
-                        lineNumber: 135,
+                        lineNumber: 143,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/ProductSearch.tsx",
-                lineNumber: 118,
+                lineNumber: 126,
                 columnNumber: 7
             }, this),
             isLoading && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3251,7 +3390,7 @@ function ProductSearch({ searchQuery, searchResults, showSearchResults, handleSe
                 children: "Searching..."
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/ProductSearch.tsx",
-                lineNumber: 143,
+                lineNumber: 151,
                 columnNumber: 9
             }, this),
             shouldShowDropdown && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3267,6 +3406,13 @@ function ProductSearch({ searchQuery, searchResults, showSearchResults, handleSe
                             } else {
                                 handleSearchSelect(product);
                             }
+                            // Close dropdown after selection
+                            clearSearch();
+                            // Maintain flow: refocus input
+                            requestAnimationFrame(()=>{
+                                inputRef?.current?.focus();
+                                inputRef?.current?.select?.();
+                            });
                         },
                         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                             className: "flex justify-between items-center",
@@ -3283,13 +3429,13 @@ function ProductSearch({ searchQuery, searchResults, showSearchResults, handleSe
                                                     children: "DEBUG"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/ProductSearch.tsx",
-                                                    lineNumber: 176,
+                                                    lineNumber: 190,
                                                     columnNumber: 23
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/ProductSearch.tsx",
-                                            lineNumber: 173,
+                                            lineNumber: 187,
                                             columnNumber: 19
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3300,13 +3446,13 @@ function ProductSearch({ searchQuery, searchResults, showSearchResults, handleSe
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/ProductSearch.tsx",
-                                            lineNumber: 181,
+                                            lineNumber: 195,
                                             columnNumber: 19
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/ProductSearch.tsx",
-                                    lineNumber: 172,
+                                    lineNumber: 186,
                                     columnNumber: 17
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3319,28 +3465,28 @@ function ProductSearch({ searchQuery, searchResults, showSearchResults, handleSe
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/ProductSearch.tsx",
-                                        lineNumber: 186,
+                                        lineNumber: 200,
                                         columnNumber: 19
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/ProductSearch.tsx",
-                                    lineNumber: 185,
+                                    lineNumber: 199,
                                     columnNumber: 17
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/ProductSearch.tsx",
-                            lineNumber: 171,
+                            lineNumber: 185,
                             columnNumber: 15
                         }, this)
                     }, product.id, false, {
                         fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/ProductSearch.tsx",
-                        lineNumber: 154,
+                        lineNumber: 162,
                         columnNumber: 13
                     }, this))
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/ProductSearch.tsx",
-                lineNumber: 149,
+                lineNumber: 157,
                 columnNumber: 9
             }, this),
             showSearchResults && !isScannerInputRef?.current && searchResults.length === 0 && searchQuery.length >= 2 && !isLoading && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3355,7 +3501,7 @@ function ProductSearch({ searchQuery, searchResults, showSearchResults, handleSe
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/ProductSearch.tsx",
-                        lineNumber: 202,
+                        lineNumber: 216,
                         columnNumber: 13
                     }, this),
                     onAddProduct && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -3364,19 +3510,19 @@ function ProductSearch({ searchQuery, searchResults, showSearchResults, handleSe
                         children: "Add new product"
                     }, void 0, false, {
                         fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/ProductSearch.tsx",
-                        lineNumber: 206,
+                        lineNumber: 220,
                         columnNumber: 15
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/ProductSearch.tsx",
-                lineNumber: 201,
+                lineNumber: 215,
                 columnNumber: 11
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/ProductSearch.tsx",
-        lineNumber: 117,
+        lineNumber: 125,
         columnNumber: 5
     }, this);
 }
@@ -3859,6 +4005,63 @@ function POSLeftCol({ step }) {
     }, this);
 }
 }),
+"[project]/src/hooks/pos/usePosShortcuts.ts [app-ssr] (ecmascript)", ((__turbopack_context__) => {
+"use strict";
+
+__turbopack_context__.s([
+    "usePosShortcuts",
+    ()=>usePosShortcuts
+]);
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/route-modules/app-page/vendored/ssr/react.js [app-ssr] (ecmascript)");
+;
+function usePosShortcuts(step) {
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
+        const onKeyDown = (e)=>{
+            // Only on Step 1
+            if (step !== 1) return;
+            // Don't steal focus from customer tagging
+            if (window.customerSearchActive) return;
+            const key = e.key;
+            const isInput = document.activeElement?.matches?.('input, textarea, [contenteditable="true"]') ?? false;
+            // F2 → focus product search/scanner
+            if (key === "F2") {
+                e.preventDefault();
+                e.stopPropagation();
+                window.dispatchEvent(new Event("focusBarcodeScanner"));
+                return;
+            }
+            // Ctrl+Enter → focus cash input
+            if (e.ctrlKey && key === "Enter") {
+                e.preventDefault();
+                e.stopPropagation();
+                window.dispatchEvent(new Event("focusCashInput"));
+                return;
+            }
+            // Ctrl+Q → quantity input (reuse existing cart event)
+            if (e.ctrlKey && !e.shiftKey && key.toLowerCase() === "q") {
+                e.preventDefault();
+                e.stopPropagation();
+                window.dispatchEvent(new CustomEvent("cart:focus-qty"));
+                // Backward compatible with your existing handler (Ctrl+Q already supported)
+                // If you prefer, keep only one of these events and handle it in CartTable/useCartKeyboard.
+                return;
+            }
+            // Ctrl+Shift+P → edit price (reuse existing cart event)
+            if (e.ctrlKey && e.shiftKey && key.toLowerCase() === "p") {
+                e.preventDefault();
+                e.stopPropagation();
+                window.dispatchEvent(new CustomEvent("cart:edit-price"));
+                return;
+            }
+        };
+        // capture = true so we win races with other listeners
+        window.addEventListener("keydown", onKeyDown, true);
+        return ()=>window.removeEventListener("keydown", onKeyDown, true);
+    }, [
+        step
+    ]);
+}
+}),
 "[project]/src/app/dashboard/_pages/POS/pos-screen.tsx [app-ssr] (ecmascript)", ((__turbopack_context__) => {
 "use strict";
 
@@ -3871,6 +4074,8 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$cart$2d$context$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/contexts/cart-context.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_pages$2f$POS$2f$components$2f$rightColumn$2f$index$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_pages$2f$POS$2f$components$2f$leftColumn$2f$index$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/app/dashboard/_pages/POS/components/leftColumn/index.tsx [app-ssr] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$pos$2f$usePosShortcuts$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/hooks/pos/usePosShortcuts.ts [app-ssr] (ecmascript)");
+;
 ;
 ;
 ;
@@ -3878,8 +4083,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_
 ;
 function MainDashboard() {
     const [step, setStep] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(1);
-    // Sync React step into a global so the existing document-level keyboard handler
-    // (useCartKeyboard) can detect the current POS step. Cleared on unmount.
+    // Make step globally visible for any legacy listeners; cleared on unmount.
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         try {
             window.posStep = step;
@@ -3892,7 +4096,9 @@ function MainDashboard() {
     }, [
         step
     ]);
-    // ensure scanner input in POS immediately receives focus when this page mounts
+    // Centralized POS shortcuts (Step 1: F2, Ctrl+Enter, Ctrl+Q, Ctrl+Shift+P)
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$pos$2f$usePosShortcuts$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["usePosShortcuts"])(step);
+    // Ensure scanner input focuses when this page mounts or window regains focus
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         if ("TURBOPACK compile-time truthy", 1) return;
         //TURBOPACK unreachable
@@ -3900,14 +4106,7 @@ function MainDashboard() {
         const focusScanner = undefined;
         const t = undefined;
     }, []);
-    // Handle Ctrl+Enter and dispatch a focus event for the cash input
-    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
-        if ("TURBOPACK compile-time truthy", 1) return;
-        //TURBOPACK unreachable
-        ;
-        const handleCtrlEnter = undefined;
-    }, []);
-    // Handle Ctrl+B for step back functionality with event capture
+    // Ctrl+B for step back with capture to win over other listeners
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         if ("TURBOPACK compile-time truthy", 1) return;
         //TURBOPACK unreachable
@@ -3924,12 +4123,12 @@ function MainDashboard() {
                         step: step
                     }, void 0, false, {
                         fileName: "[project]/src/app/dashboard/_pages/POS/pos-screen.tsx",
-                        lineNumber: 89,
+                        lineNumber: 71,
                         columnNumber: 11
                     }, this)
                 }, void 0, false, {
                     fileName: "[project]/src/app/dashboard/_pages/POS/pos-screen.tsx",
-                    lineNumber: 88,
+                    lineNumber: 70,
                     columnNumber: 9
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3939,23 +4138,23 @@ function MainDashboard() {
                         setStep: setStep
                     }, void 0, false, {
                         fileName: "[project]/src/app/dashboard/_pages/POS/pos-screen.tsx",
-                        lineNumber: 94,
+                        lineNumber: 76,
                         columnNumber: 11
                     }, this)
                 }, void 0, false, {
                     fileName: "[project]/src/app/dashboard/_pages/POS/pos-screen.tsx",
-                    lineNumber: 93,
+                    lineNumber: 75,
                     columnNumber: 9
                 }, this)
             ]
         }, void 0, true, {
             fileName: "[project]/src/app/dashboard/_pages/POS/pos-screen.tsx",
-            lineNumber: 86,
+            lineNumber: 68,
             columnNumber: 7
         }, this)
     }, void 0, false, {
         fileName: "[project]/src/app/dashboard/_pages/POS/pos-screen.tsx",
-        lineNumber: 85,
+        lineNumber: 67,
         columnNumber: 5
     }, this);
 }
@@ -11872,4 +12071,4 @@ function DashboardClient({ site }) {
 }),
 ];
 
-//# sourceMappingURL=src_addbd90e._.js.map
+//# sourceMappingURL=src_1daa878c._.js.map

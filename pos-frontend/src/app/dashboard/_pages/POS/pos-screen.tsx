@@ -3,38 +3,41 @@ import { CartProvider } from "@/contexts/cart-context";
 
 import POSright from "./components/rightColumn/index";
 import POSleft from "./components/leftColumn/index";
+import { usePosShortcuts } from "@/hooks/pos/usePosShortcuts";
 
 export default function MainDashboard() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
-  // Sync React step into a global so the existing document-level keyboard handler
-  // (useCartKeyboard) can detect the current POS step. Cleared on unmount.
+  // Make step globally visible for any legacy listeners; cleared on unmount.
   useEffect(() => {
     try {
       (window as any).posStep = step;
-    } catch { }
+    } catch {}
     return () => {
       try {
         delete (window as any).posStep;
-      } catch { }
+      } catch {}
     };
   }, [step]);
 
-  // ensure scanner input in POS immediately receives focus when this page mounts
+  // Centralized POS shortcuts (Step 1: F2, Ctrl+Enter, Ctrl+Q, Ctrl+Shift+P)
+  usePosShortcuts(step);
+
+  // Ensure scanner input focuses when this page mounts or window regains focus
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     const focusScanner = () => {
       try {
         window.dispatchEvent(new Event("focusBarcodeScanner"));
-      } catch { }
+      } catch {}
     };
 
-    // immediate + a short delayed dispatch to cover timing differences
+    // Immediate + short delayed dispatch to cover timing differences
     focusScanner();
     const t = setTimeout(focusScanner, 120);
 
-    // also focus when the browser window regains focus (user alt-tabs back)
+    // Also focus when the browser window regains focus (user alt-tabs back)
     window.addEventListener("focus", focusScanner);
 
     return () => {
@@ -43,40 +46,19 @@ export default function MainDashboard() {
     };
   }, []);
 
-  // Handle Ctrl+Enter and dispatch a focus event for the cash input
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const handleCtrlEnter = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.key === "Enter") {
-        // Only act while on the POS page (this component is only mounted on the POS page)
-        e.preventDefault();
-        e.stopPropagation();
-        window.dispatchEvent(new Event("focusCashInput"));
-      }
-    };
-
-    window.addEventListener("keydown", handleCtrlEnter);
-    return () => window.removeEventListener("keydown", handleCtrlEnter);
-  }, []);
-
-  // Handle Ctrl+B for step back functionality with event capture
+  // Ctrl+B for step back with capture to win over other listeners
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     const handleCtrlB = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.key.toLowerCase() === "b") {
-        // Prevent browser bold shortcut and sidebar collapse
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
-        
-        // Dispatch the step back event
         window.dispatchEvent(new Event("pos:step-1-back"));
       }
     };
 
-    // Use capture phase to ensure this runs before other listeners
     window.addEventListener("keydown", handleCtrlB, true);
     return () => window.removeEventListener("keydown", handleCtrlB, true);
   }, []);

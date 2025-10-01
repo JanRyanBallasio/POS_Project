@@ -68,15 +68,23 @@ export default function ProductSearch({
         if (highlightedIndex >= 0 && highlightedIndex < searchResults.length) {
           e.preventDefault();
           e.stopPropagation();
-          
+
           const selectedProduct = searchResults[highlightedIndex];
-          
+
           // Check if it's a debug product
           if (isDebugCheatCode && handleDebugProductSelect && isDebugCheatCode(searchQuery)) {
             handleDebugProductSelect(searchQuery);
           } else {
             handleSearchSelect(selectedProduct);
           }
+
+          // Close dropdown after selection
+          clearSearch();
+          // Keep UX snappy: refocus the input
+          requestAnimationFrame(() => {
+            inputEl.focus();
+            inputEl.select?.();
+          });
         }
       } else if (e.key === "Escape") {
         e.preventDefault();
@@ -154,11 +162,10 @@ export default function ProductSearch({
             <div
               key={product.id}
               data-highlighted={highlightedIndex === idx}
-              className={`p-3 cursor-pointer border-b last:border-b-0 ${
-                highlightedIndex === idx
-                  ? "bg-blue-100"
-                  : "hover:bg-gray-50"
-              }`}
+              className={`p-3 cursor-pointer border-b last:border-b-0 ${highlightedIndex === idx
+                ? "bg-blue-100"
+                : "hover:bg-gray-50"
+                }`}
               onClick={() => {
                 // Check if it's a debug product
                 if (isDebugCheatCode && handleDebugProductSelect && isDebugCheatCode(searchQuery)) {
@@ -166,6 +173,13 @@ export default function ProductSearch({
                 } else {
                   handleSearchSelect(product);
                 }
+                // Close dropdown after selection
+                clearSearch();
+                // Maintain flow: refocus input
+                requestAnimationFrame(() => {
+                  inputRef?.current?.focus();
+                  inputRef?.current?.select?.();
+                });
               }}
             >
               <div className="flex justify-between items-center">
