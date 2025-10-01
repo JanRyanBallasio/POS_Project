@@ -105,13 +105,13 @@ async function getDefaultPrinter() {
 "[project]/src/hooks/printing/usePrint.ts [app-ssr] (ecmascript)", ((__turbopack_context__) => {
 "use strict";
 
+// pos-frontend/src/hooks/printing/usePrint.ts
 __turbopack_context__.s([
     "usePrint",
     ()=>usePrint
 ]);
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$tauri$2d$apps$2f$api$2f$webviewWindow$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/@tauri-apps/api/webviewWindow.js [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$tauri$2d$apps$2f$api$2f$core$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/@tauri-apps/api/core.js [app-ssr] (ecmascript)");
-// NEW: QZ Tray helpers
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$qz$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/lib/qz.ts [app-ssr] (ecmascript)");
 ;
 ;
@@ -132,9 +132,12 @@ function usePrint() {
         const id = genId();
         persistPrintPayload(id, data);
         const label = `print-preview-${id}`;
+        const origin = window.location.origin; // http://localhost:3000, http://tauri.localhost, app://-/
+        const isDevHttp = origin.includes('localhost') && !origin.includes('tauri.localhost');
+        const url = isDevHttp ? `${origin}/print/receipt?id=${id}` : origin.startsWith('http') ? `${origin}/print/receipt.html?id=${id}` : `app://-/print/receipt.html?id=${id}`;
         const win = new __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$tauri$2d$apps$2f$api$2f$webviewWindow$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["WebviewWindow"](label, {
             title: 'Print Preview',
-            url: `/print/receipt?id=${id}`,
+            url,
             width: 420,
             height: 800,
             resizable: true,
@@ -149,27 +152,44 @@ function usePrint() {
         win.once('tauri://destroyed', ()=>removePrintPayload(id));
         return win;
     };
-    // Existing native direct printing via Tauri command (fallback)
     const printDirect = async (escposData, itemCount, printerName)=>{
         await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$tauri$2d$apps$2f$api$2f$core$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["invoke"])('print_receipt_direct', {
-            receipt_data: escposData,
-            item_count: itemCount,
-            printer_name: printerName ?? null
+            receiptData: escposData,
+            itemCount,
+            printerName: printerName ?? null
         });
     };
-    // NEW: QZ Tray direct raw printing
+    // Optional: QZ raw printing (when using QZ)
     const printViaQZ = async (escposData, preferredPrinter)=>{
         await (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$qz$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["initQZ"])();
         const target = preferredPrinter || await (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$qz$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["getDefaultPrinter"])() || '';
         await (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$qz$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["setPrinterByName"])(target);
-        // Convert string to Uint8Array for raw ESC/POS
         const buf = new TextEncoder().encode(escposData);
         await (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$qz$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["printRaw"])(buf);
+    };
+    // New: list installed printers (Windows)
+    const listPrinters = async ()=>{
+        try {
+            return await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$tauri$2d$apps$2f$api$2f$core$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["invoke"])('list_printers');
+        } catch  {
+            return [];
+        }
+    };
+    // New: get default printer name (Windows)
+    const getDefaultPrinterName = async ()=>{
+        try {
+            const n = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$tauri$2d$apps$2f$api$2f$core$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["invoke"])('get_default_printer_name');
+            return n || null;
+        } catch  {
+            return null;
+        }
     };
     return {
         openPrintPreview,
         printDirect,
-        printViaQZ
+        printViaQZ,
+        listPrinters,
+        getDefaultPrinterName
     };
 }
 }),

@@ -2,53 +2,30 @@
 "[project]/src/hooks/printing/usePrint.ts [app-client] (ecmascript)", ((__turbopack_context__) => {
 "use strict";
 
+// pos-frontend/src/hooks/printing/usePrint.ts
 __turbopack_context__.s([
     "usePrint",
     ()=>usePrint
 ]);
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$tauri$2d$apps$2f$api$2f$webviewWindow$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/@tauri-apps/api/webviewWindow.js [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$tauri$2d$apps$2f$api$2f$core$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/@tauri-apps/api/core.js [app-client] (ecmascript)");
-;
-;
-function genId() {
-    return "pr-".concat(Date.now(), "-").concat(Math.random().toString(36).slice(2, 8));
-}
-function persistPrintPayload(id, data) {
-    localStorage.setItem("print:".concat(id), JSON.stringify(data));
-}
-function removePrintPayload(id) {
-    try {
-        localStorage.removeItem("print:".concat(id));
-    } catch (e) {}
-}
 function usePrint() {
-    const openPrintPreview = async (data)=>{
-        const id = genId();
-        persistPrintPayload(id, data);
-        const label = "print-preview-".concat(id);
-        const win = new __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$tauri$2d$apps$2f$api$2f$webviewWindow$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WebviewWindow"](label, {
-            title: 'Print Preview',
-            url: "/print/receipt?id=".concat(id),
-            width: 420,
-            height: 800,
-            resizable: true,
-            center: true,
-            visible: true
+    const printReceipt = async (data)=>{
+        const origin = ("TURBOPACK compile-time truthy", 1) ? window.location.origin.includes('localhost') ? 'http://localhost:5000' : window.location.origin : "TURBOPACK unreachable";
+        const url = "".concat(origin.replace(/\/$/, ''), "/print/receipt");
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
         });
-        win.once('tauri://destroyed', ()=>removePrintPayload(id));
-        return win;
-    };
-    // IMPORTANT: send snake_case keys to match Rust command parameters
-    const printDirect = async (escposData, itemCount, printerName)=>{
-        await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$tauri$2d$apps$2f$api$2f$core$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["invoke"])('print_receipt_direct', {
-            receipt_data: escposData,
-            item_count: itemCount,
-            printer_name: printerName !== null && printerName !== void 0 ? printerName : null
-        });
+        if (!res.ok) {
+            const t = await res.text().catch(()=>'');
+            throw new Error("Print failed: ".concat(res.status, " ").concat(t));
+        }
+        return res.json();
     };
     return {
-        openPrintPreview,
-        printDirect
+        printReceipt
     };
 }
 if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelpers !== null) {
