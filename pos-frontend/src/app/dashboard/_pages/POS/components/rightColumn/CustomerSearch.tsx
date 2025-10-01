@@ -19,7 +19,7 @@ interface CustomerSearchProps {
   selectCustomer: (customer: Customer) => void;
   clearCustomer: () => void;
   onAddCustomer: () => void;
-  onCustomerSelected?: () => void; // Callback when customer is selected
+  onCustomerSelected?: () => void;
 }
 
 export default function CustomerSearch({
@@ -35,150 +35,130 @@ export default function CustomerSearch({
   const id = useId();
   const customerInputRef = useRef<HTMLInputElement>(null);
   const [selectedIndex, setSelectedIndex] = useState(-1);
-  const isAutoSelecting = filteredCustomers.length === 1 && customerQuery.trim().length >= 2 && !selectedCustomer;
 
-  // Reset selected index when filtered customers change
+  const isAutoSelecting =
+    filteredCustomers.length === 1 &&
+    customerQuery.trim().length >= 2 &&
+    !selectedCustomer;
+
   useEffect(() => {
     setSelectedIndex(-1);
   }, [filteredCustomers]);
 
-  // Handle Ctrl+C shortcut to focus customer input
   useEffect(() => {
     const handleCustomerShortcut = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.key.toLowerCase() === 'c') {
+      if (e.ctrlKey && e.key.toLowerCase() === "c") {
         e.preventDefault();
         e.stopPropagation();
-        if (customerInputRef.current) {
-          customerInputRef.current.focus();
-          customerInputRef.current.select();
-        }
+        customerInputRef.current?.focus();
+        customerInputRef.current?.select();
       }
     };
-
-    document.addEventListener('keydown', handleCustomerShortcut);
-    return () => document.removeEventListener('keydown', handleCustomerShortcut);
+    document.addEventListener("keydown", handleCustomerShortcut);
+    return () => document.removeEventListener("keydown", handleCustomerShortcut);
   }, []);
 
-  // Prevent clicks from bubbling up and losing focus
   const handleContainerClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-  };
-
-  const handleInputClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (customerInputRef.current) {
-      customerInputRef.current.focus();
-    }
   };
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     e.stopPropagation();
 
-    // Prevent any global keyboard shortcuts while typing in customer search
-    if (e.ctrlKey) {
-      // Allow Ctrl+C for focus shortcut
-      if (e.key.toLowerCase() === 'c') {
-        return;
-      }
-      // Block all other Ctrl combinations
+    if (e.ctrlKey && e.key.toLowerCase() !== "c") {
       e.preventDefault();
       return;
     }
 
-    // Handle arrow key navigation
-    if (e.key === 'ArrowDown') {
+    if (e.key === "ArrowDown") {
       e.preventDefault();
       if (filteredCustomers.length > 0) {
-        setSelectedIndex(prev => 
+        setSelectedIndex((prev) =>
           prev < filteredCustomers.length - 1 ? prev + 1 : 0
         );
       }
       return;
     }
 
-    if (e.key === 'ArrowUp') {
+    if (e.key === "ArrowUp") {
       e.preventDefault();
       if (filteredCustomers.length > 0) {
-        setSelectedIndex(prev => 
+        setSelectedIndex((prev) =>
           prev > 0 ? prev - 1 : filteredCustomers.length - 1
         );
       }
       return;
     }
 
-    // Handle Enter key
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       e.preventDefault();
-      
-      // If we have a selected index, select that customer
       if (selectedIndex >= 0 && selectedIndex < filteredCustomers.length) {
         handleCustomerSelect(filteredCustomers[selectedIndex]);
         return;
       }
-      
-      // If no index selected but we have customers, select the first one
       if (filteredCustomers.length > 0 && !selectedCustomer) {
         handleCustomerSelect(filteredCustomers[0]);
         return;
       }
-      
-      // If customer is already selected, notify parent that Enter was pressed
       if (selectedCustomer) {
-        if (onCustomerSelected) {
-          onCustomerSelected();
-        }
-        return;
+        onCustomerSelected?.();
       }
     }
 
-    // Handle Escape key to clear selection
-    if (e.key === 'Escape') {
+    if (e.key === "Escape") {
       e.preventDefault();
       setSelectedIndex(-1);
-      if (customerInputRef.current) {
-        customerInputRef.current.blur();
-      }
-      return;
+      customerInputRef.current?.blur();
     }
   };
 
-  const handleInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+  const handleInputFocus = () => {
     (window as any).customerSearchActive = true;
-    e.target.select();
+    customerInputRef.current?.select();
   };
-  
-  const handleInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    // Delay blur to allow clicking on dropdown items
+
+  const handleInputBlur = () => {
     setTimeout(() => {
       (window as any).customerSearchActive = false;
     }, 150);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log("📝 CustomerSearch: Input changed to:", e.target.value);
     e.stopPropagation();
     setCustomerQuery(e.target.value);
-    setSelectedIndex(-1); // Reset selection when typing
-    if (selectedCustomer) {
-      clearCustomer(); // Clear selection if user edits input
-    }
+    setSelectedIndex(-1);
+    if (selectedCustomer) clearCustomer();
   };
 
   const handleCustomerSelect = (customer: Customer) => {
     selectCustomer(customer);
     setSelectedIndex(-1);
     (window as any).customerSearchActive = false;
-    if (customerInputRef.current) {
-      customerInputRef.current.blur();
-    }
+    customerInputRef.current?.blur();
   };
 
+  // Limit visible results to 5
+  const visibleResults = filteredCustomers.slice(0, 4);
+
   return (
-    <div className="w-full mb-4" onClick={handleContainerClick} data-customer-search="true">
-      <Label htmlFor={id} className="mb-2 block">
-        Customer Name <span className="text-sm text-gray-500">(Ctrl+C)</span>
-      </Label>
-      <div className="flex items-center gap-2">
+    <div
+      className="w-full mb-4"
+      onClick={handleContainerClick}
+      data-customer-search="true"
+    >
+      <div className="flex items-center justify-between mb-2">
+        <Label
+          htmlFor={id}
+          className="uppercase tracking-wide text-sm font-semibold"
+        >
+          Customer Name
+        </Label>
+        <span className="text-xs text-gray-400">(Ctrl+C)</span>
+      </div>
+
+      {/* Outer flex is relative so dropdown can stretch across both input + button */}
+      <div className="flex items-center gap-2 relative">
+        {/* Input */}
         <div className="relative flex-1">
           <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
             <UserIcon className="w-4 h-4" />
@@ -187,67 +167,65 @@ export default function CustomerSearch({
             ref={customerInputRef}
             id={id}
             className="pl-9 pr-10"
-            placeholder="Search Name (Ctrl+C to focus)"
+            placeholder="Search Name"
             value={customerQuery}
             onChange={handleInputChange}
             onKeyDown={handleInputKeyDown}
             onFocus={handleInputFocus}
             onBlur={handleInputBlur}
-            onClick={handleInputClick}
             autoComplete="off"
             data-customer-search="true"
           />
           {isAutoSelecting && (
             <CheckCircle
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-green-500 animate-pulse"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-green-500 animate-pulse"
               size={16}
             />
           )}
-          {customerQuery && !selectedCustomer && (
-            <div className="absolute z-10 left-0 right-0 bg-white border rounded shadow max-h-40 overflow-y-auto top-full mt-1">
-              {filteredCustomers.length === 0 && (
-                <div className="p-2 text-gray-500 text-center">
-                  No results
-                </div>
-              )}
-              {filteredCustomers.map((customer, index) => (
-                <div
-                  key={customer.id}
-                  className={`p-2 hover:bg-gray-100 cursor-pointer flex justify-between ${
-                    selectedIndex === index 
-                      ? 'bg-blue-100 border-blue-200' 
-                      : isAutoSelecting 
-                        ? 'bg-green-50 border-green-200' 
-                        : ''
-                  }`}
-                  onClick={() => handleCustomerSelect(customer)}
-                >
-                  <span className="flex items-center gap-2">
-                    {customer.name}
-                    {isAutoSelecting && (
-                      <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
-                        Auto-selecting...
-                      </span>
-                    )}
-                  </span>
-                  <span className="text-xs text-gray-500 ml-2">
-                    {customer.points} pts
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
+
+        {/* Add Button */}
         <Button
           type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onAddCustomer();
-          }}
-          className="ml-2"
+          onClick={() => onAddCustomer()}
+          className="ml-2 rounded-lg"
         >
-          <Plus className="w-4 h-4 mr-1" /> Add
+          <Plus className="w-4 h-4 mr-1" />
+
         </Button>
+
+        {/* Dropdown (absolute, stretches full width across input + button) */}
+        {customerQuery && !selectedCustomer && (
+          <div
+            className="
+              absolute left-0 right-0 top-full mt-2
+              bg-white border rounded-xl shadow-lg
+              z-50
+              max-h-72 overflow-auto
+            "
+          >
+            {visibleResults.length === 0 ? (
+              <div className="px-3 py-2 text-sm text-gray-500 text-center">
+                No results
+              </div>
+            ) : (
+              visibleResults.map((customer, index) => (
+                <button
+                  key={customer.id}
+                  type="button"
+                  onClick={() => handleCustomerSelect(customer)}
+                  className={`w-full text-left px-4 py-3 text-sm 
+                              ${selectedIndex === index
+                      ? "bg-blue-50"
+                      : "hover:bg-gray-50"
+                    }`}
+                >
+                  <span className="block truncate">{customer.name}</span>
+                </button>
+              ))
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

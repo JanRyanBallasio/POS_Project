@@ -10,12 +10,5 @@
     "files": [
       "static/chunks/646.2487fd46faab413b.js"
     ]
-  },
-  "app\\dashboard\\_pages\\POS\\components\\rightColumn\\index.tsx -> @/hooks/printing/usePrint": {
-    "id": 83410,
-    "files": [
-      "static/chunks/727.8b369424e3576fe0.js",
-      "static/chunks/410.43248e99ff1415a6.js"
-    ]
   }
 }

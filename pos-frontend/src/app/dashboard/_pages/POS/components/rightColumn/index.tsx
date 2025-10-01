@@ -1,4 +1,3 @@
-// pos-frontend/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, useCallback } from "react";
@@ -9,8 +8,8 @@ import CustomerSearch from "./CustomerSearch";
 import PaymentSummary from "./PaymentSummary";
 import Receipt from "./Receipt";
 import AddCustomerModal from "./AddCustomerModal";
-import { usePrint } from "@/hooks/printing/usePrint";
 import axios from "@/lib/axios";
+import { usePrint } from "@/hooks/printing/usePrint";
 import {
   Dialog,
   DialogContent,
@@ -33,16 +32,20 @@ export default function POSRight({
   const [addCustomerOpen, setAddCustomerOpen] = useState(false);
   const [isProcessingSale, setIsProcessingSale] = useState(false);
 
-  const { printReceipt, listPrinters } = usePrint();
-
+  // Simplified print dialog state - just confirmation
   const [printOpen, setPrintOpen] = useState(false);
-  const [printers, setPrinters] = useState<string[]>([]);
-  const [printerName, setPrinterName] = useState<string>("");
+  const [isPrinting, setIsPrinting] = useState(false);
+
+  const { printReceipt } = usePrint(); // Remove listPrinters
 
   useEffect(() => {
     const amountValue = parseFloat(amount) || 0;
     setChange(amountValue - cartTotal);
   }, [amount, cartTotal]);
+
+  const openPrintDialog = useCallback(() => {
+    setPrintOpen(true);
+  }, []);
 
   const {
     customerQuery,
@@ -64,17 +67,6 @@ export default function POSRight({
       alert("Insufficient amount");
     }
   }, [amount, cartTotal, setStep]);
-
-  useEffect(() => {
-    if (!printOpen) return;
-    (async () => {
-      try {
-        setPrinters(await listPrinters());
-      } catch {
-        setPrinters([]);
-      }
-    })();
-  }, [printOpen, listPrinters]);
 
   const handleNewTransaction = useCallback(async () => {
     if (isProcessingSale || cart.length === 0) return;
@@ -197,48 +189,6 @@ export default function POSRight({
     } catch {}
   }, [clearCustomer, setStep, setAmount, setChange, clearCart]);
 
-  const openPrintDialog = useCallback(() => {
-    setPrintOpen(true);
-  }, []);
-
-  const confirmPrint = useCallback(async () => {
-    if (isProcessingSale) return;
-
-    const items = cart.map((item) => ({
-      desc: item.product?.name ?? item.product?.barcode ?? "Item",
-      qty: Number(item.quantity || 0),
-      amount: Number(((item.product?.price || 0) * item.quantity).toFixed(2)),
-    }));
-
-    try {
-      setIsProcessingSale(true);
-      await printReceipt({
-        store: { name: "YZY STORE", address1: "Eastern Slide, Tuding" },
-        customer: selectedCustomer || { name: "N/A" },
-        cartTotal: Number(cartTotal || 0),
-        amount: Number(parseFloat(amount) || cartTotal || 0),
-        change: Number(change || 0),
-        points: Number(selectedCustomer?.points ?? 0),
-        items,
-        printerName: printerName || null,
-      });
-      setPrintOpen(false);
-    } catch (e: any) {
-      alert(e?.message || String(e));
-    } finally {
-      setIsProcessingSale(false);
-    }
-  }, [
-    isProcessingSale,
-    cart,
-    selectedCustomer,
-    cartTotal,
-    amount,
-    change,
-    printerName,
-    printReceipt,
-  ]);
-
   const handlePosNext = useCallback(() => {
     if (isProcessingSale) return;
 
@@ -265,11 +215,6 @@ export default function POSRight({
 
     if (step === 1) {
       handleNext();
-      return;
-    }
-
-    if (step === 3) {
-      completeTransaction();
       return;
     }
   }, [step, isProcessingSale, finalizeSale, handleNext, completeTransaction, setStep]);
@@ -300,25 +245,6 @@ export default function POSRight({
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const onKey = (e: KeyboardEvent) => {
-      if (
-        step === 3 &&
-        e.shiftKey &&
-        !e.ctrlKey &&
-        !e.altKey &&
-        e.key.toLowerCase() === "p"
-      ) {
-        e.preventDefault();
-        e.stopPropagation();
-        setPrintOpen(true);
-      }
-    };
-    document.addEventListener("keydown", onKey, { capture: true });
-    return () => document.removeEventListener("keydown", onKey, { capture: true });
-  }, [step]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
     const handleEnterKey = (e: KeyboardEvent) => {
       if (step !== 2 && step !== 3) return;
       if ((window as any).customerSearchActive) return;
@@ -344,6 +270,52 @@ export default function POSRight({
     return () => document.removeEventListener("keydown", handleEnterKey);
   }, [step, isProcessingSale, finalizeSale, completeTransaction]);
 
+  // When the print dialog opens, fetch printers
+  useEffect(() => {
+    if (!printOpen) return;
+    // No longer fetching printers, as we are always using default
+  }, [printOpen]);
+
+  const confirmPrint = useCallback(async () => {
+    if (isProcessingSale || isPrinting) return;
+
+    const items = cart.map((item) => ({
+      desc: item.product?.name ?? item.product?.barcode ?? "Item",
+      qty: Number(item.quantity || 0),
+      price: Number(item.product?.price || 0), // ✅ Add missing price field
+      amount: Number(((item.product?.price || 0) * item.quantity).toFixed(2)),
+    }));
+
+    try {
+      setIsPrinting(true);
+      await printReceipt({
+        store: { name: "YZY STORE", address1: "Eastern Slide, Tuding" },
+        customer: selectedCustomer || { name: "N/A" },
+        cartTotal: Number(cartTotal || 0),
+        amount: Number(parseFloat(amount) || cartTotal || 0),
+        change: Number(change || 0),
+        points: Number(selectedCustomer?.points ?? 0),
+        items,
+        printerName: null, // Always use default printer
+      });
+      setPrintOpen(false);
+      alert("Receipt printed successfully!");
+    } catch (e: any) {
+      alert(`Print failed: ${e?.message || String(e)}`);
+    } finally {
+      setIsPrinting(false);
+    }
+  }, [
+    isProcessingSale,
+    isPrinting,
+    cart,
+    selectedCustomer,
+    cartTotal,
+    amount,
+    change,
+    printReceipt,
+  ]);
+
   const isDebugMode = cart.some((item) => {
     const productId = item.product.id;
     return typeof productId === "string" && productId.startsWith("debug-");
@@ -352,11 +324,17 @@ export default function POSRight({
   return (
     <Card className="h-full flex flex-col">
       <CardContent className="flex-1 flex flex-col p-4 pb-0">
-        <h1 className="text-xl font-medium">Total</h1>
-        <div className="w-full py-3 mb-2">
-          <div className="flex justify-between text-5xl font-medium">
-            <h1>₱</h1>
-            <h1>{cartTotal.toFixed(2)}</h1>
+        {/* Header like the reference: centered, compact, with sublabel */}
+        <div className="text-center mb-4">
+          <div className="text-sm md:text-base text-gray-600">Total</div>
+          <div className="mt-1 flex items-baseline justify-center gap-1 tabular-nums">
+            <span className="text-2xl md:text-3xl font-bold">₱</span>
+            <span className="text-4xl md:text-5xl font-extrabold leading-none">
+              {cartTotal.toFixed(2)}
+            </span>
+          </div>
+          <div className="mt-1 text-xs text-gray-500">
+            {cart.length} {cart.length === 1 ? "item" : "items"}
           </div>
         </div>
 
@@ -375,12 +353,39 @@ export default function POSRight({
                 cartTotal={cartTotal}
                 cartIsEmpty={cart.length === 0}
               />
+
+              {/* Quick cash buttons - enforce 6-column grid */}
+              <div className="w-full grid grid-cols-3 gap-3 mt-3">
+                {[50, 100, 200, 500, 1000].map((v) => (
+                  <div key={v} className="col-span-1">
+                    <button
+                      type="button"
+                      onClick={() => setAmount(String(v))}
+                      className="block w-full h-10 rounded-lg border border-gray-200 bg-white hover:bg-gray-50
+                                 text-sm font-medium text-center"
+                    >
+                      ₱{v}
+                    </button>
+                  </div>
+                ))}
+                <div className="col-span-1">
+                  <button
+                    type="button"
+                    onClick={() => setAmount(String(cartTotal.toFixed(2)))}
+                    className="block w-full h-10 rounded-lg border border-gray-200 bg-white hover:bg-gray-50
+                               text-sm font-medium text-center"
+                  >
+                    Exact
+                  </button>
+                </div>
+              </div>
+
               <div className="flex-1" />
-              <CardFooter className="px-4 pb-4 pt-4 flex flex-col gap-3">
+              <CardFooter className="px-0 pb-4 pt-4">
                 <Button
-                  className="w-full h-14 text-xl font-medium"
+                  className="w-full h-12 md:h-14 text-base md:text-lg  bg-[#0B1220] text-white hover:bg-[#0b1220]/90"
                   onClick={handleNext}
-                  disabled={cart.length === 0 || !amount || parseFloat(amount) < cartTotal}
+                  disabled={cart.length === 0 || !amount || parseFloat(amount) < cartTotal || isProcessingSale}
                 >
                   Next
                 </Button>
@@ -415,9 +420,9 @@ export default function POSRight({
                   } catch {}
                 }}
               />
-              <CardFooter className="px-4 pb-4 pt-4 flex flex-col gap-3">
+              <CardFooter className="px-0 pb-4 pt-4 flex flex-col gap-3">
                 <Button
-                  className="w-full h-14 text-xl font-medium"
+                  className="w-full h-12 text-base font-medium"
                   variant="outline"
                   onClick={() => setStep(1)}
                   disabled={isProcessingSale}
@@ -425,7 +430,7 @@ export default function POSRight({
                   Back
                 </Button>
                 <Button
-                  className="w-full h-14 text-xl font-medium"
+                  className="w-full h-12 text-base font-medium"
                   onClick={() => void finalizeSale()}
                   disabled={isProcessingSale}
                 >
@@ -460,35 +465,30 @@ export default function POSRight({
         </div>
       </CardContent>
 
+      {/* Simplified printer confirmation dialog */}
       <Dialog open={printOpen} onOpenChange={setPrintOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Select printer</DialogTitle>
+            <DialogTitle>Print Receipt</DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-2">
-            <Label htmlFor="printer">Printer</Label>
-            <select
-              id="printer"
-              value={printerName}
-              onChange={(e) => setPrinterName(e.target.value)}
-              className="w-full border rounded px-2 py-2"
-            >
-              <option value="">Default printer</option>
-              {printers.map((p) => (
-                <option key={p} value={p}>
-                  {p}
-                </option>
-              ))}
-            </select>
+          <div className="space-y-4">
+            <p className="text-center text-gray-600">
+              Print receipt to default printer?
+            </p>
+            <div className="bg-blue-50 p-3 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <strong>Note:</strong> Receipt will be sent to your default printer automatically.
+              </p>
+            </div>
           </div>
 
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setPrintOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={confirmPrint} disabled={isProcessingSale}>
-              Print
+            <Button onClick={confirmPrint} disabled={isPrinting}>
+              {isPrinting ? "Printing..." : "Print Receipt"}
             </Button>
           </DialogFooter>
         </DialogContent>

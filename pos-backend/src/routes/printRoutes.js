@@ -32,28 +32,68 @@ router.get('/printers', async (req, res) => {
 router.post('/receipt', async (req, res) => {
   try {
     const payload = req.body || {};
-    console.log('[PRINT] request', {
+    console.log('[PRINT] request received:', {
       items: Array.isArray(payload.items) ? payload.items.length : 0,
-      printerName: payload.printerName || '(default)'
+      printerName: payload.printerName || '(default)',
+      customer: payload.customer?.name || 'N/A',
+      total: payload.cartTotal || 0
     });
 
-    await printReceipt(
+    // ✅ Validate required data
+    if (!Array.isArray(payload.items) || payload.items.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'No items to print' 
+      });
+    }
+
+    // ✅ Ensure all items have required fields
+    const processedItems = payload.items.map(item => ({
+      desc: String(item.desc || ''),
+      qty: Number(item.qty || 0),
+      price: Number(item.price || 0),
+      amount: Number(item.amount || 0)
+    }));
+
+    const result = await printReceipt(
       {
-        store: payload.store || {},
+        store: payload.store || { name: 'YZY STORE', address1: 'Eastern Slide, Tuding' },
         customer: payload.customer || { name: 'N/A' },
         cartTotal: Number(payload.cartTotal || 0),
         amount: Number(payload.amount || 0),
         change: Number(payload.change || 0),
         points: Number(payload.points || 0),
-        items: Array.isArray(payload.items) ? payload.items : [],
+        items: processedItems,
       },
       { printerName: payload.printerName || null }
     );
 
     console.log('[PRINT] success');
-    res.json({ success: true, message: 'Printed successfully' });
+    res.json({ 
+      success: true, 
+      message: 'Printed successfully',
+      itemCount: processedItems.length,
+      total: payload.cartTotal
+    });
   } catch (e) {
-    console.error('[PRINT] error', e);
+    console.error('[PRINT] error:', e);
+    res.status(500).json({ 
+      success: false, 
+      error: String(e),
+      message: 'Print failed. Please check printer connection and try again.'
+    });
+  }
+});
+
+// Test endpoint to verify connection
+router.get('/test', async (req, res) => {
+  try {
+    res.json({ 
+      success: true, 
+      message: 'Print service is working',
+      timestamp: new Date().toISOString()
+    });
+  } catch (e) {
     res.status(500).json({ success: false, error: String(e) });
   }
 });

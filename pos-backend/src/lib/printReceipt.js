@@ -57,7 +57,8 @@ function buildEscposReceipt(data) {
   r += '\x1B\x74\x00'; // encoding
   r += '\x1B\x61\x01'; // center
 
-  // Store info centered
+  // ✅ Store info centered - add store name
+  if (data.store?.name) r += centerText(data.store.name, LINE_WIDTH) + '\n';
   if (data.store?.address1) r += centerText(data.store.address1, LINE_WIDTH) + '\n';
   if (data.store?.address2) r += centerText(data.store.address2, LINE_WIDTH) + '\n';
   r += '\n';
@@ -80,8 +81,9 @@ function buildEscposReceipt(data) {
     for (let i = 0; i < name.length; i += 24) lines.push(name.slice(i, i + 24));
 
     const qty = padLeft(it.qty || 0, 4);
-    const price = padLeft(`${(it.price ?? (it.amount || 0) / Math.max(1, it.qty || 1)).toFixed(2)}`, 10);
-    const amount = padLeft(`${(it.amount || 0).toFixed(2)}`, 10);
+    // ✅ Add Peso symbol to price
+    const price = padLeft(`P${(it.price ?? (it.amount || 0) / Math.max(1, it.qty || 1)).toFixed(2)}`, 10);
+    const amount = padLeft(`P${(it.amount || 0).toFixed(2)}`, 10);
 
     r += padRight(lines[0], 24) + qty + price + amount + '\n';
     for (let i = 1; i < lines.length; i++) {
@@ -92,9 +94,10 @@ function buildEscposReceipt(data) {
   }
 
   r += ''.padEnd(LINE_WIDTH, '-') + '\n';
-  r += padLeft('TOTAL:', 38) + padLeft(`${(data.cartTotal || 0).toFixed(2)}`, 10) + '\n';
-  r += padLeft('AMOUNT:', 38) + padLeft(`${(data.amount || 0).toFixed(2)}`, 10) + '\n';
-  r += padLeft('CHANGE:', 38) + padLeft(`${(data.change || 0).toFixed(2)}`, 10) + '\n';
+  // ✅ Add Peso symbols to totals
+  r += padLeft('TOTAL:', 38) + padLeft(`P${(data.cartTotal || 0).toFixed(2)}`, 10) + '\n';
+  r += padLeft('AMOUNT:', 38) + padLeft(`P${(data.amount || 0).toFixed(2)}`, 10) + '\n';
+  r += padLeft('CHANGE:', 38) + padLeft(`P${(data.change || 0).toFixed(2)}`, 10) + '\n';
   r += ''.padEnd(LINE_WIDTH, '-') + '\n';
   r += `Customer Points: ${Number(data.points || 0)}\n`;
   r += ''.padEnd(LINE_WIDTH, '-') + '\n\n';
