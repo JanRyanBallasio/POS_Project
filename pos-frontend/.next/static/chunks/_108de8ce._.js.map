@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///C:/Code/POS_Project/pos-frontend/src/app/page.tsx"],"sourcesContent":["'use client';\r\n\r\nimport { useEffect } from \"react\";\r\nimport { useRouter } from \"next/navigation\";\r\n\r\nexport default function RootPage() {\r\n  const router = useRouter();\r\n  useEffect(() => {\r\n    // Redirect to the dashboard route so its layout (sidebar) is used.\r\n    router.replace('/dashboard/main');\r\n  }, [router]);\r\n\r\n  return null;\r\n}\r\n"],"names":[],"mappings":";;;;AAEA;AACA;;AAHA;;;AAKe,SAAS;;IACtB,MAAM,SAAS,IAAA,kJAAS;IACxB,IAAA,0KAAS;8BAAC;YACR,mEAAmE;YACnE,OAAO,OAAO,CAAC;QACjB;6BAAG;QAAC;KAAO;IAEX,OAAO;AACT;GARwB;;QACP,kJAAS;;;KADF","debugId":null}},
+    {"offset": {"line": 41, "column": 0}, "map": {"version":3,"sources":["file:///C:/Code/POS_Project/pos-frontend/node_modules/next/navigation.js"],"sourcesContent":["module.exports = require('./dist/client/components/navigation')\n"],"names":[],"mappings":"AAAA,OAAO,OAAO","ignoreList":[0],"debugId":null}}]
+}

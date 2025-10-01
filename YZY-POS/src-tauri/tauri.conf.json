@@ -5,8 +5,8 @@
   "identifier": "com.yzy.pos",
   "build": {
     "beforeBuildCommand": "powershell -ExecutionPolicy Bypass -File ./src-tauri/tauri-build.ps1",
-    "beforeDevCommand": "npm run dev --prefix ../../pos-frontend",
-    "frontendDist": "../../pos-frontend/out",
+    "beforeDevCommand": "npm run dev --prefix ../pos-frontend",
+    "frontendDist": "../pos-frontend/out",
     "devUrl": "http://localhost:3000"
   },
   "app": {
@@ -38,9 +38,7 @@
       "icons/512x512.png",
       "icons/icon.icns"
     ],
-    "resources": [
-      ".env"
-    ]
+    "resources": [ ".env" ]
   },
   "plugins": {
     "opener": {

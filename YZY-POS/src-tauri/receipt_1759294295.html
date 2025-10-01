@@ -1,0 +1,143 @@
+
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Receipt</title>
+        <style>
+          @media print {
+            body { margin: 0; padding: 0; }
+            .no-print { display: none; }
+          }
+          body {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.2;
+            margin: 0;
+            padding: 10px;
+            width: 80mm;
+            background: white;
+          }
+          .header { 
+            text-align: center; 
+            font-weight: bold; 
+            margin-bottom: 10px; 
+            font-size: 14px;
+          }
+          .separator { 
+            border-top: 1px dashed #000; 
+            margin: 5px 0; 
+            height: 1px;
+          }
+          table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin: 5px 0;
+          }
+          th, td { 
+            padding: 2px; 
+            text-align: left; 
+            font-size: 11px;
+          }
+          th {
+            font-weight: bold;
+          }
+          .right { text-align: right; }
+          .center { text-align: center; }
+          .footer { 
+            margin-top: 20px; 
+            text-align: center; 
+            font-weight: bold;
+          }
+          .customer-info {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+          }
+          .summary-section {
+            margin: 10px 0;
+          }
+          .summary-line {
+            display: flex;
+            justify-content: space-between;
+            margin: 2px 0;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div>YZY STORE</div>
+          <div>Eastern Slide, Tuding</div>
+        </div>
+        
+        <div class="separator"></div>
+        
+        <div class="customer-info">
+          <span>Customer:</span>
+          <span>N/A</span>
+        </div>
+        <div class="customer-info">
+          <span>Date:</span>
+          <span>October 01, 2025</span>
+        </div>
+        
+        <div class="separator"></div>
+        
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Description</th>
+              <th>Qty</th>
+              <th>Price</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+        <tr>
+          <td>1</td>
+          <td>Debug Product 1</td>
+          <td>1</td>
+          <td>P10.00</td>
+          <td>P10.00</td>
+        </tr>
+      
+          </tbody>
+        </table>
+        
+        <div class="separator"></div>
+        
+        <div class="summary-section">
+          <div class="summary-line">
+            <span>Total:</span>
+            <span>P10.00</span>
+          </div>
+          <div class="summary-line">
+            <span>Amount:</span>
+            <span>P10.00</span>
+          </div>
+          <div class="summary-line">
+            <span>Change:</span>
+            <span>P0.00</span>
+          </div>
+        </div>
+        
+        <div class="separator"></div>
+        
+        <div class="summary-line">
+          <span>Customer Points:</span>
+          <span>0</span>
+        </div>
+        
+        <div class="separator"></div>
+        
+        <div class="footer">
+          <div>CUSTOMER COPY - NOT AN OFFICIAL RECEIPT</div>
+          <div>THANK YOU - GATANG KA MANEN!</div>
+        </div>
+        
+        <div class="separator"></div>
+      </body>
+      </html>
+    

@@ -53,7 +53,7 @@ app.use('/api/sales', auth, salesRoutes);
 app.use('/api/sales-items', auth, salesItemsRoutes);
 app.use('/api/stock-transactions', auth, stockTransactionRoutes);
 app.use('/api', auth, receiptRoutes);
-app.use('/api/auth', authRoutes);
+// app.use('/api/auth', authRoutes); // remove this duplicate
 
 // 404 fallback (optional)
 app.use((req, res, next) => {
