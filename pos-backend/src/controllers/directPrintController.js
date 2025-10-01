@@ -3,6 +3,7 @@ const escposUSB = require('escpos-usb');
 const escposNetwork = require('escpos-network');
 const fs = require('fs');
 const path = require('path');
+const puppeteer = require("puppeteer");
 
 // ZY609 Printer Configuration
 const ZY609_CONFIG = {
@@ -48,40 +49,51 @@ function generateESCPOSReceipt(data) {
   commands += `Date: ${dateStr}\n`;
   commands += '--------------------------------\n';
   
-  // Table header with Price column
-  commands += '# Description        Qty Price Amount\n';
-  commands += '--------------------------------\n';
-  
-  // Add all items with Price column
-  data.items.forEach((item, index) => {
-    const desc = item.desc.length > 15 ? item.desc.substring(0, 12) + "..." : item.desc;
-    const qty = item.qty.toString().padStart(3);
-    const price = item.price ? item.price.toFixed(2) : (item.amount / item.qty).toFixed(2);
-    const priceStr = `P${price}`.padStart(6);
-    const amount = `P${item.amount.toFixed(2)}`.padStart(7);
+  // Only print items if there are any
+  if (data.items && data.items.length > 0) {
+    // Table header with Price column
+    commands += '# Description        Qty Price Amount\n';
+    commands += '--------------------------------\n';
     
-    commands += `${(index + 1).toString().padStart(2)} ${desc.padEnd(15)} ${qty} ${priceStr} ${amount}\n`;
-  });
-  
-  // Totals
-  commands += '--------------------------------\n';
-  commands += `Total:                    P${data.cartTotal.toFixed(2)}\n`;
-  commands += `Amount:                   P${data.amount.toFixed(2)}\n`;
-  commands += `Change:                   P${data.change.toFixed(2)}\n`;
-  commands += '--------------------------------\n';
-  commands += `Customer Points: ${data.points || 0}\n`;
-  commands += '--------------------------------\n\n';
-  
-  // Footer
-  commands += '\x1B\x61\x01'; // Center align
-  commands += 'CUSTOMER COPY - NOT AN OFFICIAL RECEIPT\n\n';
-  commands += 'THANK YOU - GATANG KA MANEN!\n';
-  commands += '\x1B\x61\x00'; // Left align
-  commands += '--------------------------------\n\n';
-  
-  // Feed paper and cut (ZY609 compatible)
-  commands += '\x1B\x64\x03'; // ESC d 3 - Feed 3 lines
-  commands += '\x1D\x56\x00'; // GS V 0 - Full cut
+    // Add all items with Price column
+    data.items.forEach((item, index) => {
+      const desc = item.desc.length > 15 ? item.desc.substring(0, 12) + "..." : item.desc;
+      const qty = item.qty.toString().padStart(3);
+      const price = item.price ? item.price.toFixed(2) : (item.amount / item.qty).toFixed(2);
+      const priceStr = `P${price}`.padStart(6);
+      const amount = `P${item.amount.toFixed(2)}`.padStart(7);
+      
+      commands += `${(index + 1).toString().padStart(2)} ${desc.padEnd(15)} ${qty} ${priceStr} ${amount}\n`;
+    });
+    
+    // Totals
+    commands += '--------------------------------\n';
+    commands += `Total:                    P${data.cartTotal.toFixed(2)}\n`;
+    commands += `Amount:                   P${data.amount.toFixed(2)}\n`;
+    commands += `Change:                   P${data.change.toFixed(2)}\n`;
+    commands += '--------------------------------\n';
+    commands += `Customer Points: ${data.points || 0}\n`;
+    commands += '--------------------------------\n\n';
+    
+    // Footer
+    commands += '\x1B\x61\x01'; // Center align
+    commands += 'CUSTOMER COPY - NOT AN OFFICIAL RECEIPT\n\n';
+    commands += 'THANK YOU - GATANG KA MANEN!\n';
+    commands += '\x1B\x61\x00'; // Left align
+    commands += '--------------------------------\n\n';
+    
+    // AUTO-CUT: Only cut when there are items
+    commands += '\x1B\x64\x01'; // ESC d 1 - Feed only 1 line (minimal)
+    commands += '\x1D\x56\x00'; // GS V 0 - Full cut (auto-cut)
+  } else {
+    // No items - just print a message and don't cut
+    commands += 'NO ITEMS TO PRINT\n';
+    commands += '--------------------------------\n';
+    commands += 'Please add items to cart\n';
+    commands += '--------------------------------\n\n';
+    
+    // No auto-cut for empty cart - saves paper
+  }
   
   return commands;
 }
@@ -590,3 +602,109 @@ exports.listPrinters = async function (req, res) {
     });
   }
 };
+
+exports.generatePDF = async function (req, res) {
+  try {
+    const raw = req.body || {};
+    
+    const data = {
+      customer: raw.customer || { name: "N/A" },
+      cartTotal: Number(raw.cartTotal || 0),
+      amount: Number(raw.amount || 0),
+      change: Number(raw.change || 0),
+      points: raw.points || 0,
+      items: Array.isArray(raw.items) ? raw.items : [],
+    };
+
+    // Use the same HTML template as other functions
+    const html = generateHTMLReceipt(data);
+
+    // PDF generation logic (moved from receiptPdfController.js)
+    const browser = await getBrowser();
+    const page = await browser.newPage();
+    
+    const widthPx = Math.round(80 * 3.78);
+    await page.setViewport({ width: widthPx, height: 800 });
+    await page.setContent(html, { waitUntil: "networkidle0" });
+    
+    const paperHeightPx = await page.evaluate(() => {
+      const el = document.getElementById('receipt') || document.querySelector('.paper') || document.body;
+      const rect = el.getBoundingClientRect();
+      const style = window.getComputedStyle(el);
+      const mt = parseFloat(style.marginTop || 0);
+      const mb = parseFloat(style.marginBottom || 0);
+      return Math.ceil(rect.height + mt + mb);
+    });
+    
+    const pxToMm = 25.4 / 96;
+    let heightMm = Math.ceil(paperHeightPx * pxToMm) + 2;
+    
+    const MIN_HEIGHT_MM = 40;
+    const MAX_HEIGHT_MM = 4000;
+    if (heightMm < MIN_HEIGHT_MM) heightMm = MIN_HEIGHT_MM;
+    if (heightMm > MAX_HEIGHT_MM) heightMm = MAX_HEIGHT_MM;
+
+    const pdfBuffer = await page.pdf({
+      printBackground: true,
+      width: "80mm",
+      height: `${heightMm}mm`,
+      margin: { top: "0mm", bottom: "0mm", left: "0mm", right: "0mm" },
+      preferCSSPageSize: true,
+      displayHeaderFooter: false,
+      scale: 1.0,
+      format: undefined,
+      tagged: false,
+    });
+
+    await page.close();
+
+    const filename = `receipt-${Date.now()}.pdf`;
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
+    res.setHeader("Content-Length", Buffer.byteLength(pdfBuffer));
+    res.setHeader("Access-Control-Expose-Headers", "Content-Disposition,Content-Length");
+    return res.send(pdfBuffer);
+    
+  } catch (err) {
+    console.error("PDF generation error:", err);
+    return res.status(500).json({ error: "PDF generation failed", details: String(err) });
+  }
+};
+
+// Add browser management functions at the top
+let browserPromise = null;
+async function getBrowser() {
+  if (!browserPromise) {
+    browserPromise = (async () => {
+      const baseOpts = {
+        args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+        headless: true,
+      };
+
+      const envPath = process.env.PUPPETEER_EXECUTABLE_PATH;
+      const candidates = [
+        envPath,
+        "/usr/bin/chromium-browser",
+        "/usr/bin/chromium",
+        "/usr/bin/google-chrome",
+        "/usr/bin/google-chrome-stable",
+        "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+      ].filter(Boolean);
+
+      for (const exe of candidates) {
+        if (!exe) continue;
+        try {
+          const opts = Object.assign({}, baseOpts, { executablePath: exe });
+          const b = await puppeteer.launch(opts);
+          console.log("Puppeteer: launched successfully with", exe);
+          return b;
+        } catch (err) {
+          console.error("Puppeteer: launch failed with", exe, "-", err && err.message ? err.message : err);
+        }
+      }
+
+      return await puppeteer.launch(baseOpts);
+    })();
+  }
+  return browserPromise;
+}
