@@ -1,12 +1,12 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "YZY POS",
+  "productName": "POS TI TAGA TUDING",
   "version": "0.1.0",
   "identifier": "com.yzy.pos",
   "build": {
-    "beforeBuildCommand": "cd ../pos-frontend && npm run build",
-    "beforeDevCommand": "cd ../pos-frontend && npm run dev",
-    "frontendDist": "../pos-frontend/out",
+    "beforeBuildCommand": "powershell -ExecutionPolicy Bypass -File ./src-tauri/tauri-build.ps1",
+    "beforeDevCommand": "npm run dev --prefix ../../pos-frontend",
+    "frontendDist": "../../pos-frontend/out",
     "devUrl": "http://localhost:3000"
   },
   "app": {
@@ -14,11 +14,14 @@
     "windows": [
       {
         "title": "YZY POS",
-        "width": 1200,
-        "height": 800,
+        "width": 1920,
+        "height": 1080,
+        "minWidth": 800,
+        "minHeight": 600,
         "resizable": true,
         "fullscreen": false,
-        "devtools": true
+        "devtools": true,
+        "center": true
       }
     ]
   },
@@ -26,11 +29,14 @@
     "active": true,
     "targets": "all",
     "icon": [
+      "icons/icon.ico",
+      "icons/16x16.png",
       "icons/32x32.png",
+      "icons/64x64.png",
       "icons/128x128.png",
-      "icons/128x128@2x.png",
-      "icons/icon.icns",
-      "icons/icon.ico"
+      "icons/256x256.png",
+      "icons/512x512.png",
+      "icons/icon.icns"
     ],
     "resources": [
       ".env"
