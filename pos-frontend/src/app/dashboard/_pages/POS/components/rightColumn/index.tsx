@@ -10,7 +10,7 @@ import Receipt from "./Receipt";
 import AddCustomerModal from "./AddCustomerModal";
 import type { Customer } from "@/hooks/pos/rightCol/useCustomerTagging";
 import axios from "@/lib/axios";
-import { qz } from 'qz-tray';
+// REMOVED: import { qz } from 'qz-tray';
 
 interface POSRightColProps {
   step: 1 | 2 | 3;
@@ -155,7 +155,6 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
     }
   }, [cart, selectedCustomer, cartTotal, setAllCustomers, selectCustomer, setStep, isProcessingSale]);
 
-
   // NEW: completeTransaction (close receipt) — clear cart/customer and reset UI
   const completeTransaction = useCallback(() => {
     try {
@@ -170,71 +169,74 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
     }
   }, [clearCustomer, setStep, setAmount, setChange, clearCart]);
 
-  // Direct Print Receipt - Backend ESC/POS communication with debug mode
-  const handlePrintReceipt = useCallback(async () => {
-    if (isProcessingSale) return;
+  // NEW: Generate ESC/POS receipt (no browser, no cut-off issues)
+  const generateESCPOSReceipt = (data: any) => {
+    const dateStr = new Date().toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "2-digit",
+    });
 
-    const items = cart.map((item) => ({
-      desc: item.product?.name ?? item.product?.barcode ?? "Item",
-      qty: Number(item.quantity || 0),
-      amount: Number(((item.product?.price || 0) * item.quantity).toFixed(2)),
-    }));
+    let receipt = '';
 
-    const payload = {
-      customer: selectedCustomer || { name: "N/A" },
-      cartTotal: Number(cartTotal || 0),
-      amount: Number(parseFloat(amount) || cartTotal || 0),
-      change: Number(change || 0),
-      items,
-    };
+    // Initialize printer
+    receipt += '\x1B\x40'; // ESC @ - Initialize
 
-    try {
-      setIsProcessingSale(true);
+    // Center align and bold for header
+    receipt += '\x1B\x61\x01'; // ESC a 1 - Center align
+    receipt += '\x1B\x45\x01'; // ESC E 1 - Bold on
+    receipt += 'YZY STORE\n';
+    receipt += 'Eastern Slide, Tuding\n';
+    receipt += '\x1B\x45\x00'; // ESC E 0 - Bold off
+    receipt += '\x1B\x61\x00'; // ESC a 0 - Left align
 
-      // Get HTML from backend for print preview
-      const response = await axios.post('/generate-html', payload);
+    // Add separator
+    receipt += '--------------------------------\n';
 
-      if (response.data.success) {
-        // Create hidden iframe for printing (no popup required)
-        const iframe = document.createElement('iframe');
-        iframe.style.position = 'absolute';
-        iframe.style.left = '-9999px';
-        iframe.style.top = '-9999px';
-        iframe.style.width = '800px';
-        iframe.style.height = '600px';
+    // Customer and date info
+    receipt += `Customer: ${data.customer?.name || "N/A"}\n`;
+    receipt += `Date: ${dateStr}\n`;
+    receipt += '--------------------------------\n';
 
-        document.body.appendChild(iframe);
+    // Table header
+    receipt += '# Description        Qty Price Amount\n';
+    receipt += '--------------------------------\n';
 
-        // Write HTML to iframe
-        iframe.contentDocument?.write(response.data.html);
-        iframe.contentDocument?.close();
+    // Add all items
+    data.items.forEach((item: any, index: number) => {
+      const desc = item.desc.length > 15 ? item.desc.substring(0, 12) + "..." : item.desc;
+      const qty = item.qty.toString().padStart(3);
+      const price = item.price ? item.price.toFixed(2) : (item.amount / item.qty).toFixed(2);
+      const priceStr = `P${price}`.padStart(6);
+      const amount = `P${item.amount.toFixed(2)}`.padStart(7);
 
-        // Wait for content to load, then print
-        iframe.onload = () => {
-          setTimeout(() => {
-            iframe.contentWindow?.print();
-            // Remove iframe after printing
-            setTimeout(() => {
-              document.body.removeChild(iframe);
-            }, 1000);
-          }, 500);
-        };
+      receipt += `${(index + 1).toString().padStart(2)} ${desc.padEnd(15)} ${qty} ${priceStr} ${amount}\n`;
+    });
 
-        console.log(`Receipt preview opened! Items: ${response.data.itemCount}`);
-      } else {
-        throw new Error(response.data.error || 'HTML generation failed');
-      }
+    // Totals
+    receipt += '--------------------------------\n';
+    receipt += `Total:                    P${data.cartTotal.toFixed(2)}\n`;
+    receipt += `Amount:                   P${data.amount.toFixed(2)}\n`;
+    receipt += `Change:                   P${data.change.toFixed(2)}\n`;
+    receipt += '--------------------------------\n';
+    receipt += `Customer Points: ${data.points || 0}\n`;
+    receipt += '--------------------------------\n\n';
 
-    } catch (err: any) {
-      console.error('Print preview error:', err);
-      const errorMessage = err.response?.data?.error || err.message || "Unknown error";
-      alert(`Print preview failed: ${errorMessage}`);
-    } finally {
-      setIsProcessingSale(false);
-    }
-  }, [cart, selectedCustomer, cartTotal, amount, change, isProcessingSale]);
+    // Footer
+    receipt += '\x1B\x61\x01'; // Center align
+    receipt += 'CUSTOMER COPY - NOT AN OFFICIAL RECEIPT\n\n';
+    receipt += 'THANK YOU - GATANG KA MANEN!\n';
+    receipt += '\x1B\x61\x00'; // Left align
+    receipt += '--------------------------------\n\n';
 
-  // NEW: Tauri printing function (unlimited items)
+    // AUTO-CUT
+    receipt += '\x1B\x64\x01'; // ESC d 1 - Feed only 1 line
+    receipt += '\x1D\x56\x00'; // GS V 0 - Full cut (auto-cut)
+
+    return receipt;
+  };
+
+  // UPDATED: Use direct ESC/POS printing (no browser, no cut-off issues)
   const handleTauriPrint = useCallback(async () => {
     if (isProcessingSale) return;
 
@@ -244,7 +246,7 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
       amount: Number(((item.product?.price || 0) * item.quantity).toFixed(2)),
     }));
 
-    const payload = {
+    const data = {
       customer: selectedCustomer || { name: "N/A" },
       cartTotal: Number(cartTotal || 0),
       amount: Number(parseFloat(amount) || cartTotal || 0),
@@ -254,163 +256,21 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
 
     try {
       setIsProcessingSale(true);
+      // OPTION B: Guaranteed auto‑cut via direct ESC/POS
+      const escposReceipt = generateESCPOSReceipt(data);
+      const { usePrint } = await import('@/hooks/printing/usePrint');
+      const { printDirect } = usePrint();
+      await printDirect(escposReceipt, data.items.length);
 
-      // Get HTML from backend
-      const response = await axios.post('/tauri-print', payload);
 
-      if (response.data.success) {
-        // Use Tauri to print (no browser limitations)
-        await qz.print({}, [response.data.html]);
-         console.log(`Receipt printed successfully! Items: ${response.data.itemCount}`);
-        alert(`Receipt printed successfully!\nItems: ${response.data.itemCount}\nTotal: P${response.data.totalAmount}`);
-      } else {
-        throw new Error(response.data.error || 'Print failed');
-      }
-
+      console.log(`Opened print preview. Items: ${data.items.length}`);
     } catch (err: any) {
-      console.error('Tauri print error:', err);
-      const errorMessage = err.response?.data?.error || err.message || "Unknown error";
-      alert(`Print failed: ${errorMessage}`);
+      console.error('Print preview error:', err);
+      alert(`Print preview failed: ${err.message || 'Unknown error'}`);
     } finally {
       setIsProcessingSale(false);
     }
   }, [cart, selectedCustomer, cartTotal, amount, change, isProcessingSale]);
-
-  // NEW: Browser printing with pagination for large receipts
-  const handleBrowserPrint = useCallback(async () => {
-    if (isProcessingSale) return;
-
-    const items = cart.map((item) => ({
-      desc: item.product?.name ?? item.product?.barcode ?? "Item",
-      qty: Number(item.quantity || 0),
-      amount: Number(((item.product?.price || 0) * item.quantity).toFixed(2)),
-    }));
-
-    const payload = {
-      customer: selectedCustomer || { name: "N/A" },
-      cartTotal: Number(cartTotal || 0),
-      amount: Number(parseFloat(amount) || cartTotal || 0),
-      change: Number(change || 0),
-      items,
-    };
-
-    try {
-      setIsProcessingSale(true);
-
-      const response = await axios.post('/tauri-print', payload);
-
-      if (response.data.success) {
-        // Browser printing (works everywhere, no limitations)
-        const printWindow = window.open('', '_blank', 'width=800,height=600');
-        if (printWindow) {
-          printWindow.document.write(response.data.html);
-          printWindow.document.close();
-          printWindow.onload = () => {
-            setTimeout(() => {
-              printWindow.print();
-              setTimeout(() => printWindow.close(), 1000);
-            }, 500);
-          };
-        }
-
-        console.log(`Receipt printed successfully! Items: ${response.data.itemCount}`);
-        alert(`Receipt printed successfully!\nItems: ${response.data.itemCount}\nTotal: P${response.data.totalAmount}`);
-      } else {
-        throw new Error(response.data.error || 'Print failed');
-      }
-
-    } catch (err: any) {
-      console.error('Print error:', err);
-      const errorMessage = err.response?.data?.error || err.message || "Unknown error";
-      alert(`Print failed: ${errorMessage}`);
-    } finally {
-      setIsProcessingSale(false);
-    }
-  }, [cart, selectedCustomer, cartTotal, amount, change, isProcessingSale]);
-
-  // Generate plain text receipt (better for thermal printers)
-  const generateReceiptText = (data: any) => {
-    const dateStr = new Date().toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "2-digit",
-    });
-
-    let receipt = `
-================================
-        YZY STORE
-    Eastern Slide, Tuding
-================================
-
-Customer: ${data.customer?.name || "N/A"}
-Date: ${dateStr}
---------------------------------
-Item                QTY  Price  Amount
---------------------------------
-`;
-
-    // Add all items
-    data.items.forEach((item: any) => {
-      const desc = item.desc.length > 20 ? item.desc.substring(0, 17) + "..." : item.desc;
-      const qty = item.qty.toString().padStart(3);
-      // Fix: Calculate price from amount and qty if price is undefined
-      const price = item.price ? item.price.toFixed(2) : (item.amount / item.qty).toFixed(2);
-      const amount = item.amount.toFixed(2).padStart(7);
-
-      receipt += `${desc.padEnd(20)} ${qty} ${price.padStart(6)} ${amount}\n`;
-    });
-
-    receipt += `--------------------------------
-Total:                    P${data.cartTotal.toFixed(2)}
-Amount:                   P${data.amount.toFixed(2)}
-Change:                   P${data.change.toFixed(2)}
---------------------------------
-Customer Points: ${data.points || 0}
---------------------------------
-
-THANK YOU - GATANG KA MANEN!
-
-CUSTOMER COPY
-
-================================
-`;
-
-    return receipt;
-  };
-
-  // Fallback function for new window approach
-  const fallbackToNewWindow = useCallback((url: string) => {
-    try {
-      const newWindow = window.open(url, '_blank', 'width=800,height=600');
-      if (newWindow) {
-        newWindow.onload = () => {
-          setTimeout(() => {
-            newWindow.print();
-          }, 1000);
-        };
-        setTimeout(() => URL.revokeObjectURL(url), 10000);
-      } else {
-        // If popup blocked, just open the PDF
-        window.open(url, '_blank');
-        setTimeout(() => URL.revokeObjectURL(url), 10000);
-      }
-    } catch (err) {
-      console.error('New window fallback failed:', err);
-      // Last resort: just open the PDF
-      window.open(url, '_blank');
-      setTimeout(() => URL.revokeObjectURL(url), 10000);
-    }
-  }, []);
-
-  // Print to PDF (fallback to window.print for now)
-  const handlePrintPDF = useCallback(() => {
-    try {
-      // TODO: replace with PDF generation logic if available
-      window.print();
-    } catch (err) {
-      console.warn("Print PDF failed:", err);
-    }
-  }, []);
 
   // Called when a new customer has been added from the AddCustomerModal
   const handleCustomerAdded = useCallback(
@@ -519,7 +379,7 @@ CUSTOMER COPY
       if (step === 3 && e.shiftKey && !e.ctrlKey && !e.altKey && e.key.toLowerCase() === "p") {
         e.preventDefault();
         e.stopPropagation();
-        handleTauriPrint(); // Changed from handlePrintReceipt
+        handleTauriPrint(); // Use Tauri printing
       }
     };
     document.addEventListener("keydown", onKey, { capture: true });
@@ -686,7 +546,7 @@ CUSTOMER COPY
               <CardFooter className="px-4 pb-4 pt-4 flex flex-col gap-2">
                 <Button
                   className="w-full h-14 text-xl font-medium"
-                  onClick={handlePrintReceipt} // Use print preview
+                  onClick={handleTauriPrint} // Use Tauri printing
                   disabled={isProcessingSale}
                 >
                   {isProcessingSale ? "Processing..." : "Print Receipt"}
