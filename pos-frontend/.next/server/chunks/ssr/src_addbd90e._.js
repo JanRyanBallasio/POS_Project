@@ -1715,7 +1715,9 @@ function POSRight({ step, setStep }) {
             const response = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$axios$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"].post('/tauri-print', payload);
             if (response.data.success) {
                 // Use Tauri to print (no browser limitations)
-                await __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$qz$2d$tray$2f$qz$2d$tray$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["qz"].print(response.data.html, {});
+                await __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$qz$2d$tray$2f$qz$2d$tray$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["qz"].print({}, [
+                    response.data.html
+                ]);
                 console.log(`Receipt printed successfully! Items: ${response.data.itemCount}`);
                 alert(`Receipt printed successfully!\nItems: ${response.data.itemCount}\nTotal: P${response.data.totalAmount}`);
             } else {

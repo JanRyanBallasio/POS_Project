@@ -190,10 +190,10 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
 
     try {
       setIsProcessingSale(true);
-      
+
       // Get HTML from backend for print preview
       const response = await axios.post('/generate-html', payload);
-      
+
       if (response.data.success) {
         // Create hidden iframe for printing (no popup required)
         const iframe = document.createElement('iframe');
@@ -202,13 +202,13 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
         iframe.style.top = '-9999px';
         iframe.style.width = '800px';
         iframe.style.height = '600px';
-        
+
         document.body.appendChild(iframe);
-        
+
         // Write HTML to iframe
         iframe.contentDocument?.write(response.data.html);
         iframe.contentDocument?.close();
-        
+
         // Wait for content to load, then print
         iframe.onload = () => {
           setTimeout(() => {
@@ -219,12 +219,12 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
             }, 1000);
           }, 500);
         };
-        
+
         console.log(`Receipt preview opened! Items: ${response.data.itemCount}`);
       } else {
         throw new Error(response.data.error || 'HTML generation failed');
       }
-            
+
     } catch (err: any) {
       console.error('Print preview error:', err);
       const errorMessage = err.response?.data?.error || err.message || "Unknown error";
@@ -254,19 +254,19 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
 
     try {
       setIsProcessingSale(true);
-      
+
       // Get HTML from backend
       const response = await axios.post('/tauri-print', payload);
-      
+
       if (response.data.success) {
         // Use Tauri to print (no browser limitations)
-        await qz.print(response.data.html, {});        
-        console.log(`Receipt printed successfully! Items: ${response.data.itemCount}`);
+        await qz.print({}, [response.data.html]);
+         console.log(`Receipt printed successfully! Items: ${response.data.itemCount}`);
         alert(`Receipt printed successfully!\nItems: ${response.data.itemCount}\nTotal: P${response.data.totalAmount}`);
       } else {
         throw new Error(response.data.error || 'Print failed');
       }
-            
+
     } catch (err: any) {
       console.error('Tauri print error:', err);
       const errorMessage = err.response?.data?.error || err.message || "Unknown error";
@@ -296,9 +296,9 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
 
     try {
       setIsProcessingSale(true);
-      
+
       const response = await axios.post('/tauri-print', payload);
-      
+
       if (response.data.success) {
         // Browser printing (works everywhere, no limitations)
         const printWindow = window.open('', '_blank', 'width=800,height=600');
@@ -312,13 +312,13 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
             }, 500);
           };
         }
-        
+
         console.log(`Receipt printed successfully! Items: ${response.data.itemCount}`);
         alert(`Receipt printed successfully!\nItems: ${response.data.itemCount}\nTotal: P${response.data.totalAmount}`);
       } else {
         throw new Error(response.data.error || 'Print failed');
       }
-            
+
     } catch (err: any) {
       console.error('Print error:', err);
       const errorMessage = err.response?.data?.error || err.message || "Unknown error";
@@ -332,7 +332,7 @@ export default function POSRight({ step, setStep }: { step: 1 | 2 | 3; setStep: 
   const generateReceiptText = (data: any) => {
     const dateStr = new Date().toLocaleDateString("en-US", {
       year: "numeric",
-      month: "long", 
+      month: "long",
       day: "2-digit",
     });
 
@@ -356,7 +356,7 @@ Item                QTY  Price  Amount
       // Fix: Calculate price from amount and qty if price is undefined
       const price = item.price ? item.price.toFixed(2) : (item.amount / item.qty).toFixed(2);
       const amount = item.amount.toFixed(2).padStart(7);
-      
+
       receipt += `${desc.padEnd(20)} ${qty} ${price.padStart(6)} ${amount}\n`;
     });
 
