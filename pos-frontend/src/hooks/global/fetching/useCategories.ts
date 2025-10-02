@@ -7,7 +7,8 @@ export const CATEGORIES_KEY = "categories:list";
 const fetcher = async (): Promise<Category[]> => {
   try {
     return await categoryApi.getAll();
-  } catch {
+  } catch (error) {
+    console.warn('Failed to fetch categories:', error);
     return [];
   }
 };

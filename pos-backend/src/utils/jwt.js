@@ -1,17 +1,14 @@
-const jwt = require('jsonwebtoken');
-
-const SECRET = process.env.JWT_SECRET || 'change_this_in_production';
+// Simple stub to prevent import errors
+// No actual JWT functionality since auth is disabled
 
 module.exports = {
-  generateToken(payload, expiresIn = '8h') {
-    return jwt.sign(payload, SECRET, { expiresIn });
+  generateToken: (payload, expiresIn) => {
+    // Return a simple token for compatibility
+    return 'no-auth-token';
   },
-
-  verifyToken(token) {
-    return jwt.verify(token, SECRET);
-  },
-
-  // lower-level exports if needed
-  sign: (payload, opts) => jwt.sign(payload, SECRET, opts),
-  verify: (token) => jwt.verify(token, SECRET),
+  
+  verifyToken: (token) => {
+    // Return a simple payload for compatibility
+    return { id: 1, username: 'no-auth' };
+  }
 };

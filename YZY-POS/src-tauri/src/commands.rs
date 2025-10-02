@@ -191,3 +191,139 @@ if (-not $target) {{ throw 'No target printer'; }}
         Err(e) => Err(format!("Print command failed: {}", e))
     }
 }
+
+#[command]
+pub async fn print_receipt_enhanced(
+    _store_name: String,  // Add underscore to fix unused variable warning
+    store_address: String,
+    customer_name: String,
+    cart_total: f64,
+    amount_paid: f64,
+    change_amount: f64,
+    points: u32,
+    items: Vec<serde_json::Value>,
+) -> Result<String, String> {
+    let mut receipt_content = String::new();
+    
+    // Store the item count before consuming the vector
+    let item_count = items.len() as u32;
+    
+    // Initialize printer
+    receipt_content.push_str("\x1B\x40"); // ESC @
+    
+    // Header - Center aligned with logo
+    receipt_content.push_str("\x1B\x61\x01"); // Center
+    receipt_content.push_str("\x1B\x45\x01"); // Bold on
+    receipt_content.push_str("YZY\n"); // Logo
+    receipt_content.push_str("\x1B\x45\x00"); // Bold off
+    receipt_content.push('\n');
+    receipt_content.push_str(&format!("{}\n", store_address));
+    receipt_content.push('\n');
+    
+    // Left align for content
+    receipt_content.push_str("\x1B\x61\x00"); // Left
+    
+    // Customer and date
+    let date = chrono::Local::now().format("%B %d, %Y").to_string();
+    receipt_content.push_str(&format!("Customer: {}\n", customer_name));
+    receipt_content.push_str(&format!("Date: {}\n", date));
+    receipt_content.push_str("--------------------------------\n");
+    
+    // Items header
+    receipt_content.push_str("Item                 QTY  Price  Amount\n");
+    receipt_content.push_str("--------------------------------\n");
+    
+    // Items - iterate over references to avoid moving
+    for item in &items {
+        let desc = item.get("desc")
+            .and_then(|v| v.as_str())
+            .unwrap_or("Item");
+        let qty = item.get("qty")
+            .and_then(|v| v.as_u64())
+            .unwrap_or(0);
+        let price = item.get("price")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.0);
+        let amount = item.get("amount")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.0);
+        
+        let desc_formatted = if desc.len() > 20 {
+            format!("{}...", &desc[..17])
+        } else {
+            format!("{:<20}", desc)
+        };
+        
+        receipt_content.push_str(&format!(
+            "{} {:>3} {:>6.2} {:>7.2}\n",
+            desc_formatted, qty, price, amount
+        ));
+    }
+    
+    // Totals
+    receipt_content.push_str("--------------------------------\n");
+    receipt_content.push_str(&format!("                       TOTAL: {:>7.2}\n", cart_total));
+    receipt_content.push_str(&format!("                      AMOUNT: {:>7.2}\n", amount_paid));
+    receipt_content.push_str(&format!("                      CHANGE: {:>7.2}\n", change_amount));
+    receipt_content.push_str("--------------------------------\n");
+    
+    if points > 0 {
+        receipt_content.push_str(&format!("Customer Points: {}\n", points));
+        receipt_content.push_str("--------------------------------\n");
+    }
+    
+    // Footer
+    receipt_content.push('\n');
+    receipt_content.push_str("\x1B\x61\x01"); // Center
+    receipt_content.push_str("CUSTOMER COPY - NOT AN OFFICIAL RECEIPT\n");
+    receipt_content.push_str("THANK YOU - GATANG KA MANEN!\n");
+    receipt_content.push_str("\x1B\x61\x00"); // Left
+    
+    // Cut
+    receipt_content.push_str("\n\n");
+    receipt_content.push_str("\x1B\x64\x03"); // Feed 3 lines
+    receipt_content.push_str("\x1D\x56\x00"); // Full cut
+    
+    // Use existing print_receipt_direct function with the stored count
+    print_receipt_direct(receipt_content, item_count, None).await
+}
+
+// Add printer detection command
+#[command]
+pub async fn get_available_printers() -> Result<Vec<String>, String> {
+    let result = if cfg!(target_os = "windows") {
+        Command::new("powershell")
+            .args(["-NoProfile", "-Command", "Get-CimInstance Win32_Printer | Select-Object -ExpandProperty Name"])
+            .output()
+    } else if cfg!(target_os = "macos") {
+        Command::new("lpstat").args(["-p"]).output()
+    } else {
+        Command::new("lpstat").args(["-p"]).output()
+    };
+
+    match result {
+        Ok(output) => {
+            if output.status.success() {
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                let printers: Vec<String> = stdout
+                    .lines()
+                    .filter(|line| !line.trim().is_empty())
+                    .map(|line| {
+                        if cfg!(target_os = "windows") {
+                            line.trim().to_string()
+                        } else {
+                            line.split_whitespace()
+                                .nth(1)
+                                .unwrap_or(line.trim())
+                                .to_string()
+                        }
+                    })
+                    .collect();
+                Ok(printers)
+            } else {
+                Ok(vec!["Default Printer".to_string()])
+            }
+        }
+        Err(_) => Ok(vec!["Default Printer".to_string()])
+    }
+}

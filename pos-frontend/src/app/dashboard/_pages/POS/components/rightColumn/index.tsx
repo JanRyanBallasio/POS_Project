@@ -91,7 +91,9 @@ export default function POSRight({
         if (customerResp.data?.success && Array.isArray(customerResp.data.data)) {
           setAllCustomers(customerResp.data.data);
         }
-      } catch {}
+      } catch (error) {
+        console.warn('Operation failed:', error);
+      }
 
       clearCustomer();
       setStep(1);
@@ -186,7 +188,9 @@ export default function POSRight({
       setChange(0);
       clearCart();
       (window as any).customerSearchActive = false;
-    } catch {}
+    } catch (error) {
+      console.warn('Transaction operation failed:', error);
+    }
   }, [clearCustomer, setStep, setAmount, setChange, clearCart]);
 
   const handlePosNext = useCallback(() => {
@@ -282,13 +286,14 @@ export default function POSRight({
     const items = cart.map((item) => ({
       desc: item.product?.name ?? item.product?.barcode ?? "Item",
       qty: Number(item.quantity || 0),
-      price: Number(item.product?.price || 0), // ✅ Add missing price field
+      price: Number(item.product?.price || 0),
       amount: Number(((item.product?.price || 0) * item.quantity).toFixed(2)),
     }));
 
     try {
       setIsPrinting(true);
-      await printReceipt({
+      
+      const result = await printReceipt({
         store: { name: "YZY STORE", address1: "Eastern Slide, Tuding" },
         customer: selectedCustomer || { name: "N/A" },
         cartTotal: Number(cartTotal || 0),
@@ -296,11 +301,14 @@ export default function POSRight({
         change: Number(change || 0),
         points: Number(selectedCustomer?.points ?? 0),
         items,
-        printerName: null, // Always use default printer
+        printerName: null, // Use default printer
       });
+      
       setPrintOpen(false);
-      alert("Receipt printed successfully!");
+      alert(`Print successful: ${result}`);
+      
     } catch (e: any) {
+      console.error('[PRINT ERROR]', e);
       alert(`Print failed: ${e?.message || String(e)}`);
     } finally {
       setIsPrinting(false);
@@ -417,7 +425,9 @@ export default function POSRight({
                     setAllCustomers((prev: any[] = []) => [...prev, customer]);
                     setAddCustomerOpen(false);
                     if (typeof selectCustomer === "function") selectCustomer(customer);
-                  } catch {}
+                  } catch (error) {
+        console.warn('Operation failed:', error);
+      }
                 }}
               />
               <CardFooter className="px-0 pb-4 pt-4 flex flex-col gap-3">

@@ -25,7 +25,9 @@ export default function Calculator({
           cashInputRef.current.focus();
           cashInputRef.current.select();
         }
-      } catch { }
+      } catch (error) {
+        console.warn('Failed to focus cash input:', error);
+      }
     };
     window.addEventListener("focusCashInput", handleFocusCash);
     return () => window.removeEventListener("focusCashInput", handleFocusCash);

@@ -56,7 +56,9 @@ export default function CartTable({
         lastAutoSelectedId.current = lastAddedItemId;
         try {
           selectRow(lastAddedItemId);
-        } catch { }
+        } catch (error) {
+          console.warn('Failed to select row:', error);
+        }
         return;
       }
       attempts++;

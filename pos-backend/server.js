@@ -3,12 +3,10 @@ require('dotenv').config();
 console.log('Loaded env - NODE_ENV =', process.env.NODE_ENV);
 
 const express = require('express');
-// const cors = require('cors');
 const customCors = require('./src/middleware/cors');
 const cookieParser = require('cookie-parser');
-const auth = require('./src/middleware/auth');
 
-// Routes
+// Routes (remove auth-related imports)
 const userRoutes = require('./src/routes/userRoutes');
 const productRoutes = require('./src/routes/productRoutes');
 const categoryRoutes = require('./src/routes/categoryRoutes');
@@ -17,45 +15,37 @@ const salesRoutes = require('./src/routes/salesRoutes');
 const salesItemsRoutes = require('./src/routes/salesItemsRoutes');
 const customerRoutes = require('./src/routes/customerRoutes');
 const stockTransactionRoutes = require('./src/routes/stockTransactionRoutes');
-const authRoutes = require('./src/routes/auth.routes');
-const directPrintRoutes = require("./src/routes/directPrintRoutes");
 const printRoutes = require('./src/routes/printRoutes'); 
-const professionalPrintRoutes = require('./src/routes/professionalPrintRoutes'); // NEW
+const professionalPrintRoutes = require('./src/routes/professionalPrintRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 const HOST = '0.0.0.0';
 
 // Middleware
-// app.use(cors());
 app.use(customCors);
 app.use(express.json());
 app.use(cookieParser());
 
 // Debug
 app.use((req, res, next) => {
-  console.log(`${req.method} ${req.path} - Origin: ${req.headers.origin} - Auth: ${req.headers.authorization ? 'Present' : 'Missing'}`);
+  console.log(`${req.method} ${req.path} - Origin: ${req.headers.origin}`);
   next();
 });
 
-// Public routes
-app.use('/api/auth', authRoutes);
-// ✅ Remove conflicting directPrintRoutes - we only want printRoutes
-// app.use('/api', directPrintRoutes);
+// All routes are now public (no auth required)
+app.use('/api/users', userRoutes);
+app.use('/api/customers', customerRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/positions', positionRoutes);
+app.use('/api/sales', salesRoutes);
+app.use('/api/sales-items', salesItemsRoutes);
+app.use('/api/stock-transactions', stockTransactionRoutes);
 
-// Protected routes
-app.use('/api/users', auth, userRoutes);
-app.use('/api/customers', auth, customerRoutes);
-app.use('/api/products', productRoutes); // already protects inside
-app.use('/api/categories', auth, categoryRoutes);
-app.use('/api/positions', auth, positionRoutes);
-app.use('/api/sales', auth, salesRoutes);
-app.use('/api/sales-items', auth, salesItemsRoutes);
-app.use('/api/stock-transactions', auth, stockTransactionRoutes);
-
-// ✅ Printing endpoints (no auth required for simplicity)
+// Printing endpoints
 app.use('/print', printRoutes);
-app.use('/api/print', professionalPrintRoutes); // NEW ENHANCED ENDPOINT
+app.use('/api/print', professionalPrintRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Not found' });

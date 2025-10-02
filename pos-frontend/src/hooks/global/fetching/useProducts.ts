@@ -7,7 +7,8 @@ const PRODUCTS_KEY = "products:list";
 const fetcher = async (): Promise<Product[]> => {
   try {
     return await productApi.getAll();
-  } catch {
+  } catch (error) {
+    console.warn('Failed to fetch products:', error);
     return [];
   }
 };

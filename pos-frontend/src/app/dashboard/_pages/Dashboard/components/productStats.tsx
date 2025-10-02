@@ -81,14 +81,12 @@ export default function ProductStats() {
   const [tableSortOrder, setTableSortOrder] = useState<'asc' | 'desc' | 'recent'>('recent')
   const [productLimit, setProductLimit] = useState(15)
 
-  // FIXED: Use a different approach - fetch from multiple categories
+  // Fetch product sales data from all categories
   const productSalesUrl = useMemo(() => {
     const params = new URLSearchParams()
     if (range?.from) params.set('from_date', range.from.toISOString())
     if (range?.to) params.set('to_date', range.to.toISOString())
-    // We'll fetch from a specific category first to test
-    params.set('category_name', 'Lane 3') // Start with one category
-    return `/sales-items/products-by-category?${params.toString()}`
+    return `/sales-items?${params.toString()}`
   }, [range])
 
   // Fetch product sales data
@@ -127,9 +125,7 @@ export default function ProductStats() {
       }
     })
     
-    const result = Array.from(productMap.values())
-    console.log('Product sales data:', result)
-    return result
+    return Array.from(productMap.values())
   }, [productSales])
 
   // Fetch products to get product names and units
@@ -148,9 +144,7 @@ export default function ProductStats() {
     return map
   }, [allProducts])
 
-  // Fix the handleBarClick function:
   const handleBarClick = async (data: any) => {
-    console.log('Clicked product:', data.product_name)
     setSelectedProduct(data.product_name)
     setOpen(true)
     setLoadingDetails(true)
@@ -161,8 +155,6 @@ export default function ProductStats() {
         item.product_name === data.product_name
       )
 
-      console.log('Filtered product sales items:', productSalesItems)
-
       const transformedDetails = productSalesItems.map((item: any) => ({
         name: item.product_name,
         qty: Number(item.qty) || 0,
@@ -172,7 +164,6 @@ export default function ProductStats() {
         last_purchase: item.last_purchase
       }))
 
-      console.log('Transformed product details:', transformedDetails)
       setProductDetails(transformedDetails)
     } catch (error: any) {
       console.error('Error fetching product details:', error)
@@ -213,14 +204,6 @@ export default function ProductStats() {
       last_purchase: item.last_purchase
     }))
 
-    // Debug log to see the actual data
-    console.log('Product chart data before sorting:', arr)
-    console.log('Total sales sum:', arr.reduce((acc, curr) => acc + curr.total_sales, 0))
-    
-    // Debug each product's total
-    arr.forEach(item => {
-      console.log(`Product: ${item.product_name}, Total Sales: ₱${item.total_sales.toLocaleString()}`)
-    })
 
     // Sort first, then limit to the specified number of products
     let sorted
@@ -322,7 +305,6 @@ export default function ProductStats() {
                             nameKey='total_sales'
                             labelFormatter={v => v}
                             formatter={(value, name, props) => {
-                              console.log('Tooltip data:', { value, name, props })
                               return [
                                 `₱ ${Number(value).toLocaleString()}`,
                                 ''

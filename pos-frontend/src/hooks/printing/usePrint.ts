@@ -24,145 +24,146 @@ function isTauri() {
   return typeof window !== 'undefined' && (window as any).__TAURI__;
 }
 
-// Get backend URL with better environment detection
-function getBackendUrl() {
-  if (isTauri()) {
-    // For Tauri apps, always use localhost since backend runs locally
-    return 'http://localhost:5000';
+// Generate ESC/POS receipt content matching the image format
+function generateESCPOSReceipt(data: PrintPayload): string {
+  let commands = '';
+  
+  // Initialize printer
+  commands += '\x1B\x40'; // ESC @
+  
+  // Header - Center aligned with logo placeholder
+  commands += '\x1B\x61\x01'; // Center
+  commands += '\x1B\x45\x01'; // Bold on
+  commands += 'YZY\n'; // Logo text
+  commands += '\x1B\x45\x00'; // Bold off
+  commands += '\n';
+  commands += `${data.store?.address1 || 'Eastern Slide, Tuding'}\n`;
+  commands += '\n';
+  
+  // Left align for content
+  commands += '\x1B\x61\x00'; // Left
+  
+  // Customer and date
+  const date = new Date().toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: '2-digit'
+  });
+  
+  const customerName = data.customer?.name || 'N/A';
+  commands += `Customer: ${customerName}\n`;
+  commands += `Date: ${date}\n`;
+  commands += '--------------------------------\n';
+  
+  // Items header - matching the image format
+  commands += 'Item                 QTY  Price  Amount\n';
+  commands += '--------------------------------\n';
+  
+  // Items - format to match the image
+  data.items.forEach((item) => {
+    const desc = item.desc.length > 20 
+      ? item.desc.substring(0, 17) + '...' 
+      : item.desc.padEnd(20);
+    
+    const qty = item.qty.toString().padStart(3);
+    const price = (item.price || 0).toFixed(2).padStart(6);
+    const amount = item.amount.toFixed(2).padStart(7);
+    
+    commands += `${desc} ${qty} ${price} ${amount}\n`;
+  });
+  
+  // Totals section - matching the image
+  commands += '--------------------------------\n';
+  commands += `                       TOTAL: ${data.cartTotal.toFixed(2).padStart(7)}\n`;
+  commands += `                      AMOUNT: ${data.amount.toFixed(2).padStart(7)}\n`;
+  commands += `                      CHANGE: ${data.change.toFixed(2).padStart(7)}\n`;
+  commands += '--------------------------------\n';
+  
+  if (data.points !== undefined && data.points > 0) {
+    commands += `Customer Points: ${data.points}\n`;
+    commands += '--------------------------------\n';
   }
   
-  // For web browser - use your AWS backend URL
-  return process.env.NODE_ENV === 'production' 
-    ? 'http://3.107.238.186:5000'  // Your AWS server IP
-    : 'http://localhost:5000';
+  // Footer - matching the image
+  commands += '\n';
+  commands += '\x1B\x61\x01'; // Center align
+  commands += 'CUSTOMER COPY - NOT AN OFFICIAL RECEIPT\n';
+  commands += 'THANK YOU - GATANG KA MANEN!\n';
+  commands += '\x1B\x61\x00'; // Left align
+  
+  // Cut paper
+  commands += '\n\n';
+  commands += '\x1B\x64\x03'; // Feed 3 lines
+  commands += '\x1D\x56\x00'; // Full cut
+  
+  return commands;
 }
 
 export function usePrint() {
-  // Enhanced connection test with retry logic
-  const testConnection = async (retries = 3) => {
-    for (let i = 0; i < retries; i++) {
-      try {
-        console.log(`[PRINT] Testing connection attempt ${i + 1}/${retries}`);
-        const res = await fetch(`${getBackendUrl()}/api/print/enhanced/test`, {
-          method: 'GET',
-          headers: { 'Accept': 'application/json' },
-          signal: AbortSignal.timeout(5000) // 5 second timeout
-        });
-        
-        if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-        
-        const result = await res.json();
-        console.log('[PRINT] Connection test successful:', result);
-        return result;
-      } catch (error: any) {
-        console.warn(`[PRINT] Connection test attempt ${i + 1} failed:`, error.message);
-        
-        if (i === retries - 1) {
-          throw new Error(`Cannot connect to print server after ${retries} attempts: ${error.message}`);
-        }
-        
-        // Wait before retry
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-    }
-  };
-
-  // Get available printers
-  const getAvailablePrinters = async (): Promise<Printer[]> => {
-    try {
-      console.log('[PRINT] Fetching available printers...');
-      const res = await fetch(`${getBackendUrl()}/api/print/enhanced/printers`, {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' },
-        signal: AbortSignal.timeout(10000)
-      });
-      
-      if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-      
-      const result = await res.json();
-      console.log('[PRINT] Available printers:', result);
-      return result.printers || [];
-    } catch (error: any) {
-      console.error('[PRINT] Failed to get printers:', error);
-      return [{ name: 'Default Printer', status: 'Available', isDefault: true }];
-    }
-  };
-
   const printReceipt = async (data: PrintPayload) => {
-    if (isTauri()) {
-      try {
-        console.log('[PRINT] Starting enhanced print process...');
-        
-        // Test connection first
-        await testConnection();
-        
-        // Validate data
-        if (!data.items || data.items.length === 0) {
-          throw new Error("No items to print");
-        }
-
-        // Ensure all required fields are present
-        const sanitizedData = {
-          store: data.store || { name: "YZY STORE", address1: "Eastern Slide, Tuding" },
-          customer: data.customer || { name: "N/A" },
-          cartTotal: Number(data.cartTotal || 0),
-          amount: Number(data.amount || 0),
-          change: Number(data.change || 0),
-          points: Number(data.points || 0),
-          items: data.items.map(item => ({
-            desc: String(item.desc || ''),
-            qty: Number(item.qty || 0),
-            price: Number(item.price || 0),
-            amount: Number(item.amount || 0)
-          })),
-          printerName: data.printerName || null
-        };
-
-        console.log('[PRINT] Sending sanitized data:', {
-          itemCount: sanitizedData.items.length,
-          total: sanitizedData.cartTotal,
-          customer: sanitizedData.customer.name,
-          printer: sanitizedData.printerName || 'default'
-        });
-
-        const res = await fetch(`${getBackendUrl()}/api/print/enhanced`, {
-          method: "POST",
-          headers: { 
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-          },
-          body: JSON.stringify(sanitizedData),
-          signal: AbortSignal.timeout(30000) // 30 second timeout for printing
-        });
-        
-        console.log('[PRINT] Backend response status:', res.status);
-        
-        if (!res.ok) {
-          const errorText = await res.text().catch(() => "Unknown error");
-          console.error('[PRINT] Backend error response:', errorText);
-          throw new Error(`Print failed (${res.status}): ${errorText}`);
-        }
-        
-        const result = await res.json();
-        console.log('[PRINT] Print successful:', result);
-        return result;
-        
-      } catch (error: any) {
-        console.error('[PRINT] Print error:', error);
-        
-        // Provide user-friendly error messages
-        if (error.name === 'AbortError') {
-          throw new Error("Print request timed out. Please check your printer connection.");
-        }
-        if (error.message.includes('fetch')) {
-          throw new Error("Cannot connect to print server. Please ensure the backend is running.");
-        }
-        
-        throw new Error(`Print failed: ${error.message}`);
-      }
-    } else {
-      throw new Error("Printing is only supported in the desktop app");
+    if (!isTauri()) {
+      throw new Error("Direct printing is only available in the desktop app");
     }
+
+    try {
+      console.log('[DIRECT PRINT] Starting direct print process...');
+      
+      // Validate data
+      if (!data.items || data.items.length === 0) {
+        throw new Error("No items to print");
+      }
+
+      // Generate ESC/POS receipt content
+      const receiptContent = generateESCPOSReceipt(data);
+      
+      console.log('[DIRECT PRINT] Generated receipt content, length:', receiptContent.length);
+      console.log('[DIRECT PRINT] Items:', data.items.length);
+
+      // Call Tauri command directly
+      const result = await invoke<string>('print_receipt_direct', {
+        receiptData: receiptContent,
+        itemCount: data.items.length,
+        printerName: data.printerName || null
+      });
+
+      console.log('[DIRECT PRINT] Print successful:', result);
+      return result;
+      
+    } catch (error: any) {
+      console.error('[DIRECT PRINT] Print error:', error);
+      throw new Error(`Print failed: ${error.message || error}`);
+    }
+  };
+
+  const testConnection = async () => {
+    if (!isTauri()) {
+      throw new Error("Test connection only available in desktop app");
+    }
+    
+    // Test with sample data
+    const testData: PrintPayload = {
+      store: { name: "YZY STORE", address1: "Eastern Slide, Tuding" },
+      customer: { name: "Test Customer" },
+      cartTotal: 10.00,
+      amount: 10.00,
+      change: 0.00,
+      points: 0,
+      items: [
+        {
+          desc: "Debug Product 1",
+          qty: 1,
+          price: 10.00,
+          amount: 10.00
+        }
+      ]
+    };
+
+    return await printReceipt(testData);
+  };
+
+  const getAvailablePrinters = async (): Promise<Printer[]> => {
+    // For direct printing, we just return default printer
+    return [{ name: 'Default Printer', status: 'Available', isDefault: true }];
   };
 
   return { 
@@ -170,6 +171,6 @@ export function usePrint() {
     testConnection, 
     getAvailablePrinters,
     isTauri: isTauri(),
-    backendUrl: getBackendUrl()
+    isDirect: true
   };
 }

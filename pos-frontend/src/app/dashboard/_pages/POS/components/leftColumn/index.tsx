@@ -89,7 +89,9 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
         try {
           productSearchInputRef.current?.focus();
           productSearchInputRef.current?.select?.();
-        } catch {}
+        } catch (error) {
+          console.warn('Failed to focus search input:', error);
+        }
       }, 100);
     },
     [addProductToCart]
@@ -104,7 +106,9 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
           try {
             productSearchInputRef.current?.focus();
             productSearchInputRef.current?.select?.();
-          } catch {}
+          } catch (error) {
+          console.warn('Failed to focus search input:', error);
+        }
         }, 100);
       } catch (error) {
         console.error("Scan error:", error);
@@ -143,7 +147,9 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
         try {
           productSearchInputRef.current?.focus();
           productSearchInputRef.current?.select?.();
-        } catch {}
+        } catch (error) {
+          console.warn('Failed to focus search input:', error);
+        }
       }, 100);
     };
 
@@ -180,7 +186,9 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
       try {
         productSearchInputRef.current?.focus();
         productSearchInputRef.current?.select?.();
-      } catch {}
+      } catch (error) {
+      console.warn('Operation failed:', error);
+    }
     }, 100);
   }, []);
 
@@ -196,7 +204,9 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
       try {
         productSearchInputRef.current?.focus();
         productSearchInputRef.current?.select?.();
-      } catch {}
+      } catch (error) {
+      console.warn('Operation failed:', error);
+    }
     }, 100);
   }, [unregisteredBarcode, setBarcode, setOpen]);
 

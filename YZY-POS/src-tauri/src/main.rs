@@ -102,7 +102,9 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             commands::get_sales_data,
             commands::get_sale_items,
-            commands::print_receipt_direct
+            commands::print_receipt_direct,
+            commands::print_receipt_enhanced,
+            commands::get_available_printers
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
