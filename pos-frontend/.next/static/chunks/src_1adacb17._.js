@@ -1658,7 +1658,7 @@ function getBase() {
     if ("TURBOPACK compile-time falsy", 0) //TURBOPACK unreachable
     ;
     const origin = window.location.origin || '';
-    return origin.includes('localhost') ? 'http://localhost:5000' : origin;
+    return origin.includes('localhost') ? 'http://3.107.238.186:5000' : origin;
 }
 function usePrint() {
     const base = getBase();
@@ -2465,7 +2465,7 @@ function POSRight(param) {
         columnNumber: 5
     }, this);
 }
-_s(POSRight, "OyxxBRMHrEzqDExN74KlhjETfBg=", false, function() {
+_s(POSRight, "KwxkNpz1gRPCuCDPhA0vIpWgKc4=", false, function() {
     return [
         __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$cart$2d$context$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCart"],
         __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$printing$2f$usePrint$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["usePrint"],

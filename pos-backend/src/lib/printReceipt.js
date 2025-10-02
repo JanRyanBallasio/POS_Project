@@ -2,6 +2,7 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const { createCanvas, loadImage } = require('canvas');
+const os = require('os');
 
 function padLeft(s, len) {
   const str = String(s ?? '');
@@ -115,12 +116,16 @@ async function printViaRawSpooler(bytes, printerName) {
   const tmp = path.join(process.cwd(), `receipt_${Date.now()}.bin`);
   fs.writeFileSync(tmp, bytes);
 
-  const safePath = tmp.replace(/'/g, "''");
-  const printerExpr = printerName && String(printerName).trim().length
-    ? `'${String(printerName).replace(/'/g, "''")}'`
-    : '(Get-CimInstance Win32_Printer | Where-Object {$_.Default -eq $true}).Name';
+  const platform = os.platform();
 
-  const ps = `
+  if (platform === 'win32') {
+    // Windows: Use PowerShell with C# code
+    const safePath = tmp.replace(/'/g, "''");
+    const printerExpr = printerName && String(printerName).trim().length
+      ? `'${String(printerName).replace(/'/g, "''")}'`
+      : '(Get-CimInstance Win32_Printer | Where-Object {$_.Default -eq $true}).Name';
+
+    const ps = `
 $ErrorActionPreference = 'Stop'
 $path = '${safePath}'
 $bytes = [System.IO.File]::ReadAllBytes($path)
@@ -169,16 +174,35 @@ if (-not $target) { throw 'No target printer'; }
 [RawPrint]::SendBytes($target, $bytes)
 `;
 
-  await new Promise((resolve, reject) => {
-    const child = spawn('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', ps]);
-    let stderr = '', stdout = '';
-    child.stdout.on('data', (d) => stdout += d.toString());
-    child.stderr.on('data', (d) => stderr += d.toString());
-    child.on('close', (code) => {
-      if (code === 0) resolve();
-      else reject(new Error(`WritePrinter failed (exit ${code}) ${stderr || stdout}`));
+    await new Promise((resolve, reject) => {
+      const child = spawn('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', ps]);
+      let stderr = '', stdout = '';
+      child.stdout.on('data', (d) => stdout += d.toString());
+      child.stderr.on('data', (d) => stderr += d.toString());
+      child.on('close', (code) => {
+        if (code === 0) resolve();
+        else reject(new Error(`WritePrinter failed (exit ${code}) ${stderr || stdout}`));
+      });
     });
-  });
+  } else {
+    // Linux/Unix: Use lp command
+    const printerCmd = printerName && String(printerName).trim().length
+      ? String(printerName)
+      : ''; // Use default printer
+
+    const cmd = printerCmd ? ['lp', '-d', printerCmd, tmp] : ['lp', tmp];
+
+    await new Promise((resolve, reject) => {
+      const child = spawn(cmd[0], cmd.slice(1));
+      let stderr = '', stdout = '';
+      child.stdout.on('data', (d) => stdout += d.toString());
+      child.stderr.on('data', (d) => stderr += d.toString());
+      child.on('close', (code) => {
+        if (code === 0) resolve();
+        else reject(new Error(`Print failed (exit ${code}) ${stderr || stdout}`));
+      });
+    });
+  }
 
   try { fs.unlinkSync(tmp); } catch { }
 }

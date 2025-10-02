@@ -1450,7 +1450,7 @@ __turbopack_context__.s([
     ()=>usePrint
 ]);
 function getBase() {
-    if ("TURBOPACK compile-time truthy", 1) return 'http://localhost:5000';
+    if ("TURBOPACK compile-time truthy", 1) return 'http://3.107.238.186:5000';
     //TURBOPACK unreachable
     ;
     const origin = undefined;

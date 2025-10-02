@@ -12,9 +12,9 @@ export type PrintPayload = {
 };
 
 function getBase() {
-  if (typeof window === 'undefined') return 'http://localhost:5000';
+  if (typeof window === 'undefined') return 'http://3.107.238.186:5000';
   const origin = window.location.origin || '';
-  return origin.includes('localhost') ? 'http://localhost:5000' : origin;
+  return origin.includes('localhost') ? 'http://3.107.238.186:5000' : origin;
 }
 
 export function usePrint() {

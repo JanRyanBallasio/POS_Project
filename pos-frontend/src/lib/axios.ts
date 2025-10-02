@@ -1,7 +1,7 @@
 import Axios, { AxiosRequestConfig, AxiosResponse, AxiosError, isAxiosError } from 'axios';
 import { setAccessToken, getAccessToken, clearAuth } from '@/stores/userStore';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://3.107.238.186:5000/api';
 
 const axios = Axios.create({
   baseURL: API_BASE,
