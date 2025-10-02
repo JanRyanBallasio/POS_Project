@@ -23,6 +23,9 @@ interface CartContextType {
   updateCartItemPrice: (id: string, price: number) => void;
   deleteCartItem: (id: string) => void;
   clearCart: () => void;
+  setScanError: (error: string | null) => void;
+  setIsScanning: (isScanning: boolean) => void;
+  setLastAddedItemId: (id: string | null) => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -189,6 +192,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       updateCartItemPrice,
       deleteCartItem,
       clearCart,
+      setScanError,
+      setIsScanning,
+      setLastAddedItemId,
     }),
     [
       cart,
@@ -202,6 +208,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       updateCartItemPrice,
       deleteCartItem,
       clearCart,
+      setScanError,
+      setIsScanning,
+      setLastAddedItemId,
     ]
   );
 

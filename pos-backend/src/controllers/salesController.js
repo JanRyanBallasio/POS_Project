@@ -117,14 +117,14 @@ const salesController = {
       // Execute all updates in parallel
       await Promise.all(updatePromises);
 
-      // 4. AWARD CUSTOMER POINTS (₱1000 = 10 points)
+      // 4. AWARD CUSTOMER POINTS (₱100 = 0.01 points)
       if (customer_id && total_purchase > 0) {
         console.log("🎯 Awarding customer points...");
 
-        // 1000 = 10 points → 1 point = 100.
-        // Allow decimals: points = total_purchase / 100
+        // 100 pesos = 0.01 points
+        // Allow decimals: points = total_purchase / 10000
         const pointsToAwardRaw = Number(parseFloat(total_purchase));
-        const pointsToAward = Number.isFinite(pointsToAwardRaw) ? pointsToAwardRaw / 100 : 0;
+        const pointsToAward = Number.isFinite(pointsToAwardRaw) ? pointsToAwardRaw / 10000 : 0;
         // Keep a reasonable number of decimals (optional) — store raw float to DB
         console.log(`ℹ️ Points to award (raw): ${pointsToAward}`);
 

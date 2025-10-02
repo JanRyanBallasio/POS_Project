@@ -13,7 +13,7 @@ interface ReceiptProps {
 
 export default function Receipt({ selectedCustomer, cartTotal }: ReceiptProps) {
   // Points earned (allow decimals)
-  const pointsEarned = cartTotal > 0 ? Number((cartTotal / 100)) : 0;
+  const pointsEarned = cartTotal > 0 ? Number((cartTotal / 10000)) : 0;
 
   // Use backend-updated total points if present. Do NOT compute totals locally to avoid doubling.
   const updatedTotalPoints =

@@ -78,6 +78,7 @@ export default function Calculator({
           onKeyDown={handleKeyDown}
           placeholder="0.00"
           disabled={cartIsEmpty}
+          autoComplete="off"
           className={[
             "h-12 md:h-14 pl-8",
             "text-base md:text-lg",

@@ -506,35 +506,106 @@ const productController = {
       }
 
       const term = cleanInput(q);
+      const trimmedTerm = term.trim();
+      
+      // Strategy 1: Exact barcode match (highest priority for scanners)
+      if (/^\d+$/.test(trimmedTerm) || trimmedTerm.length >= 8) {
+        const { data: barcodeResults, error: barcodeError } = await supabase
+          .from("Products")
+          .select("id, name, barcode, price, quantity, category_id")
+          .eq("barcode", trimmedTerm)
+          .neq("is_deleted", true)
+          .limit(1);
 
-      // First filter with ILIKE to narrow candidates
-      let query = supabase
+        if (!barcodeError && barcodeResults?.length > 0) {
+          return res.json({ 
+            success: true, 
+            data: barcodeResults,
+            searchType: 'barcode_exact'
+          });
+        }
+      }
+
+      // Strategy 2: Full-text search using PostgreSQL's websearch
+      try {
+        const { data: fullTextResults, error: fullTextError } = await supabase
+          .from("Products")
+          .select("id, name, barcode, price, quantity, category_id")
+          .textSearch('search_vector', trimmedTerm, {
+            type: 'websearch',
+            config: 'english'
+          })
+          .neq("is_deleted", true)
+          .limit(20);
+
+        if (!fullTextError && fullTextResults?.length > 0) {
+          return res.json({ 
+            success: true, 
+            data: fullTextResults,
+            searchType: 'fulltext'
+          });
+        }
+      } catch (fullTextError) {
+        console.log('Full-text search not available, falling back to ILIKE');
+      }
+
+      // Strategy 3: ILIKE search with trigram ranking
+      const { data: ilikeResults, error: ilikeError } = await supabase
         .from("Products")
         .select("id, name, barcode, price, quantity, category_id")
-        .or(`name.ilike.%${term}%,barcode.ilike.%${term}%`)
+        .or(`name.ilike.%${trimmedTerm}%,barcode.ilike.%${trimmedTerm}%`)
         .neq("is_deleted", true)
+        .order("name", { ascending: true })
         .limit(50);
 
-      // Order by trigram similarity if pg_trgm is installed
-      query = query.order("name", {
-        ascending: false,
-        foreignTable: undefined, // direct Products table
+      if (ilikeError) throw ilikeError;
+
+      // Apply client-side ranking for better results
+      const rankedResults = (ilikeResults || []).map(product => ({
+        ...product,
+        matchScore: calculateMatchScore(product, trimmedTerm)
+      })).sort((a, b) => b.matchScore - a.matchScore);
+
+      res.json({ 
+        success: true, 
+        data: rankedResults.slice(0, 50),
+        searchType: 'ilike'
       });
 
-      const { data, error } = await query;
-
-      if (error) throw error;
-
-      res.json({ success: true, data: data || [] });
     } catch (error) {
       console.error("searchProducts error:", error);
-      res
-        .status(500)
-        .json({ success: false, error: error.message || "Internal server error" });
+      res.status(500).json({ 
+        success: false, 
+        error: error.message || "Internal server error" 
+      });
     }
   },
 
-
 };
+
+// Helper function to calculate match score (moved outside the controller object)
+function calculateMatchScore(product, term) {
+  let score = 0;
+  const lowerTerm = term.toLowerCase();
+  const lowerName = product.name.toLowerCase();
+  const lowerBarcode = (product.barcode || '').toLowerCase();
+
+  // Exact matches get highest score
+  if (lowerName === lowerTerm) score += 100;
+  if (lowerBarcode === lowerTerm) score += 100;
+
+  // Starts with gets high score
+  if (lowerName.startsWith(lowerTerm)) score += 50;
+  if (lowerBarcode.startsWith(lowerTerm)) score += 50;
+
+  // Contains gets medium score
+  if (lowerName.includes(lowerTerm)) score += 25;
+  if (lowerBarcode.includes(lowerTerm)) score += 25;
+
+  // Bonus for shorter names (more specific matches)
+  if (lowerName.length < 20) score += 10;
+
+  return score;
+}
 
 module.exports = productController;
