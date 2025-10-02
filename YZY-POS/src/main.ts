@@ -1,22 +1,15 @@
-import { invoke } from "@tauri-apps/api/core";
+// YZY-POS/src/main.ts
+console.log('YZY POS Tauri app starting...');
 
-let greetInputEl: HTMLInputElement | null;
-let greetMsgEl: HTMLElement | null;
+// Initialize Tauri app
+window.addEventListener('DOMContentLoaded', () => {
+  console.log('YZY POS loaded successfully');
+  
+  // Optional: Add any global initialization here
+  document.body.classList.add('tauri-app');
+});
 
-async function greet() {
-  if (greetMsgEl && greetInputEl) {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    greetMsgEl.textContent = await invoke("greet", {
-      name: greetInputEl.value,
-    });
-  }
-}
-
-window.addEventListener("DOMContentLoaded", () => {
-  greetInputEl = document.querySelector("#greet-input");
-  greetMsgEl = document.querySelector("#greet-msg");
-  document.querySelector("#greet-form")?.addEventListener("submit", (e) => {
-    e.preventDefault();
-    greet();
-  });
+// Global error handler for unhandled promises
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('Unhandled promise rejection:', event.reason);
 });

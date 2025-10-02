@@ -1468,6 +1468,7 @@ function AddCustomerModal({ open, onOpenChange, onCustomerAdded }) {
 "[project]/src/hooks/printing/usePrint.ts [app-ssr] (ecmascript)", ((__turbopack_context__) => {
 "use strict";
 
+// pos-frontend/src/hooks/printing/usePrint.ts
 __turbopack_context__.s([
     "usePrint",
     ()=>usePrint
@@ -1476,35 +1477,80 @@ __turbopack_context__.s([
 function isTauri() {
     return "undefined" !== 'undefined' && window.__TAURI__;
 }
-// Get backend URL for Tauri app
+// Get backend URL with better environment detection
 function getBackendUrl() {
     if (isTauri()) //TURBOPACK unreachable
     ;
-    // For web, use the existing logic
-    return 'http://localhost:5000';
+    // For web browser - use your AWS backend URL
+    return ("TURBOPACK compile-time falsy", 0) ? "TURBOPACK unreachable" // Your AWS server IP
+     : 'http://localhost:5000';
 }
 function usePrint() {
-    // ✅ Add connection test function
-    const testConnection = async ()=>{
+    // Enhanced connection test with retry logic
+    const testConnection = async (retries = 3)=>{
+        for(let i = 0; i < retries; i++){
+            try {
+                console.log(`[PRINT] Testing connection attempt ${i + 1}/${retries}`);
+                const res = await fetch(`${getBackendUrl()}/api/print/enhanced/test`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    },
+                    signal: AbortSignal.timeout(5000) // 5 second timeout
+                });
+                if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+                const result = await res.json();
+                console.log('[PRINT] Connection test successful:', result);
+                return result;
+            } catch (error) {
+                console.warn(`[PRINT] Connection test attempt ${i + 1} failed:`, error.message);
+                if (i === retries - 1) {
+                    throw new Error(`Cannot connect to print server after ${retries} attempts: ${error.message}`);
+                }
+                // Wait before retry
+                await new Promise((resolve)=>setTimeout(resolve, 1000));
+            }
+        }
+    };
+    // Get available printers
+    const getAvailablePrinters = async ()=>{
         try {
-            const res = await fetch(`${getBackendUrl()}/print/test`);
-            if (!res.ok) throw new Error(`Connection test failed: ${res.status}`);
-            return await res.json();
+            console.log('[PRINT] Fetching available printers...');
+            const res = await fetch(`${getBackendUrl()}/api/print/enhanced/printers`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                },
+                signal: AbortSignal.timeout(10000)
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+            const result = await res.json();
+            console.log('[PRINT] Available printers:', result);
+            return result.printers || [];
         } catch (error) {
-            throw new Error(`Cannot connect to print server: ${error instanceof Error ? error.message : String(error)}`);
+            console.error('[PRINT] Failed to get printers:', error);
+            return [
+                {
+                    name: 'Default Printer',
+                    status: 'Available',
+                    isDefault: true
+                }
+            ];
         }
     };
     const printReceipt = async (data)=>{
         if (isTauri()) //TURBOPACK unreachable
         ;
         else {
-            // Web browser fallback
-            throw new Error("Printing not supported in web browser");
+            throw new Error("Printing is only supported in the desktop app");
         }
     };
     return {
         printReceipt,
-        testConnection
+        testConnection,
+        getAvailablePrinters,
+        isTauri: isTauri(),
+        backendUrl: getBackendUrl()
     };
 }
 }),
@@ -1912,7 +1958,7 @@ function POSRight({ step, setStep }) {
                                                     children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
                                                         type: "button",
                                                         onClick: ()=>setAmount(String(v)),
-                                                        className: "block w-full h-10 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-medium text-center",
+                                                        className: "block w-full h-10 rounded-lg border border-gray-200 bg-white hover:bg-gray-50   text-sm font-medium text-center",
                                                         children: [
                                                             "₱",
                                                             v
@@ -1932,7 +1978,7 @@ function POSRight({ step, setStep }) {
                                                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
                                                     type: "button",
                                                     onClick: ()=>setAmount(String(cartTotal.toFixed(2))),
-                                                    className: "block w-full h-10 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-medium text-center",
+                                                    className: "block w-full h-10 rounded-lg border border-gray-200 bg-white hover:bg-gray-50   text-sm font-medium text-center",
                                                     children: "Exact"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
