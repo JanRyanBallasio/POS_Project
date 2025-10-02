@@ -20,8 +20,6 @@ export function useAddProduct() {
     setSuccess(false);
 
     try {
-      console.log("Adding product:", product);
-      
       // Create product
       const createdProduct = await productApi.create(product);
 
@@ -47,10 +45,9 @@ export function useAddProduct() {
     } catch (err: any) {
       console.error('Add product error:', err);
       
-      // 🔥 ENHANCED: Better error handling for all cases
+      // Enhanced error handling for all cases
       if (err.response?.data) {
         const serverError = err.response.data;
-        console.log("Server error response:", serverError);
         
         // Server sent field-specific error (400 status)
         if (serverError.field && serverError.message) {

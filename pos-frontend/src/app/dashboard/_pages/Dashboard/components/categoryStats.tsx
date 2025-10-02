@@ -111,26 +111,18 @@ export default function ProductStats() {
   // Create a map of category to unit (assuming products in same category have same unit)
   const categoryUnitMap = useMemo(() => {
     const map = new Map<string, string>()
-    console.log('All products for mapping:', allProducts) // Debug log
     allProducts.forEach((product: any) => {
       if (product.category_id && product.unit) {
-        // We need to find the actual category name, not just "Category X"
-        // Let's use the category_id to map to the actual category name from the chart data
         map.set(`Category ${product.category_id}`, product.unit)
-
-        // Also try to map common category names
         if (product.category_name) {
           map.set(product.category_name, product.unit)
         }
       }
     })
-    console.log('Final category-unit map:', map) // Debug log
     return map
   }, [allProducts])
 
-  // MODIFY: Update handleBarClick to also calculate the correct total for tooltip
   const handleBarClick = async (data: any) => {
-    console.log('Clicked category:', data.category)
     setSelectedCategory(data.category)
     setOpen(true)
     setLoadingProducts(true)
@@ -142,12 +134,8 @@ export default function ProductStats() {
       if (range?.to) params.set('to_date', range.to.toISOString())
 
       const url = `/sales-items/products-by-category?${params.toString()}`
-      console.log('Making request to:', url)
-
       const response = await axios.get(url)
-      console.log('Products by category response:', response.data)
       const items = response.data?.data || response.data || []
-      console.log('Parsed product items:', items)
 
       // Find the correct unit for this category
       let categoryUnit = 'pcs' // default
@@ -169,20 +157,16 @@ export default function ProductStats() {
         last_purchase: item.last_purchase
       }))
 
-      console.log('Transformed product items:', transformedItems)
       setProducts(transformedItems)
 
-      // ADD: Calculate and store the correct total for this category
+      // Calculate and store the correct total for this category
       const correctTotal = transformedItems.reduce((acc: number, item: Product) => acc + (Number(item.total) || 0), 0)
       setCategoryTotals(prev => ({
         ...prev,
         [data.category]: correctTotal
       }))
-      
-      console.log(`Correct total for ${data.category}: ₱${correctTotal.toLocaleString()}`)
     } catch (error: any) {
       console.error('Error fetching products by category:', error)
-      console.error('Error details:', error.response?.data)
       setProducts([])
     } finally {
       setLoadingProducts(false)
@@ -209,11 +193,6 @@ export default function ProductStats() {
   // compute total of products currently shown in modal
   const productsTotal = products.reduce((acc, p) => acc + (Number(p.total) || 0), 0)
 
-  // ADD: Debug the modal total calculation
-  console.log('Modal products:', products)
-  console.log('Modal total calculation:', productsTotal)
-  console.log('Individual product totals:', products.map(p => ({ name: p.name, total: p.total })))
-
   // initial empty state: show skeleton full-chart if first load and no data
   const initialLoadingNoData = isLoading && saleItems.length === 0
   // updating overlay while revalidating (keep previous chart visible)
@@ -221,17 +200,14 @@ export default function ProductStats() {
 
   // Note: do not return early on error — render error inside the chart area so header/footer remain visible.
 
-  // ADD: Fetch correct totals for all categories
+  // Fetch correct totals for all categories
   const fetchCategoryTotals = useCallback(async () => {
     if (!range?.from || !range?.to) return
 
     try {
       const categoryTotalsMap: {[key: string]: number} = {}
-      
-      // Get all unique categories from saleItems
       const categories = [...new Set(saleItems.map(si => si.category))]
       
-      // Fetch totals for each category
       for (const category of categories) {
         try {
           const params = new URLSearchParams()
@@ -244,11 +220,7 @@ export default function ProductStats() {
           
           const total = items.reduce((acc: number, item: any) => acc + (Number(item.total) || 0), 0)
           categoryTotalsMap[category] = total
-          
-          console.log(`Correct total for ${category}: ₱${total.toLocaleString()}`)
         } catch (error) {
-          console.error(`Error fetching total for ${category}:`, error)
-          // Fallback to original total
           const originalItem = saleItems.find(si => si.category === category)
           categoryTotalsMap[category] = Number(originalItem?.total_sales) || 0
         }
@@ -260,24 +232,21 @@ export default function ProductStats() {
     }
   }, [saleItems, range])
 
-  // ADD: Effect to fetch category totals when data changes
+  // Effect to fetch category totals when data changes
   useEffect(() => {
     if (saleItems.length > 0 && range?.from && range?.to) {
       fetchCategoryTotals()
     }
   }, [saleItems, range, fetchCategoryTotals])
 
-  // MODIFY: Update chartData to use correct totals when available
+  // Update chartData to use correct totals when available
   const chartData = useMemo(() => {
     const arr = saleItems.map(si => {
-      // Try to find the unit for this category
       let unit = 'pcs' // default
 
-      // First try to find by exact category name
       if (categoryUnitMap.has(si.category)) {
         unit = categoryUnitMap.get(si.category)!
       } else {
-        // If not found, try to find by looking up products in this category
         const categoryProduct = allProducts.find((p: any) => {
           return p.category_name === si.category ||
             p.category_id && `Category ${p.category_id}` === si.category
@@ -287,25 +256,15 @@ export default function ProductStats() {
         }
       }
 
-      // USE CORRECT TOTAL if available, otherwise use the aggregated total
       const totalSales = categoryTotals[si.category] || Number(si.total_sales) || 0
 
       return {
         category: si.category,
         quantity: Number(si.quantity) || 0,
-        total_sales: totalSales, // Use correct total
+        total_sales: totalSales,
         last_purchase: si.last_purchase,
         unit: unit
       }
-    })
-
-    // Debug log to see the actual data
-    console.log('Chart data before sorting:', arr)
-    console.log('Total sales sum:', arr.reduce((acc, curr) => acc + curr.total_sales, 0))
-    
-    // Debug each category's total
-    arr.forEach(item => {
-      console.log(`Category: ${item.category}, Total Sales: ₱${item.total_sales.toLocaleString()}`)
     })
 
     switch (sortOrder) {
@@ -314,7 +273,7 @@ export default function ProductStats() {
       case 'recent': return [...arr].sort((a, b) => new Date(b.last_purchase).getTime() - new Date(a.last_purchase).getTime())
       default: return [...arr].sort((a, b) => b.total_sales - a.total_sales)
     }
-  }, [saleItems, sortOrder, categoryUnitMap, allProducts, categoryTotals]) // ADD categoryTotals to dependencies
+  }, [saleItems, sortOrder, categoryUnitMap, allProducts, categoryTotals])
 
   const total = useMemo(() => chartData.reduce((acc, curr) => acc + curr.total_sales, 0), [chartData])
 
@@ -372,10 +331,9 @@ export default function ProductStats() {
                             nameKey='total_sales'
                             labelFormatter={v => v}
                             formatter={(value, name, props) => {
-                              console.log('Tooltip data:', { value, name, props }) // Debug log
                               return [
-                                `₱ ${Number(value).toLocaleString()}`, // Show just the price
-                                '' // Empty string instead of 'Total Sales'
+                                `₱ ${Number(value).toLocaleString()}`,
+                                ''
                               ]
                             }}
                           />

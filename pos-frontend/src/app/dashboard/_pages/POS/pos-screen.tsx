@@ -12,11 +12,15 @@ export default function MainDashboard() {
   useEffect(() => {
     try {
       (window as any).posStep = step;
-    } catch {}
+    } catch (error) {
+      console.warn('Operation failed:', error);
+    }
     return () => {
       try {
         delete (window as any).posStep;
-      } catch {}
+      } catch (error) {
+      console.warn('Operation failed:', error);
+    }
     };
   }, [step]);
 
@@ -30,7 +34,9 @@ export default function MainDashboard() {
     const focusScanner = () => {
       try {
         window.dispatchEvent(new Event("focusBarcodeScanner"));
-      } catch {}
+      } catch (error) {
+      console.warn('Operation failed:', error);
+    }
     };
 
     // Immediate + short delayed dispatch to cover timing differences

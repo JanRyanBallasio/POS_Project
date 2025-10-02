@@ -617,39 +617,26 @@ var _s = __turbopack_context__.k.signature();
 ;
 function useCustomerTagging(onAutoSelect) {
     _s();
-    const [customerQuery, setCustomerQuery] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])("");
+    const [customerQuery, setCustomerQuery] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])('');
     const [allCustomers, setAllCustomers] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])([]);
-    const [filteredCustomers, setFilteredCustomers] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])([]);
     const [selectedCustomer, setSelectedCustomer] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
-    // expose stable selectCustomer so effects can call it without hoisting/stale-closure issues
-    const selectCustomer = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
-        "useCustomerTagging.useCallback[selectCustomer]": (customer)=>{
-            setSelectedCustomer(customer);
-            setCustomerQuery(customer.name);
-            // Clear global active flag shortly after selection
-            setTimeout({
-                "useCustomerTagging.useCallback[selectCustomer]": ()=>{
-                    window.customerSearchActive = false;
-                }
-            }["useCustomerTagging.useCallback[selectCustomer]"], 100);
-        }
-    }["useCustomerTagging.useCallback[selectCustomer]"], []);
     const fetchCustomers = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
         "useCustomerTagging.useCallback[fetchCustomers]": async ()=>{
             try {
-                const resp = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$axios$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"].get("/customers"); // -> /api/customers (axios base)
+                const resp = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$axios$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"].get("/customers");
                 const json = resp.data;
                 if (json && json.success && Array.isArray(json.data)) {
                     setAllCustomers(json.data);
                 } else {
+                    console.warn('Invalid customer response format:', json);
                     setAllCustomers([]);
                 }
             } catch (err) {
+                console.error('Error fetching customers:', err);
                 setAllCustomers([]);
             }
         }
     }["useCustomerTagging.useCallback[fetchCustomers]"], []);
-    // Fetch customers once on mount
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
         "useCustomerTagging.useEffect": ()=>{
             fetchCustomers();
@@ -657,56 +644,15 @@ function useCustomerTagging(onAutoSelect) {
     }["useCustomerTagging.useEffect"], [
         fetchCustomers
     ]);
-    // Filter customers by query
-    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
-        "useCustomerTagging.useEffect": ()=>{
-            setFilteredCustomers(allCustomers.filter({
-                "useCustomerTagging.useEffect": (c)=>{
-                    var _c_name;
-                    return (_c_name = c.name) === null || _c_name === void 0 ? void 0 : _c_name.toLowerCase().includes(customerQuery.toLowerCase());
-                }
-            }["useCustomerTagging.useEffect"]));
-        }
-    }["useCustomerTagging.useEffect"], [
-        customerQuery,
-        allCustomers
-    ]);
-    // FIXED: Auto-select when only one customer is found - CRITICAL TIMING FIX
-    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
-        "useCustomerTagging.useEffect": ()=>{
-            if (filteredCustomers.length === 1 && customerQuery.trim().length >= 2 && onAutoSelect && !selectedCustomer) {
-                const autoSelectTimer = setTimeout({
-                    "useCustomerTagging.useEffect.autoSelectTimer": ()=>{
-                        const customer = filteredCustomers[0];
-                        onAutoSelect(customer);
-                        selectCustomer(customer);
-                        setCustomerQuery(customer.name);
-                        setTimeout({
-                            "useCustomerTagging.useEffect.autoSelectTimer": ()=>{
-                                window.customerSearchActive = false;
-                            }
-                        }["useCustomerTagging.useEffect.autoSelectTimer"], 200);
-                    }
-                }["useCustomerTagging.useEffect.autoSelectTimer"], 800);
-                return ({
-                    "useCustomerTagging.useEffect": ()=>clearTimeout(autoSelectTimer)
-                })["useCustomerTagging.useEffect"];
-            }
-        // include selectCustomer in deps so the effect uses the stable callback and lint is satisfied
-        }
-    }["useCustomerTagging.useEffect"], [
-        filteredCustomers,
-        customerQuery,
-        onAutoSelect,
-        selectedCustomer,
-        selectCustomer
-    ]);
-    // UPDATED: Clear both selected customer AND query - AGGRESSIVE CLEAR
+    const filteredCustomers = allCustomers.filter((customer)=>customer.name.toLowerCase().includes(customerQuery.toLowerCase()));
+    const selectCustomer = (customer)=>{
+        setSelectedCustomer(customer);
+        setCustomerQuery(customer.name);
+        onAutoSelect === null || onAutoSelect === void 0 ? void 0 : onAutoSelect(customer);
+    };
     const clearCustomer = ()=>{
-        console.log("🧹 useCustomerTagging: Clearing customer data");
         setSelectedCustomer(null);
-        setCustomerQuery(""); // <-- Add this line to clear the input!
-        window.customerSearchActive = false;
+        setCustomerQuery('');
     };
     return {
         customerQuery,
@@ -715,12 +661,12 @@ function useCustomerTagging(onAutoSelect) {
         selectedCustomer,
         selectCustomer,
         clearCustomer,
-        fetchCustomers,
         allCustomers,
-        setAllCustomers
+        setAllCustomers,
+        refetchCustomers: fetchCustomers
     };
 }
-_s(useCustomerTagging, "3CfwQ0HKYeToIX460OQmPA/DqVw=");
+_s(useCustomerTagging, "mjslrlPj2TbYFhBxq2QvO0Ukl8I=");
 if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelpers !== null) {
     __turbopack_context__.k.registerExports(__turbopack_context__.m, globalThis.$RefreshHelpers$);
 }
@@ -755,7 +701,9 @@ function Calculator(param) {
                             cashInputRef.current.focus();
                             cashInputRef.current.select();
                         }
-                    } catch (e) {}
+                    } catch (error) {
+                        console.warn('Failed to focus cash input:', error);
+                    }
                 }
             }["Calculator.useEffect.handleFocusCash"];
             window.addEventListener("focusCashInput", handleFocusCash);
@@ -806,7 +754,7 @@ function Calculator(param) {
                 children: "Cash Payment"
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/Calculator.tsx",
-                lineNumber: 63,
+                lineNumber: 65,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -817,7 +765,7 @@ function Calculator(param) {
                         children: "₱"
                     }, void 0, false, {
                         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/Calculator.tsx",
-                        lineNumber: 67,
+                        lineNumber: 69,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -841,13 +789,13 @@ function Calculator(param) {
                         inputMode: "decimal"
                     }, void 0, false, {
                         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/Calculator.tsx",
-                        lineNumber: 70,
+                        lineNumber: 72,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/Calculator.tsx",
-                lineNumber: 66,
+                lineNumber: 68,
                 columnNumber: 7
             }, this),
             showChange && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -858,7 +806,7 @@ function Calculator(param) {
                         children: "Change"
                     }, void 0, false, {
                         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/Calculator.tsx",
-                        lineNumber: 95,
+                        lineNumber: 97,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -872,7 +820,7 @@ function Calculator(param) {
                                 children: "₱"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/Calculator.tsx",
-                                lineNumber: 104,
+                                lineNumber: 106,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -883,25 +831,25 @@ function Calculator(param) {
                                 children: Math.abs(change).toFixed(2)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/Calculator.tsx",
-                                lineNumber: 105,
+                                lineNumber: 107,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/Calculator.tsx",
-                        lineNumber: 98,
+                        lineNumber: 100,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/Calculator.tsx",
-                lineNumber: 94,
+                lineNumber: 96,
                 columnNumber: 9
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/Calculator.tsx",
-        lineNumber: 61,
+        lineNumber: 63,
         columnNumber: 5
     }, this);
 }
@@ -1685,151 +1633,143 @@ __turbopack_context__.s([
     "usePrint",
     ()=>usePrint
 ]);
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$polyfills$2f$process$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = /*#__PURE__*/ __turbopack_context__.i("[project]/node_modules/next/dist/build/polyfills/process.js [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$tauri$2d$apps$2f$api$2f$core$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/@tauri-apps/api/core.js [app-client] (ecmascript)");
+;
 // Check if running in Tauri
 function isTauri() {
     return "object" !== 'undefined' && window.__TAURI__;
 }
-// Get backend URL with better environment detection
-function getBackendUrl() {
-    if (isTauri()) {
-        // For Tauri apps, always use localhost since backend runs locally
-        return 'http://localhost:5000';
+// Generate ESC/POS receipt content matching the image format
+function generateESCPOSReceipt(data) {
+    var _data_store, _data_customer;
+    let commands = '';
+    // Initialize printer
+    commands += '\x1B\x40'; // ESC @
+    // Header - Center aligned with logo placeholder
+    commands += '\x1B\x61\x01'; // Center
+    commands += '\x1B\x45\x01'; // Bold on
+    commands += 'YZY\n'; // Logo text
+    commands += '\x1B\x45\x00'; // Bold off
+    commands += '\n';
+    commands += "".concat(((_data_store = data.store) === null || _data_store === void 0 ? void 0 : _data_store.address1) || 'Eastern Slide, Tuding', "\n");
+    commands += '\n';
+    // Left align for content
+    commands += '\x1B\x61\x00'; // Left
+    // Customer and date
+    const date = new Date().toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: '2-digit'
+    });
+    const customerName = ((_data_customer = data.customer) === null || _data_customer === void 0 ? void 0 : _data_customer.name) || 'N/A';
+    commands += "Customer: ".concat(customerName, "\n");
+    commands += "Date: ".concat(date, "\n");
+    commands += '--------------------------------\n';
+    // Items header - matching the image format
+    commands += 'Item                 QTY  Price  Amount\n';
+    commands += '--------------------------------\n';
+    // Items - format to match the image
+    data.items.forEach((item)=>{
+        const desc = item.desc.length > 20 ? item.desc.substring(0, 17) + '...' : item.desc.padEnd(20);
+        const qty = item.qty.toString().padStart(3);
+        const price = (item.price || 0).toFixed(2).padStart(6);
+        const amount = item.amount.toFixed(2).padStart(7);
+        commands += "".concat(desc, " ").concat(qty, " ").concat(price, " ").concat(amount, "\n");
+    });
+    // Totals section - matching the image
+    commands += '--------------------------------\n';
+    commands += "                       TOTAL: ".concat(data.cartTotal.toFixed(2).padStart(7), "\n");
+    commands += "                      AMOUNT: ".concat(data.amount.toFixed(2).padStart(7), "\n");
+    commands += "                      CHANGE: ".concat(data.change.toFixed(2).padStart(7), "\n");
+    commands += '--------------------------------\n';
+    if (data.points !== undefined && data.points > 0) {
+        commands += "Customer Points: ".concat(data.points, "\n");
+        commands += '--------------------------------\n';
     }
-    // For web browser - use your AWS backend URL
-    return ("TURBOPACK compile-time falsy", 0) ? "TURBOPACK unreachable" // Your AWS server IP
-     : 'http://localhost:5000';
+    // Footer - matching the image
+    commands += '\n';
+    commands += '\x1B\x61\x01'; // Center align
+    commands += 'CUSTOMER COPY - NOT AN OFFICIAL RECEIPT\n';
+    commands += 'THANK YOU - GATANG KA MANEN!\n';
+    commands += '\x1B\x61\x00'; // Left align
+    // Cut paper
+    commands += '\n\n';
+    commands += '\x1B\x64\x03'; // Feed 3 lines
+    commands += '\x1D\x56\x00'; // Full cut
+    return commands;
 }
 function usePrint() {
-    // Enhanced connection test with retry logic
-    const testConnection = async function() {
-        let retries = arguments.length > 0 && arguments[0] !== void 0 ? arguments[0] : 3;
-        for(let i = 0; i < retries; i++){
-            try {
-                console.log("[PRINT] Testing connection attempt ".concat(i + 1, "/").concat(retries));
-                const res = await fetch("".concat(getBackendUrl(), "/api/print/enhanced/test"), {
-                    method: 'GET',
-                    headers: {
-                        'Accept': 'application/json'
-                    },
-                    signal: AbortSignal.timeout(5000) // 5 second timeout
-                });
-                if (!res.ok) throw new Error("HTTP ".concat(res.status, ": ").concat(res.statusText));
-                const result = await res.json();
-                console.log('[PRINT] Connection test successful:', result);
-                return result;
-            } catch (error) {
-                console.warn("[PRINT] Connection test attempt ".concat(i + 1, " failed:"), error.message);
-                if (i === retries - 1) {
-                    throw new Error("Cannot connect to print server after ".concat(retries, " attempts: ").concat(error.message));
-                }
-                // Wait before retry
-                await new Promise((resolve)=>setTimeout(resolve, 1000));
-            }
-        }
-    };
-    // Get available printers
-    const getAvailablePrinters = async ()=>{
-        try {
-            console.log('[PRINT] Fetching available printers...');
-            const res = await fetch("".concat(getBackendUrl(), "/api/print/enhanced/printers"), {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json'
-                },
-                signal: AbortSignal.timeout(10000)
-            });
-            if (!res.ok) throw new Error("HTTP ".concat(res.status, ": ").concat(res.statusText));
-            const result = await res.json();
-            console.log('[PRINT] Available printers:', result);
-            return result.printers || [];
-        } catch (error) {
-            console.error('[PRINT] Failed to get printers:', error);
-            return [
-                {
-                    name: 'Default Printer',
-                    status: 'Available',
-                    isDefault: true
-                }
-            ];
-        }
-    };
     const printReceipt = async (data)=>{
-        if (isTauri()) {
-            try {
-                console.log('[PRINT] Starting enhanced print process...');
-                // Test connection first
-                await testConnection();
-                // Validate data
-                if (!data.items || data.items.length === 0) {
-                    throw new Error("No items to print");
-                }
-                // Ensure all required fields are present
-                const sanitizedData = {
-                    store: data.store || {
-                        name: "YZY STORE",
-                        address1: "Eastern Slide, Tuding"
-                    },
-                    customer: data.customer || {
-                        name: "N/A"
-                    },
-                    cartTotal: Number(data.cartTotal || 0),
-                    amount: Number(data.amount || 0),
-                    change: Number(data.change || 0),
-                    points: Number(data.points || 0),
-                    items: data.items.map((item)=>({
-                            desc: String(item.desc || ''),
-                            qty: Number(item.qty || 0),
-                            price: Number(item.price || 0),
-                            amount: Number(item.amount || 0)
-                        })),
-                    printerName: data.printerName || null
-                };
-                console.log('[PRINT] Sending sanitized data:', {
-                    itemCount: sanitizedData.items.length,
-                    total: sanitizedData.cartTotal,
-                    customer: sanitizedData.customer.name,
-                    printer: sanitizedData.printerName || 'default'
-                });
-                const res = await fetch("".concat(getBackendUrl(), "/api/print/enhanced"), {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Accept": "application/json"
-                    },
-                    body: JSON.stringify(sanitizedData),
-                    signal: AbortSignal.timeout(30000) // 30 second timeout for printing
-                });
-                console.log('[PRINT] Backend response status:', res.status);
-                if (!res.ok) {
-                    const errorText = await res.text().catch(()=>"Unknown error");
-                    console.error('[PRINT] Backend error response:', errorText);
-                    throw new Error("Print failed (".concat(res.status, "): ").concat(errorText));
-                }
-                const result = await res.json();
-                console.log('[PRINT] Print successful:', result);
-                return result;
-            } catch (error) {
-                console.error('[PRINT] Print error:', error);
-                // Provide user-friendly error messages
-                if (error.name === 'AbortError') {
-                    throw new Error("Print request timed out. Please check your printer connection.");
-                }
-                if (error.message.includes('fetch')) {
-                    throw new Error("Cannot connect to print server. Please ensure the backend is running.");
-                }
-                throw new Error("Print failed: ".concat(error.message));
-            }
-        } else {
-            throw new Error("Printing is only supported in the desktop app");
+        if (!isTauri()) {
+            throw new Error("Direct printing is only available in the desktop app");
         }
+        try {
+            console.log('[DIRECT PRINT] Starting direct print process...');
+            // Validate data
+            if (!data.items || data.items.length === 0) {
+                throw new Error("No items to print");
+            }
+            // Generate ESC/POS receipt content
+            const receiptContent = generateESCPOSReceipt(data);
+            console.log('[DIRECT PRINT] Generated receipt content, length:', receiptContent.length);
+            console.log('[DIRECT PRINT] Items:', data.items.length);
+            // Call Tauri command directly
+            const result = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$tauri$2d$apps$2f$api$2f$core$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["invoke"])('print_receipt_direct', {
+                receiptData: receiptContent,
+                itemCount: data.items.length,
+                printerName: data.printerName || null
+            });
+            console.log('[DIRECT PRINT] Print successful:', result);
+            return result;
+        } catch (error) {
+            console.error('[DIRECT PRINT] Print error:', error);
+            throw new Error("Print failed: ".concat(error.message || error));
+        }
+    };
+    const testConnection = async ()=>{
+        if (!isTauri()) {
+            throw new Error("Test connection only available in desktop app");
+        }
+        // Test with sample data
+        const testData = {
+            store: {
+                name: "YZY STORE",
+                address1: "Eastern Slide, Tuding"
+            },
+            customer: {
+                name: "Test Customer"
+            },
+            cartTotal: 10.00,
+            amount: 10.00,
+            change: 0.00,
+            points: 0,
+            items: [
+                {
+                    desc: "Debug Product 1",
+                    qty: 1,
+                    price: 10.00,
+                    amount: 10.00
+                }
+            ]
+        };
+        return await printReceipt(testData);
+    };
+    const getAvailablePrinters = async ()=>{
+        // For direct printing, we just return default printer
+        return [
+            {
+                name: 'Default Printer',
+                status: 'Available',
+                isDefault: true
+            }
+        ];
     };
     return {
         printReceipt,
         testConnection,
         getAvailablePrinters,
         isTauri: isTauri(),
-        backendUrl: getBackendUrl()
+        isDirect: true
     };
 }
 if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelpers !== null) {
@@ -1937,7 +1877,9 @@ function POSRight(param) {
                     if (((_customerResp_data = customerResp.data) === null || _customerResp_data === void 0 ? void 0 : _customerResp_data.success) && Array.isArray(customerResp.data.data)) {
                         setAllCustomers(customerResp.data.data);
                     }
-                } catch (e) {}
+                } catch (error) {
+                    console.warn('Operation failed:', error);
+                }
                 clearCustomer();
                 setStep(1);
                 setAmount("");
@@ -2040,7 +1982,9 @@ function POSRight(param) {
                 setChange(0);
                 clearCart();
                 window.customerSearchActive = false;
-            } catch (e) {}
+            } catch (error) {
+                console.warn('Transaction operation failed:', error);
+            }
         }
     }["POSRight.useCallback[completeTransaction]"], [
         clearCustomer,
@@ -2183,7 +2127,7 @@ function POSRight(param) {
             try {
                 setIsPrinting(true);
                 var _selectedCustomer_points;
-                await printReceipt({
+                const result = await printReceipt({
                     store: {
                         name: "YZY STORE",
                         address1: "Eastern Slide, Tuding"
@@ -2199,8 +2143,9 @@ function POSRight(param) {
                     printerName: null
                 });
                 setPrintOpen(false);
-                alert("Receipt printed successfully!");
+                alert("Print successful: ".concat(result));
             } catch (e) {
+                console.error('[PRINT ERROR]', e);
                 alert("Print failed: ".concat((e === null || e === void 0 ? void 0 : e.message) || String(e)));
             } finally{
                 setIsPrinting(false);
@@ -2234,7 +2179,7 @@ function POSRight(param) {
                                 children: "Total"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                lineNumber: 329,
+                                lineNumber: 337,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2245,7 +2190,7 @@ function POSRight(param) {
                                         children: "₱"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                        lineNumber: 331,
+                                        lineNumber: 339,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -2253,13 +2198,13 @@ function POSRight(param) {
                                         children: cartTotal.toFixed(2)
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                        lineNumber: 332,
+                                        lineNumber: 340,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                lineNumber: 330,
+                                lineNumber: 338,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2271,13 +2216,13 @@ function POSRight(param) {
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                lineNumber: 336,
+                                lineNumber: 344,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                        lineNumber: 328,
+                        lineNumber: 336,
                         columnNumber: 9
                     }, this),
                     isDebugMode && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2287,14 +2232,14 @@ function POSRight(param) {
                                 children: "Debug Mode:"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                lineNumber: 343,
+                                lineNumber: 351,
                                 columnNumber: 13
                             }, this),
                             " This transaction will not be saved to the database."
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                        lineNumber: 342,
+                        lineNumber: 350,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2309,7 +2254,7 @@ function POSRight(param) {
                                         cartIsEmpty: cart.length === 0
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                        lineNumber: 350,
+                                        lineNumber: 358,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2333,12 +2278,12 @@ function POSRight(param) {
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                                        lineNumber: 361,
+                                                        lineNumber: 369,
                                                         columnNumber: 21
                                                     }, this)
                                                 }, v, false, {
                                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                                    lineNumber: 360,
+                                                    lineNumber: 368,
                                                     columnNumber: 19
                                                 }, this)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2350,25 +2295,25 @@ function POSRight(param) {
                                                     children: "Exact"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                                    lineNumber: 372,
+                                                    lineNumber: 380,
                                                     columnNumber: 19
                                                 }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                                lineNumber: 371,
+                                                lineNumber: 379,
                                                 columnNumber: 17
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                        lineNumber: 358,
+                                        lineNumber: 366,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                         className: "flex-1"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                        lineNumber: 383,
+                                        lineNumber: 391,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardFooter"], {
@@ -2380,12 +2325,12 @@ function POSRight(param) {
                                             children: "Next"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                            lineNumber: 385,
+                                            lineNumber: 393,
                                             columnNumber: 17
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                        lineNumber: 384,
+                                        lineNumber: 392,
                                         columnNumber: 15
                                     }, this)
                                 ]
@@ -2398,14 +2343,14 @@ function POSRight(param) {
                                         change: change
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                        lineNumber: 398,
+                                        lineNumber: 406,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                         className: "flex-1"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                        lineNumber: 399,
+                                        lineNumber: 407,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_pages$2f$POS$2f$components$2f$rightColumn$2f$CustomerSearch$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -2421,7 +2366,7 @@ function POSRight(param) {
                                         }
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                        lineNumber: 400,
+                                        lineNumber: 408,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_pages$2f$POS$2f$components$2f$rightColumn$2f$AddCustomerModal$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -2438,11 +2383,13 @@ function POSRight(param) {
                                                 });
                                                 setAddCustomerOpen(false);
                                                 if (typeof selectCustomer === "function") selectCustomer(customer);
-                                            } catch (e) {}
+                                            } catch (error) {
+                                                console.warn('Operation failed:', error);
+                                            }
                                         }
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                        lineNumber: 412,
+                                        lineNumber: 420,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardFooter"], {
@@ -2456,7 +2403,7 @@ function POSRight(param) {
                                                 children: "Back"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                                lineNumber: 424,
+                                                lineNumber: 434,
                                                 columnNumber: 17
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -2466,13 +2413,13 @@ function POSRight(param) {
                                                 children: "Finish Transaction"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                                lineNumber: 432,
+                                                lineNumber: 442,
                                                 columnNumber: 17
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                        lineNumber: 423,
+                                        lineNumber: 433,
                                         columnNumber: 15
                                     }, this)
                                 ]
@@ -2484,7 +2431,7 @@ function POSRight(param) {
                                         cartTotal: cartTotal
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                        lineNumber: 445,
+                                        lineNumber: 455,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardFooter"], {
@@ -2497,7 +2444,7 @@ function POSRight(param) {
                                                 children: isProcessingSale ? "Processing..." : "Print Receipt"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                                lineNumber: 447,
+                                                lineNumber: 457,
                                                 columnNumber: 17
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -2508,13 +2455,13 @@ function POSRight(param) {
                                                 children: "Close"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                                lineNumber: 454,
+                                                lineNumber: 464,
                                                 columnNumber: 17
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                        lineNumber: 446,
+                                        lineNumber: 456,
                                         columnNumber: 15
                                     }, this)
                                 ]
@@ -2522,13 +2469,13 @@ function POSRight(param) {
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                        lineNumber: 347,
+                        lineNumber: 355,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                lineNumber: 326,
+                lineNumber: 334,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Dialog"], {
@@ -2542,12 +2489,12 @@ function POSRight(param) {
                                 children: "Print Receipt"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                lineNumber: 472,
+                                lineNumber: 482,
                                 columnNumber: 13
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                            lineNumber: 471,
+                            lineNumber: 481,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2558,7 +2505,7 @@ function POSRight(param) {
                                     children: "Print receipt to default printer?"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                    lineNumber: 476,
+                                    lineNumber: 486,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2570,25 +2517,25 @@ function POSRight(param) {
                                                 children: "Note:"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                                lineNumber: 481,
+                                                lineNumber: 491,
                                                 columnNumber: 17
                                             }, this),
                                             " Receipt will be sent to your default printer automatically."
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                        lineNumber: 480,
+                                        lineNumber: 490,
                                         columnNumber: 15
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                    lineNumber: 479,
+                                    lineNumber: 489,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                            lineNumber: 475,
+                            lineNumber: 485,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogFooter"], {
@@ -2600,7 +2547,7 @@ function POSRight(param) {
                                     children: "Cancel"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                    lineNumber: 487,
+                                    lineNumber: 497,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -2609,30 +2556,30 @@ function POSRight(param) {
                                     children: isPrinting ? "Printing..." : "Print Receipt"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                                    lineNumber: 490,
+                                    lineNumber: 500,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                            lineNumber: 486,
+                            lineNumber: 496,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                    lineNumber: 470,
+                    lineNumber: 480,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-                lineNumber: 469,
+                lineNumber: 479,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
-        lineNumber: 325,
+        lineNumber: 333,
         columnNumber: 5
     }, this);
 }
@@ -3227,7 +3174,9 @@ function CartTable(param) {
                         lastAutoSelectedId.current = lastAddedItemId;
                         try {
                             selectRow(lastAddedItemId);
-                        } catch (e) {}
+                        } catch (error) {
+                            console.warn('Failed to select row:', error);
+                        }
                         return;
                     }
                     attempts++;
@@ -3459,7 +3408,7 @@ function CartTable(param) {
             disabled: disabled
         }, void 0, false, {
             fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-            lineNumber: 206,
+            lineNumber: 208,
             columnNumber: 7
         }, this);
     };
@@ -3588,7 +3537,7 @@ function CartTable(param) {
             placeholder: "1"
         }, void 0, false, {
             fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-            lineNumber: 355,
+            lineNumber: 357,
             columnNumber: 7
         }, this);
     };
@@ -3603,17 +3552,17 @@ function CartTable(param) {
                     children: "🛒 Scan or search to add products"
                 }, void 0, false, {
                     fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                    lineNumber: 375,
+                    lineNumber: 377,
                     columnNumber: 11
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                lineNumber: 374,
+                lineNumber: 376,
                 columnNumber: 9
             }, this)
         }, void 0, false, {
             fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-            lineNumber: 373,
+            lineNumber: 375,
             columnNumber: 7
         }, this);
     }
@@ -3627,7 +3576,7 @@ function CartTable(param) {
                             children: "Barcode"
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                            lineNumber: 385,
+                            lineNumber: 387,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableHead"], {
@@ -3635,7 +3584,7 @@ function CartTable(param) {
                             children: "Name"
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                            lineNumber: 386,
+                            lineNumber: 388,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableHead"], {
@@ -3643,7 +3592,7 @@ function CartTable(param) {
                             children: "Price"
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                            lineNumber: 387,
+                            lineNumber: 389,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableHead"], {
@@ -3651,7 +3600,7 @@ function CartTable(param) {
                             children: "Quantity"
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                            lineNumber: 388,
+                            lineNumber: 390,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableHead"], {
@@ -3659,18 +3608,18 @@ function CartTable(param) {
                             children: "Actions"
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                            lineNumber: 389,
+                            lineNumber: 391,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                    lineNumber: 384,
+                    lineNumber: 386,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                lineNumber: 383,
+                lineNumber: 385,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableBody"], {
@@ -3688,7 +3637,7 @@ function CartTable(param) {
                                 children: item.product.barcode || "N/A"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                                lineNumber: 407,
+                                lineNumber: 409,
                                 columnNumber: 15
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableCell"], {
@@ -3701,25 +3650,25 @@ function CartTable(param) {
                                             className: "h-4 w-4 animate-spin"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                                            lineNumber: 420,
+                                            lineNumber: 422,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                             children: "Fetching product…"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                                            lineNumber: 421,
+                                            lineNumber: 423,
                                             columnNumber: 21
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                                    lineNumber: 419,
+                                    lineNumber: 421,
                                     columnNumber: 19
                                 }, this) : item.product.name
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                                lineNumber: 414,
+                                lineNumber: 416,
                                 columnNumber: 15
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableCell"], {
@@ -3728,12 +3677,12 @@ function CartTable(param) {
                                     item: item
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                                    lineNumber: 429,
+                                    lineNumber: 431,
                                     columnNumber: 17
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                                lineNumber: 428,
+                                lineNumber: 430,
                                 columnNumber: 15
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableCell"], {
@@ -3756,7 +3705,7 @@ function CartTable(param) {
                                             itemId: item.id
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                                            lineNumber: 434,
+                                            lineNumber: 436,
                                             columnNumber: 19
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -3764,18 +3713,18 @@ function CartTable(param) {
                                             children: item.product.unit || "pcs"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                                            lineNumber: 448,
+                                            lineNumber: 450,
                                             columnNumber: 19
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                                    lineNumber: 433,
+                                    lineNumber: 435,
                                     columnNumber: 17
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                                lineNumber: 432,
+                                lineNumber: 434,
                                 columnNumber: 15
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableCell"], {
@@ -3792,30 +3741,30 @@ function CartTable(param) {
                                     children: "Delete"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                                    lineNumber: 455,
+                                    lineNumber: 457,
                                     columnNumber: 17
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                                lineNumber: 454,
+                                lineNumber: 456,
                                 columnNumber: 15
                             }, this)
                         ]
                     }, item.id, true, {
                         fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                        lineNumber: 397,
+                        lineNumber: 399,
                         columnNumber: 13
                     }, this);
                 })
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-                lineNumber: 392,
+                lineNumber: 394,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/CartTable.tsx",
-        lineNumber: 382,
+        lineNumber: 384,
         columnNumber: 5
     }, this);
 }
@@ -4455,7 +4404,9 @@ function POSLeftCol(param) {
                         var _productSearchInputRef_current, _productSearchInputRef_current_select, _productSearchInputRef_current1;
                         (_productSearchInputRef_current = productSearchInputRef.current) === null || _productSearchInputRef_current === void 0 ? void 0 : _productSearchInputRef_current.focus();
                         (_productSearchInputRef_current1 = productSearchInputRef.current) === null || _productSearchInputRef_current1 === void 0 ? void 0 : (_productSearchInputRef_current_select = _productSearchInputRef_current1.select) === null || _productSearchInputRef_current_select === void 0 ? void 0 : _productSearchInputRef_current_select.call(_productSearchInputRef_current1);
-                    } catch (e) {}
+                    } catch (error) {
+                        console.warn('Failed to focus search input:', error);
+                    }
                 }
             }["POSLeftCol.useCallback[handleSearchSelect]"], 100);
         }
@@ -4473,7 +4424,9 @@ function POSLeftCol(param) {
                             var _productSearchInputRef_current, _productSearchInputRef_current_select, _productSearchInputRef_current1;
                             (_productSearchInputRef_current = productSearchInputRef.current) === null || _productSearchInputRef_current === void 0 ? void 0 : _productSearchInputRef_current.focus();
                             (_productSearchInputRef_current1 = productSearchInputRef.current) === null || _productSearchInputRef_current1 === void 0 ? void 0 : (_productSearchInputRef_current_select = _productSearchInputRef_current1.select) === null || _productSearchInputRef_current_select === void 0 ? void 0 : _productSearchInputRef_current_select.call(_productSearchInputRef_current1);
-                        } catch (e) {}
+                        } catch (error) {
+                            console.warn('Failed to focus search input:', error);
+                        }
                     }
                 }["POSLeftCol.useCallback[handleScanAndAddToCart]"], 100);
             } catch (error) {
@@ -4504,7 +4457,9 @@ function POSLeftCol(param) {
                                 var _productSearchInputRef_current, _productSearchInputRef_current_select, _productSearchInputRef_current1;
                                 (_productSearchInputRef_current = productSearchInputRef.current) === null || _productSearchInputRef_current === void 0 ? void 0 : _productSearchInputRef_current.focus();
                                 (_productSearchInputRef_current1 = productSearchInputRef.current) === null || _productSearchInputRef_current1 === void 0 ? void 0 : (_productSearchInputRef_current_select = _productSearchInputRef_current1.select) === null || _productSearchInputRef_current_select === void 0 ? void 0 : _productSearchInputRef_current_select.call(_productSearchInputRef_current1);
-                            } catch (e) {}
+                            } catch (error) {
+                                console.warn('Failed to focus search input:', error);
+                            }
                         }
                     }["POSLeftCol.useEffect.handleProductAdded"], 100);
                 }
@@ -4557,7 +4512,9 @@ function POSLeftCol(param) {
                         var _productSearchInputRef_current, _productSearchInputRef_current_select, _productSearchInputRef_current1;
                         (_productSearchInputRef_current = productSearchInputRef.current) === null || _productSearchInputRef_current === void 0 ? void 0 : _productSearchInputRef_current.focus();
                         (_productSearchInputRef_current1 = productSearchInputRef.current) === null || _productSearchInputRef_current1 === void 0 ? void 0 : (_productSearchInputRef_current_select = _productSearchInputRef_current1.select) === null || _productSearchInputRef_current_select === void 0 ? void 0 : _productSearchInputRef_current_select.call(_productSearchInputRef_current1);
-                    } catch (e) {}
+                    } catch (error) {
+                        console.warn('Operation failed:', error);
+                    }
                 }
             }["POSLeftCol.useCallback[handleRegisterDialogClose]"], 100);
         }
@@ -4577,7 +4534,9 @@ function POSLeftCol(param) {
                         var _productSearchInputRef_current, _productSearchInputRef_current_select, _productSearchInputRef_current1;
                         (_productSearchInputRef_current = productSearchInputRef.current) === null || _productSearchInputRef_current === void 0 ? void 0 : _productSearchInputRef_current.focus();
                         (_productSearchInputRef_current1 = productSearchInputRef.current) === null || _productSearchInputRef_current1 === void 0 ? void 0 : (_productSearchInputRef_current_select = _productSearchInputRef_current1.select) === null || _productSearchInputRef_current_select === void 0 ? void 0 : _productSearchInputRef_current_select.call(_productSearchInputRef_current1);
-                    } catch (e) {}
+                    } catch (error) {
+                        console.warn('Operation failed:', error);
+                    }
                 }
             }["POSLeftCol.useCallback[handleRegisterDialogConfirm]"], 100);
         }
@@ -4610,7 +4569,7 @@ function POSLeftCol(param) {
                             isDebugCheatCode: isDebugCheatCode
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/index.tsx",
-                            lineNumber: 207,
+                            lineNumber: 217,
                             columnNumber: 11
                         }, this),
                         isLoading && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4618,7 +4577,7 @@ function POSLeftCol(param) {
                             children: "Searching..."
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/index.tsx",
-                            lineNumber: 223,
+                            lineNumber: 233,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$_pages$2f$POS$2f$components$2f$leftColumn$2f$CartTable$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -4631,18 +4590,18 @@ function POSLeftCol(param) {
                             disabled: step !== 1
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/index.tsx",
-                            lineNumber: 227,
+                            lineNumber: 237,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/index.tsx",
-                    lineNumber: 206,
+                    lineNumber: 216,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/index.tsx",
-                lineNumber: 205,
+                lineNumber: 215,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialog"], {
@@ -4656,7 +4615,7 @@ function POSLeftCol(param) {
                                     children: "Product Not Found"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/index.tsx",
-                                    lineNumber: 243,
+                                    lineNumber: 253,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialogDescription"], {
@@ -4667,13 +4626,13 @@ function POSLeftCol(param) {
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/index.tsx",
-                                    lineNumber: 244,
+                                    lineNumber: 254,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/index.tsx",
-                            lineNumber: 242,
+                            lineNumber: 252,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialogFooter"], {
@@ -4683,7 +4642,7 @@ function POSLeftCol(param) {
                                     children: "Cancel"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/index.tsx",
-                                    lineNumber: 250,
+                                    lineNumber: 260,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialogAction"], {
@@ -4691,35 +4650,35 @@ function POSLeftCol(param) {
                                     children: "Add Product"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/index.tsx",
-                                    lineNumber: 253,
+                                    lineNumber: 263,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/index.tsx",
-                            lineNumber: 249,
+                            lineNumber: 259,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/index.tsx",
-                    lineNumber: 241,
+                    lineNumber: 251,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/index.tsx",
-                lineNumber: 240,
+                lineNumber: 250,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$product$2f$components$2f$ProductRegisterModal$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {}, void 0, false, {
                 fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/index.tsx",
-                lineNumber: 261,
+                lineNumber: 271,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/dashboard/_pages/POS/components/leftColumn/index.tsx",
-        lineNumber: 204,
+        lineNumber: 214,
         columnNumber: 5
     }, this);
 }
@@ -4839,12 +4798,16 @@ function MainDashboard() {
         "MainDashboard.useEffect": ()=>{
             try {
                 window.posStep = step;
-            } catch (e) {}
+            } catch (error) {
+                console.warn('Operation failed:', error);
+            }
             return ({
                 "MainDashboard.useEffect": ()=>{
                     try {
                         delete window.posStep;
-                    } catch (e) {}
+                    } catch (error) {
+                        console.warn('Operation failed:', error);
+                    }
                 }
             })["MainDashboard.useEffect"];
         }
@@ -4862,7 +4825,9 @@ function MainDashboard() {
                 "MainDashboard.useEffect.focusScanner": ()=>{
                     try {
                         window.dispatchEvent(new Event("focusBarcodeScanner"));
-                    } catch (e) {}
+                    } catch (error) {
+                        console.warn('Operation failed:', error);
+                    }
                 }
             }["MainDashboard.useEffect.focusScanner"];
             // Immediate + short delayed dispatch to cover timing differences
@@ -4909,12 +4874,12 @@ function MainDashboard() {
                         step: step
                     }, void 0, false, {
                         fileName: "[project]/src/app/dashboard/_pages/POS/pos-screen.tsx",
-                        lineNumber: 71,
+                        lineNumber: 77,
                         columnNumber: 11
                     }, this)
                 }, void 0, false, {
                     fileName: "[project]/src/app/dashboard/_pages/POS/pos-screen.tsx",
-                    lineNumber: 70,
+                    lineNumber: 76,
                     columnNumber: 9
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4924,23 +4889,23 @@ function MainDashboard() {
                         setStep: setStep
                     }, void 0, false, {
                         fileName: "[project]/src/app/dashboard/_pages/POS/pos-screen.tsx",
-                        lineNumber: 76,
+                        lineNumber: 82,
                         columnNumber: 11
                     }, this)
                 }, void 0, false, {
                     fileName: "[project]/src/app/dashboard/_pages/POS/pos-screen.tsx",
-                    lineNumber: 75,
+                    lineNumber: 81,
                     columnNumber: 9
                 }, this)
             ]
         }, void 0, true, {
             fileName: "[project]/src/app/dashboard/_pages/POS/pos-screen.tsx",
-            lineNumber: 68,
+            lineNumber: 74,
             columnNumber: 7
         }, this)
     }, void 0, false, {
         fileName: "[project]/src/app/dashboard/_pages/POS/pos-screen.tsx",
-        lineNumber: 67,
+        lineNumber: 73,
         columnNumber: 5
     }, this);
 }
@@ -8654,29 +8619,22 @@ function ProductStats() {
     const categoryUnitMap = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
         "ProductStats.useMemo[categoryUnitMap]": ()=>{
             const map = new Map();
-            console.log('All products for mapping:', allProducts); // Debug log
             allProducts.forEach({
                 "ProductStats.useMemo[categoryUnitMap]": (product)=>{
                     if (product.category_id && product.unit) {
-                        // We need to find the actual category name, not just "Category X"
-                        // Let's use the category_id to map to the actual category name from the chart data
                         map.set("Category ".concat(product.category_id), product.unit);
-                        // Also try to map common category names
                         if (product.category_name) {
                             map.set(product.category_name, product.unit);
                         }
                     }
                 }
             }["ProductStats.useMemo[categoryUnitMap]"]);
-            console.log('Final category-unit map:', map); // Debug log
             return map;
         }
     }["ProductStats.useMemo[categoryUnitMap]"], [
         allProducts
     ]);
-    // MODIFY: Update handleBarClick to also calculate the correct total for tooltip
     const handleBarClick = async (data)=>{
-        console.log('Clicked category:', data.category);
         setSelectedCategory(data.category);
         setOpen(true);
         setLoadingProducts(true);
@@ -8687,11 +8645,8 @@ function ProductStats() {
             if (range === null || range === void 0 ? void 0 : range.from) params.set('from_date', range.from.toISOString());
             if (range === null || range === void 0 ? void 0 : range.to) params.set('to_date', range.to.toISOString());
             const url = "/sales-items/products-by-category?".concat(params.toString());
-            console.log('Making request to:', url);
             const response = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$axios$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"].get(url);
-            console.log('Products by category response:', response.data);
             const items = ((_response_data = response.data) === null || _response_data === void 0 ? void 0 : _response_data.data) || response.data || [];
-            console.log('Parsed product items:', items);
             // Find the correct unit for this category
             let categoryUnit = 'pcs' // default
             ;
@@ -8710,19 +8665,15 @@ function ProductStats() {
                     unit: item.unit || 'pcs',
                     last_purchase: item.last_purchase
                 }));
-            console.log('Transformed product items:', transformedItems);
             setProducts(transformedItems);
-            // ADD: Calculate and store the correct total for this category
+            // Calculate and store the correct total for this category
             const correctTotal = transformedItems.reduce((acc, item)=>acc + (Number(item.total) || 0), 0);
             setCategoryTotals((prev)=>({
                     ...prev,
                     [data.category]: correctTotal
                 }));
-            console.log("Correct total for ".concat(data.category, ": ₱").concat(correctTotal.toLocaleString()));
         } catch (error) {
-            var _error_response;
             console.error('Error fetching products by category:', error);
-            console.error('Error details:', (_error_response = error.response) === null || _error_response === void 0 ? void 0 : _error_response.data);
             setProducts([]);
         } finally{
             setLoadingProducts(false);
@@ -8764,31 +8715,22 @@ function ProductStats() {
     ]);
     // compute total of products currently shown in modal
     const productsTotal = products.reduce((acc, p)=>acc + (Number(p.total) || 0), 0);
-    // ADD: Debug the modal total calculation
-    console.log('Modal products:', products);
-    console.log('Modal total calculation:', productsTotal);
-    console.log('Individual product totals:', products.map((p)=>({
-            name: p.name,
-            total: p.total
-        })));
     // initial empty state: show skeleton full-chart if first load and no data
     const initialLoadingNoData = isLoading && saleItems.length === 0;
     // updating overlay while revalidating (keep previous chart visible)
     const isUpdating = isValidating && saleItems.length > 0;
     // Note: do not return early on error — render error inside the chart area so header/footer remain visible.
-    // ADD: Fetch correct totals for all categories
+    // Fetch correct totals for all categories
     const fetchCategoryTotals = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
         "ProductStats.useCallback[fetchCategoryTotals]": async ()=>{
             if (!(range === null || range === void 0 ? void 0 : range.from) || !(range === null || range === void 0 ? void 0 : range.to)) return;
             try {
                 const categoryTotalsMap = {};
-                // Get all unique categories from saleItems
                 const categories = [
                     ...new Set(saleItems.map({
                         "ProductStats.useCallback[fetchCategoryTotals]": (si)=>si.category
                     }["ProductStats.useCallback[fetchCategoryTotals]"]))
                 ];
-                // Fetch totals for each category
                 for (const category of categories){
                     try {
                         var _response_data;
@@ -8802,10 +8744,7 @@ function ProductStats() {
                             "ProductStats.useCallback[fetchCategoryTotals].total": (acc, item)=>acc + (Number(item.total) || 0)
                         }["ProductStats.useCallback[fetchCategoryTotals].total"], 0);
                         categoryTotalsMap[category] = total;
-                        console.log("Correct total for ".concat(category, ": ₱").concat(total.toLocaleString()));
                     } catch (error) {
-                        console.error("Error fetching total for ".concat(category, ":"), error);
-                        // Fallback to original total
                         const originalItem = saleItems.find({
                             "ProductStats.useCallback[fetchCategoryTotals].originalItem": (si)=>si.category === category
                         }["ProductStats.useCallback[fetchCategoryTotals].originalItem"]);
@@ -8821,7 +8760,7 @@ function ProductStats() {
         saleItems,
         range
     ]);
-    // ADD: Effect to fetch category totals when data changes
+    // Effect to fetch category totals when data changes
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
         "ProductStats.useEffect": ()=>{
             if (saleItems.length > 0 && (range === null || range === void 0 ? void 0 : range.from) && (range === null || range === void 0 ? void 0 : range.to)) {
@@ -8833,19 +8772,16 @@ function ProductStats() {
         range,
         fetchCategoryTotals
     ]);
-    // MODIFY: Update chartData to use correct totals when available
+    // Update chartData to use correct totals when available
     const chartData = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
         "ProductStats.useMemo[chartData]": ()=>{
             const arr = saleItems.map({
                 "ProductStats.useMemo[chartData].arr": (si)=>{
-                    // Try to find the unit for this category
                     let unit = 'pcs' // default
                     ;
-                    // First try to find by exact category name
                     if (categoryUnitMap.has(si.category)) {
                         unit = categoryUnitMap.get(si.category);
                     } else {
-                        // If not found, try to find by looking up products in this category
                         const categoryProduct = allProducts.find({
                             "ProductStats.useMemo[chartData].arr.categoryProduct": (p)=>{
                                 return p.category_name === si.category || p.category_id && "Category ".concat(p.category_id) === si.category;
@@ -8855,7 +8791,6 @@ function ProductStats() {
                             unit = categoryProduct.unit;
                         }
                     }
-                    // USE CORRECT TOTAL if available, otherwise use the aggregated total
                     const totalSales = categoryTotals[si.category] || Number(si.total_sales) || 0;
                     return {
                         category: si.category,
@@ -8866,17 +8801,6 @@ function ProductStats() {
                     };
                 }
             }["ProductStats.useMemo[chartData].arr"]);
-            // Debug log to see the actual data
-            console.log('Chart data before sorting:', arr);
-            console.log('Total sales sum:', arr.reduce({
-                "ProductStats.useMemo[chartData]": (acc, curr)=>acc + curr.total_sales
-            }["ProductStats.useMemo[chartData]"], 0));
-            // Debug each category's total
-            arr.forEach({
-                "ProductStats.useMemo[chartData]": (item)=>{
-                    console.log("Category: ".concat(item.category, ", Total Sales: ₱").concat(item.total_sales.toLocaleString()));
-                }
-            }["ProductStats.useMemo[chartData]"]);
             switch(sortOrder){
                 case 'asc':
                     return [
@@ -8910,8 +8834,7 @@ function ProductStats() {
         categoryUnitMap,
         allProducts,
         categoryTotals
-    ]) // ADD categoryTotals to dependencies
-    ;
+    ]);
     const total = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
         "ProductStats.useMemo[total]": ()=>chartData.reduce({
                 "ProductStats.useMemo[total]": (acc, curr)=>acc + curr.total_sales
@@ -8931,14 +8854,14 @@ function ProductStats() {
                                 children: "Category Analytics"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                lineNumber: 325,
+                                lineNumber: 284,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardDescription"], {
                                 children: "Showing most sold categories for this month."
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                lineNumber: 326,
+                                lineNumber: 285,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardAction"], {
@@ -8954,12 +8877,12 @@ function ProductStats() {
                                                 size: 16
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                                lineNumber: 329,
+                                                lineNumber: 288,
                                                 columnNumber: 125
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                            lineNumber: 329,
+                                            lineNumber: 288,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -8970,12 +8893,12 @@ function ProductStats() {
                                                 size: 16
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                                lineNumber: 330,
+                                                lineNumber: 289,
                                                 columnNumber: 129
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                            lineNumber: 330,
+                                            lineNumber: 289,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -8986,12 +8909,12 @@ function ProductStats() {
                                                 size: 16
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                                lineNumber: 331,
+                                                lineNumber: 290,
                                                 columnNumber: 123
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                            lineNumber: 331,
+                                            lineNumber: 290,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$popover$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Popover"], {
@@ -9003,19 +8926,19 @@ function ProductStats() {
                                                         children: [
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$calendar$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__CalendarIcon$3e$__["CalendarIcon"], {}, void 0, false, {
                                                                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                                                lineNumber: 335,
+                                                                lineNumber: 294,
                                                                 columnNumber: 21
                                                             }, this),
                                                             (range === null || range === void 0 ? void 0 : range.from) && (range === null || range === void 0 ? void 0 : range.to) ? "".concat(range.from.toLocaleDateString(), " - ").concat(range.to.toLocaleDateString()) : "".concat(startOfMonth.toLocaleDateString(), " - ").concat(today.toLocaleDateString())
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                                        lineNumber: 334,
+                                                        lineNumber: 293,
                                                         columnNumber: 19
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                                    lineNumber: 333,
+                                                    lineNumber: 292,
                                                     columnNumber: 17
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$popover$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["PopoverContent"], {
@@ -9033,35 +8956,35 @@ function ProductStats() {
                                                         }
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                                        lineNumber: 342,
+                                                        lineNumber: 301,
                                                         columnNumber: 19
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                                    lineNumber: 341,
+                                                    lineNumber: 300,
                                                     columnNumber: 17
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                            lineNumber: 332,
+                                            lineNumber: 291,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                    lineNumber: 328,
+                                    lineNumber: 287,
                                     columnNumber: 13
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                lineNumber: 327,
+                                lineNumber: 286,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                        lineNumber: 324,
+                        lineNumber: 283,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -9087,7 +9010,7 @@ function ProductStats() {
                                                         vertical: false
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                                        lineNumber: 366,
+                                                        lineNumber: 325,
                                                         columnNumber: 23
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$XAxis$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["XAxis"], {
@@ -9098,7 +9021,7 @@ function ProductStats() {
                                                         minTickGap: 20
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                                        lineNumber: 367,
+                                                        lineNumber: 326,
                                                         columnNumber: 23
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$chart$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ChartTooltip"], {
@@ -9107,24 +9030,19 @@ function ProductStats() {
                                                             nameKey: "total_sales",
                                                             labelFormatter: (v)=>v,
                                                             formatter: (value, name, props)=>{
-                                                                console.log('Tooltip data:', {
-                                                                    value,
-                                                                    name,
-                                                                    props
-                                                                }); // Debug log
                                                                 return [
                                                                     "₱ ".concat(Number(value).toLocaleString()),
-                                                                    '' // Empty string instead of 'Total Sales'
+                                                                    ''
                                                                 ];
                                                             }
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                                            lineNumber: 370,
+                                                            lineNumber: 329,
                                                             columnNumber: 27
                                                         }, void 0)
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                                        lineNumber: 368,
+                                                        lineNumber: 327,
                                                         columnNumber: 23
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$Bar$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Bar"], {
@@ -9134,23 +9052,23 @@ function ProductStats() {
                                                         onClick: handleBarClick
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                                        lineNumber: 384,
+                                                        lineNumber: 342,
                                                         columnNumber: 23
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                                lineNumber: 365,
+                                                lineNumber: 324,
                                                 columnNumber: 21
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                            lineNumber: 364,
+                                            lineNumber: 323,
                                             columnNumber: 19
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                        lineNumber: 362,
+                                        lineNumber: 321,
                                         columnNumber: 17
                                     }, this) : // show helpful messages when there is no chart data
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9160,31 +9078,31 @@ function ProductStats() {
                                             children: "Error loading product stats."
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                            lineNumber: 392,
+                                            lineNumber: 350,
                                             columnNumber: 21
                                         }, this) : !isLoading && saleItems.length === 0 ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                             className: "text-sm text-gray-600",
                                             children: "No data for the selected range."
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                            lineNumber: 394,
+                                            lineNumber: 352,
                                             columnNumber: 21
                                         }, this) : // keep empty while initial skeleton (below) handles first-load UX
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                             className: "w-full h-full"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                            lineNumber: 397,
+                                            lineNumber: 355,
                                             columnNumber: 21
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                        lineNumber: 390,
+                                        lineNumber: 348,
                                         columnNumber: 17
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                    lineNumber: 360,
+                                    lineNumber: 319,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9216,39 +9134,39 @@ function ProductStats() {
                                                         }
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                                        lineNumber: 419,
+                                                        lineNumber: 377,
                                                         columnNumber: 25
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                                    lineNumber: 418,
+                                                    lineNumber: 376,
                                                     columnNumber: 23
                                                 }, this)
                                             }, i, false, {
                                                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                                lineNumber: 417,
+                                                lineNumber: 375,
                                                 columnNumber: 21
                                             }, this);
                                         })
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                        lineNumber: 411,
+                                        lineNumber: 369,
                                         columnNumber: 15
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                    lineNumber: 406,
+                                    lineNumber: 364,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                            lineNumber: 353,
+                            lineNumber: 312,
                             columnNumber: 11
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                        lineNumber: 350,
+                        lineNumber: 309,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardFooter"], {
@@ -9265,24 +9183,24 @@ function ProductStats() {
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                    lineNumber: 431,
+                                    lineNumber: 389,
                                     columnNumber: 26
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                            lineNumber: 430,
+                            lineNumber: 388,
                             columnNumber: 11
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                        lineNumber: 429,
+                        lineNumber: 387,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                lineNumber: 323,
+                lineNumber: 282,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Dialog"], {
@@ -9299,7 +9217,7 @@ function ProductStats() {
                                     children: selectedCategory ? "".concat(selectedCategory, " — Total Amount: ₱ ").concat(productsTotal.toLocaleString()) : "₱ ".concat(productsTotal.toLocaleString())
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                    lineNumber: 440,
+                                    lineNumber: 398,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9314,12 +9232,12 @@ function ProductStats() {
                                                 size: 16
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                                lineNumber: 450,
+                                                lineNumber: 408,
                                                 columnNumber: 17
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                            lineNumber: 444,
+                                            lineNumber: 402,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -9331,12 +9249,12 @@ function ProductStats() {
                                                 size: 16
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                                lineNumber: 458,
+                                                lineNumber: 416,
                                                 columnNumber: 17
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                            lineNumber: 452,
+                                            lineNumber: 410,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -9348,24 +9266,24 @@ function ProductStats() {
                                                 size: 16
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                                lineNumber: 466,
+                                                lineNumber: 424,
                                                 columnNumber: 17
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                            lineNumber: 460,
+                                            lineNumber: 418,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                    lineNumber: 443,
+                                    lineNumber: 401,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                            lineNumber: 439,
+                            lineNumber: 397,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$scroll$2d$area$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ScrollArea"], {
@@ -9376,7 +9294,7 @@ function ProductStats() {
                                     children: "Loading products…"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                    lineNumber: 475,
+                                    lineNumber: 433,
                                     columnNumber: 15
                                 }, this),
                                 sortedProducts.length > 0 ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
@@ -9386,7 +9304,7 @@ function ProductStats() {
                                             children: "Updating products…"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                            lineNumber: 483,
+                                            lineNumber: 441,
                                             columnNumber: 19
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("table", {
@@ -9401,7 +9319,7 @@ function ProductStats() {
                                                                 children: "Product"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                                                lineNumber: 488,
+                                                                lineNumber: 446,
                                                                 columnNumber: 23
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
@@ -9409,7 +9327,7 @@ function ProductStats() {
                                                                 children: "Quantity Sold"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                                                lineNumber: 489,
+                                                                lineNumber: 447,
                                                                 columnNumber: 23
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
@@ -9417,7 +9335,7 @@ function ProductStats() {
                                                                 children: "Unit Price"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                                                lineNumber: 490,
+                                                                lineNumber: 448,
                                                                 columnNumber: 23
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
@@ -9425,18 +9343,18 @@ function ProductStats() {
                                                                 children: "Total"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                                                lineNumber: 491,
+                                                                lineNumber: 449,
                                                                 columnNumber: 23
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                                        lineNumber: 487,
+                                                        lineNumber: 445,
                                                         columnNumber: 21
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                                    lineNumber: 486,
+                                                    lineNumber: 444,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("tbody", {
@@ -9448,7 +9366,7 @@ function ProductStats() {
                                                                     children: p.name
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                                                    lineNumber: 497,
+                                                                    lineNumber: 455,
                                                                     columnNumber: 25
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
@@ -9460,7 +9378,7 @@ function ProductStats() {
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                                                    lineNumber: 498,
+                                                                    lineNumber: 456,
                                                                     columnNumber: 25
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
@@ -9471,7 +9389,7 @@ function ProductStats() {
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                                                    lineNumber: 501,
+                                                                    lineNumber: 459,
                                                                     columnNumber: 25
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
@@ -9482,24 +9400,24 @@ function ProductStats() {
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                                                    lineNumber: 502,
+                                                                    lineNumber: 460,
                                                                     columnNumber: 25
                                                                 }, this)
                                                             ]
                                                         }, idx, true, {
                                                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                                            lineNumber: 496,
+                                                            lineNumber: 454,
                                                             columnNumber: 23
                                                         }, this))
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                                    lineNumber: 494,
+                                                    lineNumber: 452,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                            lineNumber: 485,
+                                            lineNumber: 443,
                                             columnNumber: 17
                                         }, this)
                                     ]
@@ -9509,30 +9427,30 @@ function ProductStats() {
                                     children: "No products found for this category."
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                                    lineNumber: 511,
+                                    lineNumber: 469,
                                     columnNumber: 17
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                            lineNumber: 472,
+                            lineNumber: 430,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                    lineNumber: 438,
+                    lineNumber: 396,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/categoryStats.tsx",
-                lineNumber: 437,
+                lineNumber: 395,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true);
 }
-_s(ProductStats, "QbSfUYX4vVMfexkLVxJD1ReWYgM=", false, function() {
+_s(ProductStats, "k6tvzShmxeDftWAZOdo1k90VX4Y=", false, function() {
     return [
         __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$index$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$locals$3e$__["default"],
         __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$index$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$locals$3e$__["default"]
@@ -10291,15 +10209,13 @@ function ProductStats() {
     // Also change the table sort order default:
     const [tableSortOrder, setTableSortOrder] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])('recent');
     const [productLimit, setProductLimit] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(15);
-    // FIXED: Use a different approach - fetch from multiple categories
+    // Fetch product sales data from all categories
     const productSalesUrl = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
         "ProductStats.useMemo[productSalesUrl]": ()=>{
             const params = new URLSearchParams();
             if (range === null || range === void 0 ? void 0 : range.from) params.set('from_date', range.from.toISOString());
             if (range === null || range === void 0 ? void 0 : range.to) params.set('to_date', range.to.toISOString());
-            // We'll fetch from a specific category first to test
-            params.set('category_name', 'Lane 3'); // Start with one category
-            return "/sales-items/products-by-category?".concat(params.toString());
+            return "/sales-items?".concat(params.toString());
         }
     }["ProductStats.useMemo[productSalesUrl]"], [
         range
@@ -10337,9 +10253,7 @@ function ProductStats() {
                     }
                 }
             }["ProductStats.useMemo[productSalesData]"]);
-            const result = Array.from(productMap.values());
-            console.log('Product sales data:', result);
-            return result;
+            return Array.from(productMap.values());
         }
     }["ProductStats.useMemo[productSalesData]"], [
         productSales
@@ -10363,16 +10277,13 @@ function ProductStats() {
     }["ProductStats.useMemo[productMap]"], [
         allProducts
     ]);
-    // Fix the handleBarClick function:
     const handleBarClick = async (data)=>{
-        console.log('Clicked product:', data.product_name);
         setSelectedProduct(data.product_name);
         setOpen(true);
         setLoadingDetails(true);
         try {
             // Filter the productSales data for this specific product
             const productSalesItems = productSales.filter((item)=>item.product_name === data.product_name);
-            console.log('Filtered product sales items:', productSalesItems);
             const transformedDetails = productSalesItems.map((item)=>({
                     name: item.product_name,
                     qty: Number(item.qty) || 0,
@@ -10381,7 +10292,6 @@ function ProductStats() {
                     unit: item.unit || 'pcs',
                     last_purchase: item.last_purchase
                 }));
-            console.log('Transformed product details:', transformedDetails);
             setProductDetails(transformedDetails);
         } catch (error) {
             console.error('Error fetching product details:', error);
@@ -10438,17 +10348,6 @@ function ProductStats() {
                         last_purchase: item.last_purchase
                     })
             }["ProductStats.useMemo[chartData].arr"]);
-            // Debug log to see the actual data
-            console.log('Product chart data before sorting:', arr);
-            console.log('Total sales sum:', arr.reduce({
-                "ProductStats.useMemo[chartData]": (acc, curr)=>acc + curr.total_sales
-            }["ProductStats.useMemo[chartData]"], 0));
-            // Debug each product's total
-            arr.forEach({
-                "ProductStats.useMemo[chartData]": (item)=>{
-                    console.log("Product: ".concat(item.product_name, ", Total Sales: ₱").concat(item.total_sales.toLocaleString()));
-                }
-            }["ProductStats.useMemo[chartData]"]);
             // Sort first, then limit to the specified number of products
             let sorted;
             switch(sortOrder){
@@ -10512,14 +10411,14 @@ function ProductStats() {
                                 children: "Product Analytics"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                lineNumber: 256,
+                                lineNumber: 239,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardDescription"], {
                                 children: "Showing highest selling products for this month."
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                lineNumber: 257,
+                                lineNumber: 240,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardAction"], {
@@ -10535,7 +10434,7 @@ function ProductStats() {
                                                     children: "Show:"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                                    lineNumber: 262,
+                                                    lineNumber: 245,
                                                     columnNumber: 17
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -10547,7 +10446,7 @@ function ProductStats() {
                                                     className: "w-16 px-2 py-1 border rounded text-sm text-center"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                                    lineNumber: 263,
+                                                    lineNumber: 246,
                                                     columnNumber: 17
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -10555,13 +10454,13 @@ function ProductStats() {
                                                     children: "products"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                                    lineNumber: 271,
+                                                    lineNumber: 254,
                                                     columnNumber: 17
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                            lineNumber: 261,
+                                            lineNumber: 244,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -10572,12 +10471,12 @@ function ProductStats() {
                                                 size: 16
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                                lineNumber: 275,
+                                                lineNumber: 258,
                                                 columnNumber: 17
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                            lineNumber: 274,
+                                            lineNumber: 257,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -10588,12 +10487,12 @@ function ProductStats() {
                                                 size: 16
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                                lineNumber: 278,
+                                                lineNumber: 261,
                                                 columnNumber: 17
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                            lineNumber: 277,
+                                            lineNumber: 260,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -10604,12 +10503,12 @@ function ProductStats() {
                                                 size: 16
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                                lineNumber: 281,
+                                                lineNumber: 264,
                                                 columnNumber: 17
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                            lineNumber: 280,
+                                            lineNumber: 263,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$popover$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Popover"], {
@@ -10621,19 +10520,19 @@ function ProductStats() {
                                                         children: [
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$calendar$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__CalendarIcon$3e$__["CalendarIcon"], {}, void 0, false, {
                                                                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                                                lineNumber: 286,
+                                                                lineNumber: 269,
                                                                 columnNumber: 21
                                                             }, this),
                                                             (range === null || range === void 0 ? void 0 : range.from) && (range === null || range === void 0 ? void 0 : range.to) ? "".concat(range.from.toLocaleDateString(), " - ").concat(range.to.toLocaleDateString()) : "".concat(startOfMonth.toLocaleDateString(), " - ").concat(today.toLocaleDateString())
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                                        lineNumber: 285,
+                                                        lineNumber: 268,
                                                         columnNumber: 19
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                                    lineNumber: 284,
+                                                    lineNumber: 267,
                                                     columnNumber: 17
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$popover$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["PopoverContent"], {
@@ -10651,35 +10550,35 @@ function ProductStats() {
                                                         }
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                                        lineNumber: 293,
+                                                        lineNumber: 276,
                                                         columnNumber: 19
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                                    lineNumber: 292,
+                                                    lineNumber: 275,
                                                     columnNumber: 17
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                            lineNumber: 283,
+                                            lineNumber: 266,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                    lineNumber: 259,
+                                    lineNumber: 242,
                                     columnNumber: 13
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                lineNumber: 258,
+                                lineNumber: 241,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                        lineNumber: 255,
+                        lineNumber: 238,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -10705,7 +10604,7 @@ function ProductStats() {
                                                         vertical: false
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                                        lineNumber: 307,
+                                                        lineNumber: 290,
                                                         columnNumber: 23
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$XAxis$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["XAxis"], {
@@ -10719,7 +10618,7 @@ function ProductStats() {
                                                         height: 100
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                                        lineNumber: 308,
+                                                        lineNumber: 291,
                                                         columnNumber: 23
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$chart$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ChartTooltip"], {
@@ -10728,11 +10627,6 @@ function ProductStats() {
                                                             nameKey: "total_sales",
                                                             labelFormatter: (v)=>v,
                                                             formatter: (value, name, props)=>{
-                                                                console.log('Tooltip data:', {
-                                                                    value,
-                                                                    name,
-                                                                    props
-                                                                });
                                                                 return [
                                                                     "₱ ".concat(Number(value).toLocaleString()),
                                                                     ''
@@ -10740,12 +10634,12 @@ function ProductStats() {
                                                             }
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                                            lineNumber: 320,
+                                                            lineNumber: 303,
                                                             columnNumber: 27
                                                         }, void 0)
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                                        lineNumber: 318,
+                                                        lineNumber: 301,
                                                         columnNumber: 23
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$Bar$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Bar"], {
@@ -10755,23 +10649,23 @@ function ProductStats() {
                                                         onClick: handleBarClick
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                                        lineNumber: 334,
+                                                        lineNumber: 316,
                                                         columnNumber: 23
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                                lineNumber: 306,
+                                                lineNumber: 289,
                                                 columnNumber: 21
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                            lineNumber: 305,
+                                            lineNumber: 288,
                                             columnNumber: 19
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                        lineNumber: 304,
+                                        lineNumber: 287,
                                         columnNumber: 17
                                     }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                         className: "w-full h-full flex items-center justify-center px-4",
@@ -10780,30 +10674,30 @@ function ProductStats() {
                                             children: "Error loading product stats."
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                            lineNumber: 341,
+                                            lineNumber: 323,
                                             columnNumber: 21
                                         }, this) : !isLoading && productSalesData.length === 0 ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                             className: "text-sm text-gray-600",
                                             children: "No data for the selected range."
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                            lineNumber: 343,
+                                            lineNumber: 325,
                                             columnNumber: 21
                                         }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                             className: "w-full h-full"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                            lineNumber: 345,
+                                            lineNumber: 327,
                                             columnNumber: 21
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                        lineNumber: 339,
+                                        lineNumber: 321,
                                         columnNumber: 17
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                    lineNumber: 302,
+                                    lineNumber: 285,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -10834,39 +10728,39 @@ function ProductStats() {
                                                         }
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                                        lineNumber: 364,
+                                                        lineNumber: 346,
                                                         columnNumber: 25
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                                    lineNumber: 363,
+                                                    lineNumber: 345,
                                                     columnNumber: 23
                                                 }, this)
                                             }, i, false, {
                                                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                                lineNumber: 362,
+                                                lineNumber: 344,
                                                 columnNumber: 21
                                             }, this);
                                         })
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                        lineNumber: 357,
+                                        lineNumber: 339,
                                         columnNumber: 15
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                    lineNumber: 352,
+                                    lineNumber: 334,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                            lineNumber: 301,
+                            lineNumber: 284,
                             columnNumber: 11
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                        lineNumber: 300,
+                        lineNumber: 283,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardFooter"], {
@@ -10883,24 +10777,24 @@ function ProductStats() {
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                    lineNumber: 376,
+                                    lineNumber: 358,
                                     columnNumber: 26
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                            lineNumber: 375,
+                            lineNumber: 357,
                             columnNumber: 11
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                        lineNumber: 374,
+                        lineNumber: 356,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                lineNumber: 254,
+                lineNumber: 237,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Dialog"], {
@@ -10919,7 +10813,7 @@ function ProductStats() {
                                             children: selectedProduct ? "".concat(selectedProduct, " — Total Amount: ₱ ").concat(productDetailsTotal.toLocaleString()) : "₱ ".concat(productDetailsTotal.toLocaleString())
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                            lineNumber: 386,
+                                            lineNumber: 368,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -10932,13 +10826,13 @@ function ProductStats() {
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                            lineNumber: 389,
+                                            lineNumber: 371,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                    lineNumber: 385,
+                                    lineNumber: 367,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -10953,12 +10847,12 @@ function ProductStats() {
                                                 size: 16
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                                lineNumber: 400,
+                                                lineNumber: 382,
                                                 columnNumber: 17
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                            lineNumber: 394,
+                                            lineNumber: 376,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -10970,12 +10864,12 @@ function ProductStats() {
                                                 size: 16
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                                lineNumber: 408,
+                                                lineNumber: 390,
                                                 columnNumber: 17
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                            lineNumber: 402,
+                                            lineNumber: 384,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -10987,24 +10881,24 @@ function ProductStats() {
                                                 size: 16
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                                lineNumber: 416,
+                                                lineNumber: 398,
                                                 columnNumber: 17
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                            lineNumber: 410,
+                                            lineNumber: 392,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                    lineNumber: 393,
+                                    lineNumber: 375,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                            lineNumber: 384,
+                            lineNumber: 366,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$scroll$2d$area$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ScrollArea"], {
@@ -11015,7 +10909,7 @@ function ProductStats() {
                                     children: "Loading product details…"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                    lineNumber: 423,
+                                    lineNumber: 405,
                                     columnNumber: 15
                                 }, this),
                                 sortedProductDetails.length > 0 ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
@@ -11025,7 +10919,7 @@ function ProductStats() {
                                             children: "Updating details…"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                            lineNumber: 429,
+                                            lineNumber: 411,
                                             columnNumber: 19
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("table", {
@@ -11040,7 +10934,7 @@ function ProductStats() {
                                                                 children: "Product"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                                                lineNumber: 434,
+                                                                lineNumber: 416,
                                                                 columnNumber: 23
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
@@ -11048,7 +10942,7 @@ function ProductStats() {
                                                                 children: "Quantity Sold"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                                                lineNumber: 435,
+                                                                lineNumber: 417,
                                                                 columnNumber: 23
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
@@ -11056,7 +10950,7 @@ function ProductStats() {
                                                                 children: "Unit Price"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                                                lineNumber: 436,
+                                                                lineNumber: 418,
                                                                 columnNumber: 23
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
@@ -11064,18 +10958,18 @@ function ProductStats() {
                                                                 children: "Total"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                                                lineNumber: 437,
+                                                                lineNumber: 419,
                                                                 columnNumber: 23
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                                        lineNumber: 433,
+                                                        lineNumber: 415,
                                                         columnNumber: 21
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                                    lineNumber: 432,
+                                                    lineNumber: 414,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("tbody", {
@@ -11087,7 +10981,7 @@ function ProductStats() {
                                                                     children: p.name
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                                                    lineNumber: 443,
+                                                                    lineNumber: 425,
                                                                     columnNumber: 25
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
@@ -11099,7 +10993,7 @@ function ProductStats() {
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                                                    lineNumber: 444,
+                                                                    lineNumber: 426,
                                                                     columnNumber: 25
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
@@ -11110,7 +11004,7 @@ function ProductStats() {
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                                                    lineNumber: 447,
+                                                                    lineNumber: 429,
                                                                     columnNumber: 25
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
@@ -11121,24 +11015,24 @@ function ProductStats() {
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                                                    lineNumber: 448,
+                                                                    lineNumber: 430,
                                                                     columnNumber: 25
                                                                 }, this)
                                                             ]
                                                         }, idx, true, {
                                                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                                            lineNumber: 442,
+                                                            lineNumber: 424,
                                                             columnNumber: 23
                                                         }, this))
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                                    lineNumber: 440,
+                                                    lineNumber: 422,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                            lineNumber: 431,
+                                            lineNumber: 413,
                                             columnNumber: 17
                                         }, this)
                                     ]
@@ -11147,30 +11041,30 @@ function ProductStats() {
                                     children: "No details found for this product."
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                                    lineNumber: 456,
+                                    lineNumber: 438,
                                     columnNumber: 17
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                            lineNumber: 421,
+                            lineNumber: 403,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                    lineNumber: 383,
+                    lineNumber: 365,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/_pages/Dashboard/components/productStats.tsx",
-                lineNumber: 382,
+                lineNumber: 364,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true);
 }
-_s(ProductStats, "gQeWB8MMvoAJYXL6zykqotNxVqo=", false, function() {
+_s(ProductStats, "m2KG86YhC2Zqy1tuitnUEHln6FI=", false, function() {
     return [
         __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$index$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$locals$3e$__["default"],
         __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$swr$2f$dist$2f$index$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$locals$3e$__["default"]

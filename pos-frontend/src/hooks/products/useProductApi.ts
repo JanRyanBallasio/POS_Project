@@ -171,14 +171,17 @@ function removeProductFromList(old: ProductsListShape | undefined | null, id: nu
 export const productApi = {
   async getAll(): Promise<Product[]> {
     try {
-      // request all rows from backend
       const response = await axios.get('/products?limit=all');
+      
       if (response.status >= 400) {
+        console.error('Product API error status:', response.status);
         return [];
       }
+      
       const json = response.data as ApiResponse<Product[]>;
       return json.data ?? [];
-    } catch {
+    } catch (error: any) {
+      console.error('Error fetching products:', error);
       return [];
     }
   },

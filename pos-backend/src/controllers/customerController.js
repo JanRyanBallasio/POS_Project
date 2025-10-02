@@ -5,7 +5,7 @@ const customerController = {
         try {
             const { data, error } = await supabase
                 .from("Customer")
-                .select("*")
+                .select("*"); // Add semicolon here
 
             if (error) throw error;
 
@@ -13,12 +13,12 @@ const customerController = {
                 success: true,
                 data: data,
                 count: data.length,
-            })
+            });
         } catch (error) {
             res.status(500).json({
                 success: false,
                 error: error.message,
-            })
+            });
         }
     },
     
