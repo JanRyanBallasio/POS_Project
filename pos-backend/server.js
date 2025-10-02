@@ -20,6 +20,7 @@ const stockTransactionRoutes = require('./src/routes/stockTransactionRoutes');
 const authRoutes = require('./src/routes/auth.routes');
 const directPrintRoutes = require("./src/routes/directPrintRoutes");
 const printRoutes = require('./src/routes/printRoutes'); 
+const professionalPrintRoutes = require('./src/routes/professionalPrintRoutes'); // NEW
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -52,8 +53,9 @@ app.use('/api/sales', auth, salesRoutes);
 app.use('/api/sales-items', auth, salesItemsRoutes);
 app.use('/api/stock-transactions', auth, stockTransactionRoutes);
 
-// ✅ Main printing endpoint (no auth required for simplicity)
+// ✅ Printing endpoints (no auth required for simplicity)
 app.use('/print', printRoutes);
+app.use('/api/print', professionalPrintRoutes); // NEW ENHANCED ENDPOINT
 
 app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Not found' });
@@ -66,4 +68,5 @@ app.use((error, req, res, next) => {
 
 app.listen(PORT, HOST, () => {
   console.log(`Server running on http://${HOST}:${PORT}`);
+  console.log(`Enhanced printing available at: http://${HOST}:${PORT}/api/print/enhanced`);
 });

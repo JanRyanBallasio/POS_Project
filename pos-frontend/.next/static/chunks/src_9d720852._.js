@@ -1680,83 +1680,156 @@ if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelper
 "[project]/src/hooks/printing/usePrint.ts [app-client] (ecmascript)", ((__turbopack_context__) => {
 "use strict";
 
+// pos-frontend/src/hooks/printing/usePrint.ts
 __turbopack_context__.s([
     "usePrint",
     ()=>usePrint
 ]);
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$polyfills$2f$process$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = /*#__PURE__*/ __turbopack_context__.i("[project]/node_modules/next/dist/build/polyfills/process.js [app-client] (ecmascript)");
 // Check if running in Tauri
 function isTauri() {
     return "object" !== 'undefined' && window.__TAURI__;
 }
-// Get backend URL for Tauri app
+// Get backend URL with better environment detection
 function getBackendUrl() {
     if (isTauri()) {
-        // Use your specific backend URL WITHOUT /api
-        return 'http://3.107.238.186:5000';
+        // For Tauri apps, always use localhost since backend runs locally
+        return 'http://localhost:5000';
     }
-    // For web, use the existing logic
-    return 'http://localhost:5000';
+    // For web browser - use your AWS backend URL
+    return ("TURBOPACK compile-time falsy", 0) ? "TURBOPACK unreachable" // Your AWS server IP
+     : 'http://localhost:5000';
 }
 function usePrint() {
-    // ✅ Add connection test function
-    const testConnection = async ()=>{
+    // Enhanced connection test with retry logic
+    const testConnection = async function() {
+        let retries = arguments.length > 0 && arguments[0] !== void 0 ? arguments[0] : 3;
+        for(let i = 0; i < retries; i++){
+            try {
+                console.log("[PRINT] Testing connection attempt ".concat(i + 1, "/").concat(retries));
+                const res = await fetch("".concat(getBackendUrl(), "/api/print/enhanced/test"), {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    },
+                    signal: AbortSignal.timeout(5000) // 5 second timeout
+                });
+                if (!res.ok) throw new Error("HTTP ".concat(res.status, ": ").concat(res.statusText));
+                const result = await res.json();
+                console.log('[PRINT] Connection test successful:', result);
+                return result;
+            } catch (error) {
+                console.warn("[PRINT] Connection test attempt ".concat(i + 1, " failed:"), error.message);
+                if (i === retries - 1) {
+                    throw new Error("Cannot connect to print server after ".concat(retries, " attempts: ").concat(error.message));
+                }
+                // Wait before retry
+                await new Promise((resolve)=>setTimeout(resolve, 1000));
+            }
+        }
+    };
+    // Get available printers
+    const getAvailablePrinters = async ()=>{
         try {
-            const res = await fetch("".concat(getBackendUrl(), "/print/test"));
-            if (!res.ok) throw new Error("Connection test failed: ".concat(res.status));
-            return await res.json();
+            console.log('[PRINT] Fetching available printers...');
+            const res = await fetch("".concat(getBackendUrl(), "/api/print/enhanced/printers"), {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                },
+                signal: AbortSignal.timeout(10000)
+            });
+            if (!res.ok) throw new Error("HTTP ".concat(res.status, ": ").concat(res.statusText));
+            const result = await res.json();
+            console.log('[PRINT] Available printers:', result);
+            return result.printers || [];
         } catch (error) {
-            throw new Error("Cannot connect to print server: ".concat(error instanceof Error ? error.message : String(error)));
+            console.error('[PRINT] Failed to get printers:', error);
+            return [
+                {
+                    name: 'Default Printer',
+                    status: 'Available',
+                    isDefault: true
+                }
+            ];
         }
     };
     const printReceipt = async (data)=>{
         if (isTauri()) {
-            // Use backend API to get logo support
             try {
-                var _data_customer;
-                // ✅ Test connection first
+                console.log('[PRINT] Starting enhanced print process...');
+                // Test connection first
                 await testConnection();
-                // ✅ Validate data before sending
+                // Validate data
                 if (!data.items || data.items.length === 0) {
                     throw new Error("No items to print");
                 }
-                console.log('[PRINT] Sending data to backend:', {
-                    items: data.items.length,
-                    total: data.cartTotal,
-                    customer: (_data_customer = data.customer) === null || _data_customer === void 0 ? void 0 : _data_customer.name
+                // Ensure all required fields are present
+                const sanitizedData = {
+                    store: data.store || {
+                        name: "YZY STORE",
+                        address1: "Eastern Slide, Tuding"
+                    },
+                    customer: data.customer || {
+                        name: "N/A"
+                    },
+                    cartTotal: Number(data.cartTotal || 0),
+                    amount: Number(data.amount || 0),
+                    change: Number(data.change || 0),
+                    points: Number(data.points || 0),
+                    items: data.items.map((item)=>({
+                            desc: String(item.desc || ''),
+                            qty: Number(item.qty || 0),
+                            price: Number(item.price || 0),
+                            amount: Number(item.amount || 0)
+                        })),
+                    printerName: data.printerName || null
+                };
+                console.log('[PRINT] Sending sanitized data:', {
+                    itemCount: sanitizedData.items.length,
+                    total: sanitizedData.cartTotal,
+                    customer: sanitizedData.customer.name,
+                    printer: sanitizedData.printerName || 'default'
                 });
-                const res = await fetch("".concat(getBackendUrl(), "/print/receipt"), {
+                const res = await fetch("".concat(getBackendUrl(), "/api/print/enhanced"), {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
                         "Accept": "application/json"
                     },
-                    body: JSON.stringify(data)
+                    body: JSON.stringify(sanitizedData),
+                    signal: AbortSignal.timeout(30000) // 30 second timeout for printing
                 });
                 console.log('[PRINT] Backend response status:', res.status);
                 if (!res.ok) {
                     const errorText = await res.text().catch(()=>"Unknown error");
-                    console.error('[PRINT] Backend error:', errorText);
-                    throw new Error("Print failed: ".concat(res.status, " ").concat(errorText));
+                    console.error('[PRINT] Backend error response:', errorText);
+                    throw new Error("Print failed (".concat(res.status, "): ").concat(errorText));
                 }
                 const result = await res.json();
-                console.log('[PRINT] Backend success:', result);
+                console.log('[PRINT] Print successful:', result);
                 return result;
             } catch (error) {
-                console.error('[PRINT] Error details:', error);
-                // ✅ Better error handling
-                if (error.name === 'TypeError' && error.message.includes('fetch')) {
-                    throw new Error("Cannot connect to print server. Please check your connection.");
+                console.error('[PRINT] Print error:', error);
+                // Provide user-friendly error messages
+                if (error.name === 'AbortError') {
+                    throw new Error("Print request timed out. Please check your printer connection.");
                 }
-                throw new Error("Print failed: ".concat(error.message || String(error)));
+                if (error.message.includes('fetch')) {
+                    throw new Error("Cannot connect to print server. Please ensure the backend is running.");
+                }
+                throw new Error("Print failed: ".concat(error.message));
             }
         } else {
-            // Web browser fallback
-            throw new Error("Printing not supported in web browser");
+            throw new Error("Printing is only supported in the desktop app");
         }
     };
     return {
         printReceipt,
-        testConnection
+        testConnection,
+        getAvailablePrinters,
+        isTauri: isTauri(),
+        backendUrl: getBackendUrl()
     };
 }
 if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelpers !== null) {
@@ -2253,7 +2326,7 @@ function POSRight(param) {
                                                     children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
                                                         type: "button",
                                                         onClick: ()=>setAmount(String(v)),
-                                                        className: "block w-full h-10 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-medium text-center",
+                                                        className: "block w-full h-10 rounded-lg border border-gray-200 bg-white hover:bg-gray-50   text-sm font-medium text-center",
                                                         children: [
                                                             "₱",
                                                             v
@@ -2273,7 +2346,7 @@ function POSRight(param) {
                                                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
                                                     type: "button",
                                                     onClick: ()=>setAmount(String(cartTotal.toFixed(2))),
-                                                    className: "block w-full h-10 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-medium text-center",
+                                                    className: "block w-full h-10 rounded-lg border border-gray-200 bg-white hover:bg-gray-50   text-sm font-medium text-center",
                                                     children: "Exact"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/dashboard/_pages/POS/components/rightColumn/index.tsx",
@@ -2563,7 +2636,7 @@ function POSRight(param) {
         columnNumber: 5
     }, this);
 }
-_s(POSRight, "WiAmcfC+9i1Brp6SThHyNYCHNBA=", false, function() {
+_s(POSRight, "C0h9S0xLsnV0T9hh19tZh6VhURI=", false, function() {
     return [
         __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$cart$2d$context$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCart"],
         __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$printing$2f$usePrint$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["usePrint"],
