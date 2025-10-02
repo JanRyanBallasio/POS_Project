@@ -24,79 +24,90 @@ function isTauri() {
   return typeof window !== 'undefined' && (window as any).__TAURI__;
 }
 
-// Generate ESC/POS receipt content matching the image format
+// Helper functions matching the backend
+function padLeft(s: string | number, len: number): string {
+  const str = String(s ?? '');
+  return str.length >= len ? str.slice(0, len) : ' '.repeat(len - str.length) + str;
+}
+
+function padRight(s: string | number, len: number): string {
+  const str = String(s ?? '');
+  return str.length >= len ? str.slice(0, len) : str + ' '.repeat(len - str.length);
+}
+
+function centerText(text: string | number, width: number): string {
+  const str = String(text ?? '');
+  if (str.length >= width) return str;
+  const left = Math.floor((width - str.length) / 2);
+  const right = width - str.length - left;
+  return ' '.repeat(left) + str + ' '.repeat(right);
+}
+
+// Generate ESC/POS receipt content matching your backend EXACTLY
 function generateESCPOSReceipt(data: PrintPayload): string {
-  let commands = '';
-  
-  // Initialize printer
-  commands += '\x1B\x40'; // ESC @
-  
-  // Header - Center aligned with logo placeholder
-  commands += '\x1B\x61\x01'; // Center
-  commands += '\x1B\x45\x01'; // Bold on
-  commands += 'YZY\n'; // Logo text
-  commands += '\x1B\x45\x00'; // Bold off
-  commands += '\n';
-  commands += `${data.store?.address1 || 'Eastern Slide, Tuding'}\n`;
-  commands += '\n';
-  
-  // Left align for content
-  commands += '\x1B\x61\x00'; // Left
-  
-  // Customer and date
-  const date = new Date().toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: '2-digit'
-  });
-  
-  const customerName = data.customer?.name || 'N/A';
-  commands += `Customer: ${customerName}\n`;
-  commands += `Date: ${date}\n`;
-  commands += '--------------------------------\n';
-  
-  // Items header - matching the image format
-  commands += 'Item                 QTY  Price  Amount\n';
-  commands += '--------------------------------\n';
-  
-  // Items - format to match the image
-  data.items.forEach((item) => {
-    const desc = item.desc.length > 20 
-      ? item.desc.substring(0, 17) + '...' 
-      : item.desc.padEnd(20);
-    
-    const qty = item.qty.toString().padStart(3);
-    const price = (item.price || 0).toFixed(2).padStart(6);
-    const amount = item.amount.toFixed(2).padStart(7);
-    
-    commands += `${desc} ${qty} ${price} ${amount}\n`;
-  });
-  
-  // Totals section - matching the image
-  commands += '--------------------------------\n';
-  commands += `                       TOTAL: ${data.cartTotal.toFixed(2).padStart(7)}\n`;
-  commands += `                      AMOUNT: ${data.amount.toFixed(2).padStart(7)}\n`;
-  commands += `                      CHANGE: ${data.change.toFixed(2).padStart(7)}\n`;
-  commands += '--------------------------------\n';
-  
-  if (data.points !== undefined && data.points > 0) {
-    commands += `Customer Points: ${data.points}\n`;
-    commands += '--------------------------------\n';
+  const dateStr = new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: '2-digit' });
+  const LINE_WIDTH = 48; // 80mm printer width
+
+  let r = '';
+  r += '\x1B\x40'; // init
+  r += '\x1B\x74\x00'; // encoding
+  r += '\x1B\x61\x01'; // center
+
+  // Store info centered - add store name
+  if (data.store?.name) r += centerText(data.store.name, LINE_WIDTH) + '\n';
+  if (data.store?.address1) r += centerText(data.store.address1, LINE_WIDTH) + '\n';
+  if (data.store?.address2) r += centerText(data.store.address2, LINE_WIDTH) + '\n';
+  r += '\n';
+
+  // Left align
+  r += '\x1B\x61\x00';
+  r += `Customer: ${data.customer?.name || 'N/A'}\n`;
+  r += `Date: ${dateStr}\n`;
+  r += ''.padEnd(LINE_WIDTH, '-') + '\n';
+
+  // Table header (24 + 4 + 10 + 10 = 48)
+  r += padRight('Item', 24) + padLeft('QTY', 4) + padLeft('Price', 10) + padLeft('Amount', 10) + '\n';
+  r += ''.padEnd(LINE_WIDTH, '-') + '\n';
+
+  // Items
+  const items = Array.isArray(data.items) ? data.items : [];
+  for (const it of items) {
+    const name = String(it.desc || '').trim();
+    const lines = [];
+    for (let i = 0; i < name.length; i += 24) lines.push(name.slice(i, i + 24));
+
+    const qty = padLeft(it.qty || 0, 4);
+    // Add Peso symbol to price
+    const price = padLeft(`P${(it.price ?? (it.amount || 0) / Math.max(1, it.qty || 1)).toFixed(2)}`, 10);
+    const amount = padLeft(`P${(it.amount || 0).toFixed(2)}`, 10);
+
+    r += padRight(lines[0], 24) + qty + price + amount + '\n';
+    for (let i = 1; i < lines.length; i++) {
+      r += padRight(lines[i], 24) + '\n';
+    }
+    // Add extra spacing for readability
+    r += '\n';
   }
-  
-  // Footer - matching the image
-  commands += '\n';
-  commands += '\x1B\x61\x01'; // Center align
-  commands += 'CUSTOMER COPY - NOT AN OFFICIAL RECEIPT\n';
-  commands += 'THANK YOU - GATANG KA MANEN!\n';
-  commands += '\x1B\x61\x00'; // Left align
-  
-  // Cut paper
-  commands += '\n\n';
-  commands += '\x1B\x64\x03'; // Feed 3 lines
-  commands += '\x1D\x56\x00'; // Full cut
-  
-  return commands;
+
+  r += ''.padEnd(LINE_WIDTH, '-') + '\n';
+  // Add Peso symbols to totals
+  r += padLeft('TOTAL:', 38) + padLeft(`P${(data.cartTotal || 0).toFixed(2)}`, 10) + '\n';
+  r += padLeft('AMOUNT:', 38) + padLeft(`P${(data.amount || 0).toFixed(2)}`, 10) + '\n';
+  r += padLeft('CHANGE:', 38) + padLeft(`P${(data.change || 0).toFixed(2)}`, 10) + '\n';
+  r += ''.padEnd(LINE_WIDTH, '-') + '\n';
+  r += `Customer Points: ${Number(data.points || 0)}\n`;
+  r += ''.padEnd(LINE_WIDTH, '-') + '\n\n';
+
+  // Footer
+  r += '\x1B\x61\x01';
+  r += 'CUSTOMER COPY - NOT AN OFFICIAL RECEIPT\n';
+  r += 'THANK YOU - GATANG KA MANEN!\n';
+  r += '\x1B\x61\x00';
+  r += '\n\n';
+  r += '\x1B\x64\x07'; // feed
+  r += '\x1D\x56\x00'; // cut
+
+  return r;
 }
 
 export function usePrint() {
@@ -140,13 +151,13 @@ export function usePrint() {
       throw new Error("Test connection only available in desktop app");
     }
     
-    // Test with sample data
+    // Test with sample data matching Image 2
     const testData: PrintPayload = {
-      store: { name: "YZY STORE", address1: "Eastern Slide, Tuding" },
-      customer: { name: "Test Customer" },
-      cartTotal: 10.00,
-      amount: 10.00,
-      change: 0.00,
+      store: { name: "YZY", address1: "Eastern Slide, Tuding" },
+      customer: { name: "N/A" },
+      cartTotal: 23.00,
+      amount: 50.00,
+      change: 27.00,
       points: 0,
       items: [
         {
@@ -154,6 +165,12 @@ export function usePrint() {
           qty: 1,
           price: 10.00,
           amount: 10.00
+        },
+        {
+          desc: "MAGIC SARAP TRIPID 21G",
+          qty: 1,
+          price: 13.00,
+          amount: 13.00
         }
       ]
     };

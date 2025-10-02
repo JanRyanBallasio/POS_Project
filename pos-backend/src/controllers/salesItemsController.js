@@ -49,7 +49,7 @@ const salesItemsController = {
           Sales!inner(created_at)
         `)
         .gte('Sales.created_at', from)
-        .lte('Sales.created_at', to);
+        .lt('Sales.created_at', to);
 
       if (error) throw error;
 
@@ -169,7 +169,7 @@ const salesItemsController = {
           `)
           .eq('Products.Categories.name', category_name)
           .gte('Sales.created_at', from)
-          .lte('Sales.created_at', to);
+          .lt('Sales.created_at', to);
 
         if (error) throw error;
 
@@ -212,6 +212,134 @@ const salesItemsController = {
         success: false,
         error: error?.message || String(error),
       });
+    }
+  },
+
+  // NEW: Get individual product sales data for Product Analytics
+  getProductSales: async (req, res) => {
+    try {
+      let { from, to } = req.query;
+
+      if (!from || !to) {
+        const range = getManilaDayRangeAsUTC();
+        from = range.from;
+        to = range.to;
+      }
+
+      console.log('🚀 getProductSales called with SQL function!');
+      console.log('📅 Exact SQL inputs:', { from, to });
+      console.log('📅 Human readable:', {
+        from: new Date(from).toISOString(),
+        to: new Date(to).toISOString()
+      });
+
+      // Use the enhanced SQL function for aggregated totals
+      const { data, error } = await supabase.rpc('get_product_sales_totals', {
+        from_date: from,
+        to_date: to
+      });
+
+      if (error) {
+        console.error('❌ RPC Error:', error);
+        throw error;
+      }
+
+      console.log('✅ SQL function result count:', data?.length || 0);
+      
+      if (data && data.length > 0) {
+        console.log('📊 First 3 raw results from SQL:');
+        data.slice(0, 3).forEach((item, i) => {
+          console.log(`${i + 1}. ${item.product_name}: total_sales=${item.total_sales}, qty=${item.total_quantity}`);
+        });
+      } else {
+        console.log('⚠️ No data returned from SQL function - checking date range...');
+        
+        // Test with a wider date range to see if it's a timezone issue
+        const testResult = await supabase.rpc('get_product_sales_totals', {
+          from_date: '2025-08-01T00:00:00.000Z',
+          to_date: '2025-11-01T00:00:00.000Z'
+        });
+        console.log('🧪 Test with wider range returned:', testResult.data?.length || 0, 'products');
+      }
+
+      if (!data || data.length === 0) {
+        return res.json({ success: true, data: [] });
+      }
+
+      // Transform to match frontend expectations - FIX field mapping
+      const transformedData = data.map(item => ({
+        product_id: null,
+        product_name: item.product_name,
+        category_name: item.category_name,
+        quantity: Number(item.total_quantity) || 0,  // ← Fixed mapping
+        price: Number(item.average_price) || 0,      // ← Fixed mapping  
+        total: Number(item.total_sales) || 0,        // ← Fixed mapping
+        unit: item.unit || 'pcs',
+        last_purchase: item.last_purchase,
+        sale_count: Number(item.sale_count) || 0
+      }));
+
+      console.log('🔍 TOP 5 PRODUCTS BY TOTAL SALES (after transform):');
+      transformedData.slice(0, 5).forEach((product, index) => {
+        console.log(`${index + 1}. ${product.product_name}: ₱${product.total.toLocaleString()} (${product.quantity} ${product.unit}, ${product.sale_count} transactions)`);
+      });
+      
+      return res.json({ success: true, data: transformedData });
+    } catch (error) {
+      console.error('❌ Product sales SQL function error:', error);
+      return res.status(500).json({
+        success: false,
+        error: error?.message || String(error),
+      });
+    }
+  },
+
+  // Get raw sales details for a single product
+  getProductDetails: async (req, res) => {
+    try {
+      const { product_name, from, to } = req.query;
+      if (!product_name) {
+        return res.status(400).json({ success: false, error: "product_name is required" });
+      }
+
+      if (!from || !to) {
+        const range = getManilaDayRangeAsUTC();
+        from = range.from;
+        to = range.to;
+      }
+
+      console.log(`Getting details for product: ${product_name}`);
+
+      const { data, error } = await supabase
+        .from("SaleItems")
+        .select(`
+          quantity,
+          price,
+          created_at,
+          Products!inner(name, unit),
+          Sales!inner(created_at)
+        `)
+        .eq("Products.name", product_name)
+        .gte("Sales.created_at", from)
+        .lt("Sales.created_at", to)
+        .order('Sales.created_at', { ascending: false }); // Most recent first
+
+      if (error) throw error;
+
+      const details = data.map(item => ({
+        name: item.Products.name,
+        qty: Number(item.quantity) || 0,
+        price: Number(item.price) || 0,
+        total: (Number(item.quantity) || 0) * (Number(item.price) || 0),
+        unit: item.Products.unit || "pcs",
+        last_purchase: item.Sales.created_at
+      }));
+
+      console.log(`Found ${details.length} transactions for ${product_name}`);
+      return res.json({ success: true, data: details });
+    } catch (err) {
+      console.error("getProductDetails error:", err);
+      return res.status(500).json({ success: false, error: err.message });
     }
   },
 };

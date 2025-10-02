@@ -61,6 +61,24 @@ const fetcher = async (url: string) => {
   return response.data?.data || response.data || []
 }
 
+// Manila timezone helpers
+const MANILA_OFFSET_MS = 8 * 60 * 60 * 1000
+function manilaDayStartUTCiso(d: Date) {
+  const y = d.getFullYear()
+  const m = d.getMonth()
+  const day = d.getDate()
+  const manilaMidnightUTCms = Date.UTC(y, m, day, 0, 0, 0) - MANILA_OFFSET_MS
+  return new Date(manilaMidnightUTCms).toISOString()
+}
+function manilaNextDayStartUTCiso(d: Date) {
+  const y = d.getFullYear()
+  const m = d.getMonth()
+  const day = d.getDate()
+  const manilaMidnightUTCms = Date.UTC(y, m, day, 0, 0, 0) - MANILA_OFFSET_MS
+  const nextMidnight = manilaMidnightUTCms + 24 * 60 * 60 * 1000
+  return new Date(nextMidnight).toISOString()
+}
+
 export default function ProductStats() {
   const today = new Date()
   const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
@@ -69,80 +87,42 @@ export default function ProductStats() {
     from: startOfMonth,
     to: today
   })
-  // Change the default sort order from 'desc' to 'recent':
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | 'recent'>('recent')
-  
-  // State declarations
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | 'recent'>('desc')
   const [open, setOpen] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null)
   const [productDetails, setProductDetails] = useState<ProductDetail[]>([])
   const [loadingDetails, setLoadingDetails] = useState(false)
-  // Also change the table sort order default:
-  const [tableSortOrder, setTableSortOrder] = useState<'asc' | 'desc' | 'recent'>('recent')
+  const [tableSortOrder, setTableSortOrder] = useState<'asc' | 'desc' | 'recent'>('desc')
   const [productLimit, setProductLimit] = useState(15)
 
-  // Fetch product sales data from all categories
+  // API URL
   const productSalesUrl = useMemo(() => {
-    const params = new URLSearchParams()
-    if (range?.from) params.set('from_date', range.from.toISOString())
-    if (range?.to) params.set('to_date', range.to.toISOString())
-    return `/sales-items?${params.toString()}`
-  }, [range])
+    if (!range?.from || !range?.to) return '/sales-items/products'
+    const fromIso = manilaDayStartUTCiso(range.from)
+    const toIso = manilaNextDayStartUTCiso(range.to)
+    return `/sales-items/products?from=${encodeURIComponent(fromIso)}&to=${encodeURIComponent(toIso)}`
+  }, [range?.from?.getTime(), range?.to?.getTime()])
 
-  // Fetch product sales data
+  // Fetch sales data
   const { data: productSales = [], error, isLoading, isValidating } = useSWR(
     productSalesUrl,
     fetcher,
     { keepPreviousData: true, revalidateOnFocus: false }
   )
 
-  // Transform the data to match our expected format
+  // ✅ Use backend totals directly, no re-aggregation
   const productSalesData = useMemo(() => {
-    if (productSales.length === 0) return []
-    
-    const productMap = new Map<string, ProductSaleItem>()
-    
-    productSales.forEach((item: any) => {
-      const productName = item.product_name || 'Unknown Product'
-      const existing = productMap.get(productName)
-      
-      if (existing) {
-        existing.total_sales += Number(item.total) || 0
-        existing.quantity += Number(item.qty) || 0
-        // Keep the most recent purchase date
-        if (new Date(item.last_purchase) > new Date(existing.last_purchase)) {
-          existing.last_purchase = item.last_purchase
-        }
-      } else {
-        productMap.set(productName, {
-          product_name: productName,
-          total_sales: Number(item.total) || 0,
-          quantity: Number(item.qty) || 0,
-          price: Number(item.price) || 0,
-          unit: item.unit || 'pcs',
-          last_purchase: item.last_purchase
-        })
-      }
-    })
-    
-    return Array.from(productMap.values())
+    if (!productSales.length) return []
+
+    return productSales.map((item: any) => ({
+      product_name: item.product_name || 'Unknown Product',
+      total_sales: Number(item.total_sales || item.total) || 0,  // ← Handle both field names
+      quantity: Number(item.total_quantity || item.quantity) || 0,  // ← Handle both field names
+      price: Number(item.average_price || item.price) || 0,     // ← Handle both field names
+      unit: item.unit || 'pcs',
+      last_purchase: item.last_purchase
+    }))
   }, [productSales])
-
-  // Fetch products to get product names and units
-  const { data: allProducts = [] } = useSWR(
-    '/products?limit=all',
-    fetcher,
-    { keepPreviousData: true, revalidateOnFocus: false }
-  )
-
-  // Create a map of product_id to product info
-  const productMap = useMemo(() => {
-    const map = new Map<number, any>()
-    allProducts.forEach((product: any) => {
-      map.set(product.id, product)
-    })
-    return map
-  }, [allProducts])
 
   const handleBarClick = async (data: any) => {
     setSelectedProduct(data.product_name)
@@ -150,21 +130,21 @@ export default function ProductStats() {
     setLoadingDetails(true)
 
     try {
-      // Filter the productSales data for this specific product
-      const productSalesItems = productSales.filter((item: any) => 
-        item.product_name === data.product_name
-      )
+      const fromIso = manilaDayStartUTCiso(range?.from || new Date())
+      const toIso = manilaNextDayStartUTCiso(range?.to || new Date())
 
-      const transformedDetails = productSalesItems.map((item: any) => ({
-        name: item.product_name,
-        qty: Number(item.qty) || 0,
-        price: Number(item.price) || 0,
-        total: Number(item.total) || 0,
-        unit: item.unit || 'pcs',
-        last_purchase: item.last_purchase
-      }))
+      const response = await axios.get(`/sales-items/product-details`, {
+        params: {
+          product_name: data.product_name,
+          from: fromIso,
+          to: toIso
+        }
+      })
 
-      setProductDetails(transformedDetails)
+      const details = response.data?.data || []
+      setProductDetails(details)
+
+      console.log(`Loaded ${details.length} transactions for ${data.product_name}`)
     } catch (error: any) {
       console.error('Error fetching product details:', error)
       setProductDetails([])
@@ -173,13 +153,10 @@ export default function ProductStats() {
     }
   }
 
-  // Sort table data locally based on tableSortOrder
   const sortedProductDetails = useMemo(() => {
     switch (tableSortOrder) {
-      case 'asc':
-        return [...productDetails].sort((a, b) => (a.total || 0) - (b.total || 0))
-      case 'desc':
-        return [...productDetails].sort((a, b) => (b.total || 0) - (a.total || 0))
+      case 'asc': return [...productDetails].sort((a, b) => (a.total || 0) - (b.total || 0))
+      case 'desc': return [...productDetails].sort((a, b) => (b.total || 0) - (a.total || 0))
       case 'recent':
       default:
         return [...productDetails].sort((a, b) => {
@@ -190,46 +167,34 @@ export default function ProductStats() {
     }
   }, [productDetails, tableSortOrder])
 
-  // Compute total of product details currently shown in modal
   const productDetailsTotal = productDetails.reduce((acc, p) => acc + (Number(p.total) || 0), 0)
 
-  // Chart data with sorting
   const chartData = useMemo(() => {
-    const arr = productSalesData.map(item => ({
-      product_name: item.product_name,
-      total_sales: item.total_sales,
-      quantity: item.quantity,
-      price: item.price,
-      unit: item.unit,
-      last_purchase: item.last_purchase
-    }))
-
-
-    // Sort first, then limit to the specified number of products
     let sorted
     switch (sortOrder) {
-      case 'asc': 
-        sorted = [...arr].sort((a, b) => a.total_sales - b.total_sales)
-        break
-      case 'desc': 
-        sorted = [...arr].sort((a, b) => b.total_sales - a.total_sales)
-        break
-      case 'recent': 
-        sorted = [...arr].sort((a, b) => new Date(b.last_purchase).getTime() - new Date(a.last_purchase).getTime())
-        break
-      default: 
-        sorted = [...arr].sort((a, b) => b.total_sales - a.total_sales)
+      case 'asc': sorted = [...productSalesData].sort((a, b) => a.total_sales - b.total_sales); break
+      case 'desc': sorted = [...productSalesData].sort((a, b) => b.total_sales - a.total_sales); break
+      case 'recent': sorted = [...productSalesData].sort((a, b) =>
+        new Date(b.last_purchase).getTime() - new Date(a.last_purchase).getTime()
+      ); break
+      default: sorted = [...productSalesData].sort((a, b) => b.total_sales - a.total_sales)
     }
     
-    // Limit to the specified number of products
-    return sorted.slice(0, productLimit)
-  }, [productSalesData, sortOrder, productLimit]) // Add productLimit to dependencies
+    const limited = sorted.slice(0, productLimit)
+    
+    // Add debugging
+    console.log('🔍 PRODUCT ANALYTICS DEBUG:')
+    console.log('Total products from API:', productSalesData.length)
+    console.log('Product limit setting:', productLimit)
+    console.log('Chart data length after limit:', limited.length)
+    console.log('Chart data sample:', limited.slice(0, 3).map(p => p.product_name))
+    
+    return limited
+  }, [productSalesData, sortOrder, productLimit])
 
   const total = useMemo(() => chartData.reduce((acc, curr) => acc + curr.total_sales, 0), [chartData])
 
-  // Initial empty state: show skeleton full-chart if first load and no data
   const initialLoadingNoData = isLoading && productSalesData.length === 0
-  // Updating overlay while revalidating (keep previous chart visible)
   const isUpdating = isValidating && productSalesData.length > 0
 
   return (
@@ -240,7 +205,6 @@ export default function ProductStats() {
           <CardDescription>Showing highest selling products for this month.</CardDescription>
           <CardAction className='mt-2 @md/card:mt-0'>
             <div className="flex gap-2 items-center mt-2">
-              {/* Add the input field here */}
               <div className="flex items-center gap-2">
                 <label className="text-sm font-medium">Show:</label>
                 <input
@@ -253,7 +217,6 @@ export default function ProductStats() {
                 />
                 <span className="text-sm text-gray-600">products</span>
               </div>
-              
               <Button onClick={() => setSortOrder('desc')} variant={sortOrder === 'desc' ? 'default' : 'outline'} size="sm">
                 <ChevronDown size={16} />
               </Button>
@@ -284,58 +247,39 @@ export default function ProductStats() {
           <div className="relative h-89 w-full">
             <div className="absolute inset-0 z-10 flex items-center justify-center">
               {chartData.length > 0 ? (
-                <div className="w-full h-full">
-                  <ChartContainer config={chartConfig} className='aspect-auto h-89 w-full'>
-                    <BarChart data={chartData} margin={{ left: 12, right: 12 }}>
-                      <CartesianGrid vertical={false} />
-                      <XAxis 
-                        dataKey='product_name' 
-                        tickLine={false} 
-                        axisLine={false} 
-                        tickMargin={8} 
-                        minTickGap={20}
-                        angle={-45}
-                        textAnchor="end"
-                        height={100}
-                      />
-                      <ChartTooltip
-                        content={
-                          <ChartTooltipContent
-                            className='w-[200px]'
-                            nameKey='total_sales'
-                            labelFormatter={v => v}
-                            formatter={(value, name, props) => {
-                              return [
-                                `₱ ${Number(value).toLocaleString()}`,
-                                ''
-                              ]
-                            }}
-                          />
-                        }
-                      />
-                      <Bar dataKey='total_sales' fill={`var(--color-total_sales)`} radius={4} onClick={handleBarClick} />
-                    </BarChart>
-                  </ChartContainer>
-                </div>
+                <ChartContainer config={chartConfig} className='aspect-auto h-89 w-full'>
+                  <BarChart data={chartData} margin={{ left: 12, right: 12 }}>
+                    <CartesianGrid vertical={false} />
+                    <XAxis 
+                      dataKey='product_name' 
+                      tickLine={false} 
+                      axisLine={false} 
+                      tickMargin={8} 
+                      minTickGap={20}
+                      angle={-45}
+                      textAnchor="end"
+                      height={100}
+                      interval={0} // Show all ticks for the limited data
+                      fontSize={10} // Smaller font to fit better
+                    />
+                    <ChartTooltip
+                      content={
+                        <ChartTooltipContent
+                          className='w-[200px]'
+                          nameKey='total_sales'
+                          labelFormatter={v => v}
+                          formatter={(value) => [`₱ ${Number(value).toLocaleString()}`, '']}
+                        />
+                      }
+                    />
+                    <Bar dataKey='total_sales' fill={`var(--color-total_sales)`} radius={4} onClick={handleBarClick} />
+                  </BarChart>
+                </ChartContainer>
               ) : (
-                <div className="w-full h-full flex items-center justify-center px-4">
-                  {error ? (
-                    <div className="text-sm text-red-600">Error loading product stats.</div>
-                  ) : (!isLoading && productSalesData.length === 0) ? (
-                    <div className="text-sm text-gray-600">No data for the selected range.</div>
-                  ) : (
-                    <div className="w-full h-full" />
-                  )}
-                </div>
+                <div className="text-sm text-gray-600">No data for the selected range.</div>
               )}
             </div>
-
-            {/* Skeleton overlay */}
-            <div
-              aria-hidden
-              className={`absolute inset-0 z-20 flex items-end px-4 pointer-events-none transition-opacity duration-300 ease-in-out ${(isUpdating || initialLoadingNoData) ? 'opacity-100' : 'opacity-0'
-                }`}
-            >
+            <div aria-hidden className={`absolute inset-0 z-20 flex items-end px-4 pointer-events-none transition-opacity duration-300 ease-in-out ${(isUpdating || initialLoadingNoData) ? 'opacity-100' : 'opacity-0'}`}>
               <div className="flex w-full h-full items-end gap-3">
                 {Array.from({ length: Math.max(6, chartData.length || 6) }).map((_, i) => {
                   const heights = [28, 44, 60, 36, 52, 40]
@@ -360,83 +304,37 @@ export default function ProductStats() {
         </CardFooter>
       </Card>
 
-      {/* Modal with product details */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="w-full max-w-5xl sm:max-w-4xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl">
+        <DialogContent className="w-full max-w-5xl">
           <DialogHeader className="flex flex-row items-center justify-between">
-            <div>
-              <DialogTitle className="text-lg font-semibold items-center">
-                {selectedProduct ? `${selectedProduct} — Total Amount: ₱ ${productDetailsTotal.toLocaleString()}` : `₱ ${productDetailsTotal.toLocaleString()}`}
-              </DialogTitle>
-              <div className="text-sm text-gray-600 mt-1">
-                Total Quantity Sold: {productDetails.reduce((acc, p) => acc + p.qty, 0).toLocaleString()} {productDetails[0]?.unit || 'units'}
-              </div>
-            </div>
-            <div className="flex gap-2 pr-4">
-              <Button
-                onClick={() => setTableSortOrder('desc')}
-                variant={tableSortOrder === 'desc' ? 'default' : 'outline'}
-                size="icon"
-                className="w-8 h-8"
-              >
-                <ChevronDown size={16} />
-              </Button>
-              <Button
-                onClick={() => setTableSortOrder('recent')}
-                variant={tableSortOrder === 'recent' ? 'default' : 'outline'}
-                size="icon"
-                className="w-8 h-8"
-              >
-                <History size={16} />
-              </Button>
-              <Button
-                onClick={() => setTableSortOrder('asc')}
-                variant={tableSortOrder === 'asc' ? 'default' : 'outline'}
-                size="icon"
-                className="w-8 h-8"
-              >
-                <ChevronUp size={16} />
-              </Button>
-            </div>
+            <DialogTitle>
+              {selectedProduct ? `${selectedProduct} — Total Amount: ₱ ${productDetailsTotal.toLocaleString()}` : `₱ ${productDetailsTotal.toLocaleString()}`}
+            </DialogTitle>
           </DialogHeader>
-
           <ScrollArea className="h-80 mt-4 rounded-md border bg-white">
-            {loadingDetails && productDetails.length === 0 && (
-              <div className="p-4 text-center text-gray-600">Loading product details…</div>
-            )}
-
             {sortedProductDetails.length > 0 ? (
-              <>
-                {loadingDetails && (
-                  <div className="p-2 text-sm text-gray-600 border-b">Updating details…</div>
-                )}
-                <table className="w-full text-sm border-collapse">
-                  <thead className="bg-gray-100 sticky top-0">
-                    <tr>
-                      <th className="p-2 border text-left font-semibold">Product</th>
-                      <th className="p-2 border text-center font-semibold">Quantity Sold</th>
-                      <th className="p-2 border text-center font-semibold">Unit Price</th>
-                      <th className="p-2 border text-center font-semibold">Total</th>
+              <table className="w-full text-sm border-collapse">
+                <thead className="bg-gray-100 sticky top-0">
+                  <tr>
+                    <th className="p-2 border text-left">Product</th>
+                    <th className="p-2 border text-center">Quantity Sold</th>
+                    <th className="p-2 border text-center">Unit Price</th>
+                    <th className="p-2 border text-center">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedProductDetails.map((p, idx) => (
+                    <tr key={idx}>
+                      <td className="p-2 border">{p.name}</td>
+                      <td className="p-2 border text-center">{p.qty.toLocaleString()} {p.unit}</td>
+                      <td className="p-2 border text-center">₱ {p.price.toLocaleString()}</td>
+                      <td className="p-2 border text-center">₱ {p.total.toLocaleString()}</td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {sortedProductDetails.map((p, idx) => (
-                      <tr key={idx} className="hover:bg-gray-50 transition">
-                        <td className="p-2 border font-medium">{p.name}</td>
-                        <td className="p-2 border text-center font-semibold text-blue-600">
-                          {p.qty.toLocaleString()} {p.unit}
-                        </td>
-                        <td className="p-2 border text-left">₱ {p.price.toLocaleString()}</td>
-                        <td className="p-2 border text-left font-semibold">₱ {p.total.toLocaleString()}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </>
+                  ))}
+                </tbody>
+              </table>
             ) : (
-              !loadingDetails && (
-                <p className="p-4 text-center text-gray-500">No details found for this product.</p>
-              )
+              <p className="p-4 text-center text-gray-500">No details found for this product.</p>
             )}
           </ScrollArea>
         </DialogContent>

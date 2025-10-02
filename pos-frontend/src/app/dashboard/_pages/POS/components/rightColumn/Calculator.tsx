@@ -55,7 +55,7 @@ export default function Calculator({
     if (e.key === "Enter" && !e.ctrlKey) {
       e.preventDefault();
       e.stopPropagation();
-      window.dispatchEvent(new CustomEvent("pos:step-1-complete"));
+      window.dispatchEvent(new CustomEvent("pos:next-step"));
     }
   };
 

@@ -28,10 +28,13 @@ type Sale = {
   total_purchase: number
 }
 
-type ChartData = {
-  date: string
-  customer: number
+type AggregatedSale = {
+  sale_date: string
+  total_sales: number
 }
+
+// Create a union type for flexibility
+type SalesData = Sale | AggregatedSale
 
 const chartConfig: ChartConfig = {
   customer: {
@@ -51,24 +54,26 @@ const MANILA_OFFSET_MS = 8 * 60 * 60 * 1000
 // Return UTC ISO that corresponds to Manila 00:00:00.000 for the provided date (inclusive start).
 // Caller should pass a Date representing the selected local day (from calendar).
 function manilaDayStartUTCiso(d: Date) {
-  const manilaLocal = new Date(d.getTime() + MANILA_OFFSET_MS)
-  const y = manilaLocal.getUTCFullYear()
-  const m = manilaLocal.getUTCMonth()
-  const day = manilaLocal.getUTCDate()
+  // d is already a local date from the calendar picker
+  // We need to treat it as if it's a Manila date and convert to UTC
+  const y = d.getFullYear()
+  const m = d.getMonth()
+  const day = d.getDate()
+  
+  // Create Manila midnight for this date, then convert to UTC
   const manilaMidnightUTCms = Date.UTC(y, m, day, 0, 0, 0) - MANILA_OFFSET_MS
-  return new Date(manilaMidnightUTCms).toISOString() // inclusive start
+  return new Date(manilaMidnightUTCms).toISOString()
 }
 
-// Return UTC ISO for Manila next-day 00:00:00.000 (exclusive end).
-// Use this as `to` so backend can use created_at < to and include the whole last Manila day.
 function manilaNextDayStartUTCiso(d: Date) {
-  const manilaLocal = new Date(d.getTime() + MANILA_OFFSET_MS)
-  const y = manilaLocal.getUTCFullYear()
-  const m = manilaLocal.getUTCMonth()
-  const day = manilaLocal.getUTCDate()
+  const y = d.getFullYear()
+  const m = d.getMonth()
+  const day = d.getDate()
+  
+  // Create Manila midnight for this date, add 24 hours, then convert to UTC
   const manilaMidnightUTCms = Date.UTC(y, m, day, 0, 0, 0) - MANILA_OFFSET_MS
   const nextMidnight = manilaMidnightUTCms + 24 * 60 * 60 * 1000
-  return new Date(nextMidnight).toISOString() // exclusive end
+  return new Date(nextMidnight).toISOString()
 }
 
 // Convert an ISO created_at (UTC) to a Manila YYYY-MM-DD string
@@ -119,14 +124,14 @@ export default function SalesStats() {
   // build URL with from/to when range selected (convert to Manila day boundaries -> UTC ISO)
   // pass from = Manila 00:00 (inclusive), to = next Manila 00:00 (exclusive) so backend can use gte / lt
   const salesUrl = React.useMemo(() => {
-    if (!range?.from || !range?.to) return '/sales'
+    if (!range?.from || !range?.to) return '/sales?aggregate=daily'
     const fromIso = manilaDayStartUTCiso(range.from)
-    const toIso = manilaNextDayStartUTCiso(range.to) // exclusive end: includes the whole `range.to` Manila day
-    return `/sales?from=${encodeURIComponent(fromIso)}&to=${encodeURIComponent(toIso)}`
+    const toIso = manilaNextDayStartUTCiso(range.to)
+    return `/sales?aggregate=daily&from=${encodeURIComponent(fromIso)}&to=${encodeURIComponent(toIso)}`
   }, [range?.from?.getTime(), range?.to?.getTime()])
 
   // Keep previous data during revalidation to avoid flicker
-  const { data: sales = [], error, isLoading, isValidating } = useSWR<Sale[]>(
+  const { data: sales = [], error, isLoading, isValidating } = useSWR<SalesData[]>(
     salesUrl,
     fetcher,
     { keepPreviousData: true, revalidateOnFocus: false }
@@ -135,10 +140,18 @@ export default function SalesStats() {
   // Group by Manila date (YYYY-MM-DD)
   const groupedByDateMap = React.useMemo(() => {
     const map = new Map<string, number>()
+    
     sales.forEach(sale => {
-      const key = createdAtToManilaYmd(sale.created_at)
-      map.set(key, (map.get(key) || 0) + (sale.total_purchase || 0))
+      if ('sale_date' in sale) {
+        // Aggregated data from the new API
+        map.set(sale.sale_date, sale.total_sales || 0)
+      } else {
+        // Individual sales data (fallback)
+        const key = createdAtToManilaYmd(sale.created_at)
+        map.set(key, (map.get(key) || 0) + (sale.total_purchase || 0))
+      }
     })
+    
     return map
   }, [sales])
 
@@ -146,6 +159,7 @@ export default function SalesStats() {
   const chartSeries = React.useMemo(() => {
     let fromDate: Date
     let toDate: Date
+    
     if (range?.from && range?.to) {
       fromDate = new Date(range.from.getFullYear(), range.from.getMonth(), range.from.getDate())
       toDate = new Date(range.to.getFullYear(), range.to.getMonth(), range.to.getDate())
@@ -156,6 +170,7 @@ export default function SalesStats() {
       fromDate = new Date(min.getFullYear(), min.getMonth(), min.getDate())
       toDate = new Date(max.getFullYear(), max.getMonth(), max.getDate())
     } else {
+      const today = new Date()
       fromDate = new Date(today.getFullYear(), today.getMonth(), today.getDate())
       toDate = fromDate
     }
@@ -168,7 +183,7 @@ export default function SalesStats() {
         customer: groupedByDateMap.get(key) || 0
       }
     })
-  }, [range?.from?.getTime(), range?.to?.getTime(), sales, groupedByDateMap, today])
+  }, [range?.from?.getTime(), range?.to?.getTime(), sales, groupedByDateMap])
 
   // --- NEW: compute chartDisplayData based on sortOrder ---
   const chartDisplayData = React.useMemo(() => {
@@ -204,6 +219,44 @@ export default function SalesStats() {
 
   const initialLoadingNoData = isLoading && sales.length === 0
   const isUpdating = isValidating && sales.length > 0
+
+  // Add debugging logs
+  React.useEffect(() => {
+    if (range?.from && range?.to) {
+      const fromIso = manilaDayStartUTCiso(range.from)
+      const toIso = manilaNextDayStartUTCiso(range.to)
+      
+      console.log('🔍 DEBUGGING SALES CHART:')
+      console.log('Selected range:', {
+        from: range.from.toISOString(),
+        to: range.to.toISOString()
+      })
+      console.log('Converted to Manila UTC:', {
+        fromIso,
+        toIso
+      })
+      console.log('Sales URL:', salesUrl)
+      console.log('Raw sales data count:', sales.length)
+      console.log('Raw sales data sample:', sales.slice(0, 3))
+      
+      // Check what type of data we have
+      const dataType = sales.length > 0 && 'sale_date' in sales[0] ? 'aggregated' : 'individual'
+      console.log('Data type:', dataType)
+      
+      if (dataType === 'aggregated') {
+        console.log('✅ Using aggregated data!')
+      } else {
+        console.log('❌ Still using individual sales data - backend not working!')
+      }
+      
+      // Check the grouped data
+      console.log('Grouped by date map:', Object.fromEntries(groupedByDateMap))
+      
+      // Check the chart series
+      console.log('Chart series length:', chartSeries.length)
+      console.log('Chart series sample:', chartSeries.slice(0, 5))
+    }
+  }, [range, sales, salesUrl, groupedByDateMap, chartSeries])
 
   if (error && !sales.length) return <div>Error loading sales data.</div>
 
