@@ -166,27 +166,225 @@ const salesController = {
   getSales: async (req, res) => {
     try {
       let { from, to } = req.query;
+      
+      console.log('�� BACKEND DEBUGGING:')
+      console.log('Received query params:', req.query)
 
-      // Default to Manila calendar day (converted to UTC) if not provided
       if (!from || !to) {
         const range = getManilaDayRangeAsUTC();
         from = range.from;
         to = range.to;
       }
 
-      // Query using UTC timestamps that correspond to Manila's 00:00 - 24:00 range.
-      // Use >= from and < to (exclusive upper bound) to avoid ms-precision edge cases.
-      const { data, error } = await supabase
-        .from('Sales')
-        .select('*')
-        .gte('created_at', from)
-        .lt('created_at', to)
-        .order('created_at', { ascending: false });
+      console.log('Final query range:', { from, to })
+      console.log('Using BATCH FETCHING to get ALL records')
+      
+      // Batch fetching to get ALL records
+      let allSalesData = [];
+      let start = 0;
+      const batchSize = 1000;
+      let hasMore = true;
 
-      if (error) throw error;
+      while (hasMore) {
+        console.log(`Fetching batch starting at ${start}...`)
+        
+        const { data: batch, error } = await supabase
+          .from('Sales')
+          .select('created_at, total_purchase')
+          .gte('created_at', from)
+          .lt('created_at', to)
+          .range(start, start + batchSize - 1)
+          .order('created_at', { ascending: true }); // Consistent ordering
 
-      return res.json({ success: true, data: data || [] });
+        if (error) throw error;
+
+        if (batch && batch.length > 0) {
+          allSalesData = allSalesData.concat(batch);
+          hasMore = batch.length === batchSize; // Continue if we got a full batch
+          start += batchSize;
+          console.log(`Got ${batch.length} records, total so far: ${allSalesData.length}`)
+        } else {
+          hasMore = false;
+        }
+      }
+
+      console.log('🎉 TOTAL records fetched:', allSalesData.length)
+
+      // Group by Manila date manually
+      const grouped = {};
+      allSalesData.forEach(sale => {
+        const manilaDate = new Date(new Date(sale.created_at).getTime() + 8 * 60 * 60 * 1000);
+        const dateKey = manilaDate.toISOString().split('T')[0];
+        
+        if (!grouped[dateKey]) {
+          grouped[dateKey] = 0;
+        }
+        grouped[dateKey] += sale.total_purchase || 0;
+      });
+
+      const aggregatedData = Object.entries(grouped)
+        .map(([date, total]) => ({
+          sale_date: date,
+          total_sales: total
+        }))
+        .sort((a, b) => a.sale_date.localeCompare(b.sale_date));
+
+      console.log('�� Final aggregation:')
+      console.log('- Total unique dates:', aggregatedData.length)
+      console.log('- Date range:', aggregatedData[0]?.sale_date, 'to', aggregatedData[aggregatedData.length - 1]?.sale_date)
+      
+      return res.json({ success: true, data: aggregatedData });
     } catch (error) {
+      console.error('❌ Sales query error:', error)
+      return res.status(500).json({
+        success: false,
+        error: error?.message || String(error),
+      });
+    }
+  },
+
+  getTodaysStats: async (req, res) => {
+    try {
+      console.log('📊 Getting today\'s stats...')
+      
+      // Get Manila day range
+      const range = getManilaDayRangeAsUTC();
+      const { from, to } = range;
+      
+      console.log('📊 Stats date range:', { from, to })
+      console.log('📊 Current time:', new Date().toISOString())
+      console.log('📊 Manila time equivalent:', new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString())
+
+      // 1. Today's Sales Total
+      const { data: salesData, error: salesError } = await supabase
+        .from('Sales')
+        .select('total_purchase, created_at')  // Add created_at to see the actual timestamps
+        .gte('created_at', from)
+        .lt('created_at', to);
+
+      if (salesError) throw salesError;
+
+      console.log('📊 Raw sales data:', salesData.length, 'records')
+      console.log('📊 Sample sales records:', salesData.slice(0, 3))
+
+      const todaysSales = salesData.reduce((sum, sale) => sum + (sale.total_purchase || 0), 0);
+      const todaysTransactions = salesData.length;
+
+      // 2. Items Sold Today (total quantity from all sale items)
+      const { data: itemsData, error: itemsError } = await supabase
+        .from('SaleItems')
+        .select(`
+          quantity,
+          Sales!inner(created_at)
+        `)
+        .gte('Sales.created_at', from)
+        .lt('Sales.created_at', to);
+
+      if (itemsError) throw itemsError;
+
+      const itemsSoldToday = itemsData.reduce((sum, item) => sum + (item.quantity || 0), 0);
+
+      const stats = {
+        todaysSales,
+        todaysTransactions, 
+        itemsSoldToday
+      };
+
+      console.log('📊 Stats result:', stats);
+
+      return res.json({ success: true, data: stats });
+    } catch (error) {
+      console.error('❌ Stats error:', error)
+      return res.status(500).json({
+        success: false,
+        error: error?.message || String(error),
+      });
+    }
+  },
+
+  validateDailySalesConsistency: async (req, res) => {
+    try {
+      let { from, to } = req.query;
+      
+      // Default to Manila calendar day if not provided
+      if (!from || !to) {
+        const range = getManilaDayRangeAsUTC();
+        from = range.from;
+        to = range.to;
+      }
+
+      console.log('🔍 Validating sales consistency for range:', { from, to });
+
+      // Get daily total from Sales table (cached values)
+      const { data: salesData, error: salesError } = await supabase
+        .from('Sales')
+        .select('total_purchase, created_at')
+        .gte('created_at', from)
+        .lt('created_at', to);
+
+      if (salesError) throw salesError;
+
+      const salesTableTotal = salesData.reduce((sum, sale) => 
+        sum + (Number(sale.total_purchase) || 0), 0
+      );
+
+      // Get total from SaleItems (real calculation)
+      const { data: itemsData, error: itemsError } = await supabase
+        .from('SaleItems')
+        .select(`
+          quantity,
+          price,
+          Sales!inner(created_at)
+        `)
+        .gte('Sales.created_at', from)
+        .lt('Sales.created_at', to);
+
+      if (itemsError) throw itemsError;
+
+      const saleItemsTotal = itemsData.reduce((sum, item) => 
+        sum + (Number(item.quantity) * Number(item.price)), 0
+      );
+
+      // Get category total (should match saleItemsTotal)
+      const { data: categoryData, error: categoryError } = await supabase
+        .from('SaleItems')
+        .select(`
+          quantity,
+          price,
+          Products!inner(
+            category_id,
+            Categories!inner(name)
+          ),
+          Sales!inner(created_at)
+        `)
+        .gte('Sales.created_at', from)
+        .lt('Sales.created_at', to);
+
+      if (categoryError) throw categoryError;
+
+      const categoryTotal = categoryData.reduce((sum, item) => 
+        sum + (Number(item.quantity) * Number(item.price)), 0
+      );
+
+      const result = {
+        sales_table_total: salesTableTotal,
+        sale_items_total: saleItemsTotal,
+        category_total: categoryTotal,
+        sales_vs_items_diff: salesTableTotal - saleItemsTotal,
+        items_vs_category_diff: saleItemsTotal - categoryTotal,
+        date_range: { from, to },
+        validation_timestamp: new Date().toISOString(),
+        sales_count: salesData.length,
+        items_count: itemsData.length,
+        category_items_count: categoryData.length
+      };
+
+      console.log('📊 Sales consistency result:', result);
+      
+      return res.json({ success: true, data: result });
+
+    } catch (error) {
+      console.error('❌ Sales consistency validation error:', error);
       return res.status(500).json({
         success: false,
         error: error?.message || String(error),

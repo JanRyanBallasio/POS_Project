@@ -1,51 +1,69 @@
-// Stats.tsx
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, Package, ShoppingCart } from "lucide-react";
-import { useSaleItems } from "@/hooks/global/fetching/useSaleItems";
-import { useProducts } from "@/hooks/global/fetching/useProducts";
-import { useSales } from "@/hooks/global/fetching/useSales";
-function getCalendarDayRange() {
-    const now = new Date();
+import { useState, useEffect } from "react";
+import axios from "@/lib/axios";
 
-    const start = new Date(now);
-    start.setHours(0, 0, 0, 0); // 12:00 AM
-
-    const end = new Date(now);
-    end.setHours(23, 59, 59, 999); // 11:59 PM
-
-    return { from: start.toISOString(), to: end.toISOString() };
+interface StatsData {
+    todaysSales: number;
+    todaysTransactions: number;
+    itemsSoldToday: number;
 }
 
 export default function Stats() {
-    const { products = [], loading: productsLoading } = useProducts();
+    const [stats, setStats] = useState<StatsData>({
+        todaysSales: 0,
+        todaysTransactions: 0,
+        itemsSoldToday: 0
+    });
+    const [loading, setLoading] = useState(true);
 
-    const { from, to } = getCalendarDayRange();
+    const fetchStats = async () => {
+        try {
+            setLoading(true);
+            console.log('📊 Fetching today\'s stats...');
 
-    const { sales = [], loading: salesLoading } = useSales({ from, to });
-    const { saleItems: todaysSaleItems = [], loading: saleItemsLoading } =
-        useSaleItems({ from, to });
+            const res = await axios.get("/sales/stats"); 
+            const data = res.data.data;
 
-    const todaysSales = sales.reduce((sum, sale) => sum + sale.total_purchase, 0);
-    const todaysTransactions = sales.length;
-    const itemsSoldToday = todaysSaleItems.reduce(
-        (sum, item) => sum + (Number(item.quantity) || 0),
-        0
-    );
+            console.log('📊 Stats received:', data);
+
+            // Fix: Check if data exists and has the expected structure
+            if (data && typeof data === 'object') {
+                setStats({
+                    todaysSales: data.todaysSales || 0,
+                    todaysTransactions: data.todaysTransactions || 0,
+                    itemsSoldToday: data.itemsSoldToday || 0
+                });
+            } else {
+                console.warn('📊 Invalid stats data received:', data);
+                // Keep default values
+            }
+        } catch (err) {
+            console.error('📊 Stats error:', err);
+            // Keep default values on error
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchStats();
+    }, []);
 
     const statsData = [
         {
             title: "Today's Sales",
-            content: salesLoading ? "..." : `₱ ${todaysSales.toLocaleString()}`,
+            content: loading ? "..." : `₱ ${stats.todaysSales.toLocaleString()}`,
             icon: <DollarSign size={20} />,
         },
         {
             title: "Items Sold Today",
-            content: saleItemsLoading ? "..." : itemsSoldToday.toLocaleString(),
+            content: loading ? "..." : stats.itemsSoldToday.toLocaleString(),
             icon: <Package size={20} />,
         },
         {
             title: "Today's Transactions",
-            content: salesLoading ? "..." : todaysTransactions.toLocaleString(),
+            content: loading ? "..." : stats.todaysTransactions.toLocaleString(),
             icon: <ShoppingCart size={20} />,
         },
     ];

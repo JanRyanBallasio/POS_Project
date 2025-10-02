@@ -35,6 +35,5 @@ const healthCheck = async () => {
   }
 };
 
+// Fix: Remove the duplicate export on line 40
 module.exports = { supabase, healthCheck };
-
-module.exports = { supabase };

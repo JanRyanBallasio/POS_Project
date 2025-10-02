@@ -55,7 +55,6 @@ const chartConfig: ChartConfig = {
   }
 }
 
-
 const fetcher = async (url: string) => {
   const response = await axios.get(url)
   return response.data?.data || response.data || []
@@ -65,6 +64,31 @@ const fetcher = async (url: string) => {
 const productsFetcher = async () => {
   const response = await axios.get('/products?limit=all')
   return response.data?.data || response.data || []
+}
+
+// Manila timezone conversion functions (same as in salesStats.tsx)
+const MANILA_OFFSET_MS = 8 * 60 * 60 * 1000
+
+// Return UTC ISO that corresponds to Manila 00:00:00.000 for the provided date (inclusive start).
+function manilaDayStartUTCiso(d: Date) {
+  const y = d.getFullYear()
+  const m = d.getMonth()
+  const day = d.getDate()
+  
+  // Create Manila midnight for this date, then convert to UTC
+  const manilaMidnightUTCms = Date.UTC(y, m, day, 0, 0, 0) - MANILA_OFFSET_MS
+  return new Date(manilaMidnightUTCms).toISOString()
+}
+
+function manilaNextDayStartUTCiso(d: Date) {
+  const y = d.getFullYear()
+  const m = d.getMonth()
+  const day = d.getDate()
+  
+  // Create Manila midnight for this date, add 24 hours, then convert to UTC
+  const manilaMidnightUTCms = Date.UTC(y, m, day, 0, 0, 0) - MANILA_OFFSET_MS
+  const nextMidnight = manilaMidnightUTCms + 24 * 60 * 60 * 1000
+  return new Date(nextMidnight).toISOString()
 }
 
 export default function ProductStats() {
@@ -85,14 +109,28 @@ export default function ProductStats() {
   const [loadingProducts, setLoadingProducts] = useState(false)
   // Also change the table sort order default:
   const [tableSortOrder, setTableSortOrder] = useState<'asc' | 'desc' | 'recent'>('recent')
-  const [categoryTotals, setCategoryTotals] = useState<{[key: string]: number}>({})
+  // REMOVE: const [categoryTotals, setCategoryTotals] = useState<{[key: string]: number}>({})
 
+  // FIX: Use Manila timezone conversion for date range
   const saleItemsUrl = useMemo(() => {
-    const params = new URLSearchParams()
-    if (range?.from) params.set('from', range.from.toISOString())
-    if (range?.to) params.set('to', range.to.toISOString())
-    return `/sales-items?${params.toString()}`
-  }, [range])
+    if (!range?.from || !range?.to) return '/sales-items'
+    
+    const fromIso = manilaDayStartUTCiso(range.from)
+    const toIso = manilaNextDayStartUTCiso(range.to)
+    
+    console.log('🔍 CATEGORY ANALYTICS DEBUGGING:')
+    console.log('Selected range:', {
+      from: range.from.toISOString(),
+      to: range.to.toISOString()
+    })
+    console.log('Converted to Manila UTC:', {
+      fromIso,
+      toIso
+    })
+    console.log('Category Analytics URL:', `/sales-items?from=${encodeURIComponent(fromIso)}&to=${encodeURIComponent(toIso)}`)
+    
+    return `/sales-items?from=${encodeURIComponent(fromIso)}&to=${encodeURIComponent(toIso)}`
+  }, [range?.from?.getTime(), range?.to?.getTime()])
 
   // Keep previous data during revalidation and avoid refetch on window focus
   const { data: saleItems = [], error, isLoading, isValidating } = useSWR<SaleItem[]>(
@@ -100,6 +138,19 @@ export default function ProductStats() {
     fetcher,
     { keepPreviousData: true, revalidateOnFocus: false }
   )
+
+  // Add debugging effect after the useSWR call
+  useEffect(() => {
+    if (saleItems.length > 0) {
+      console.log('📊 CATEGORY ANALYTICS DATA:')
+      console.log('Raw sale items count:', saleItems.length)
+      console.log('Raw sale items sample:', saleItems.slice(0, 3))
+      
+      // Calculate total from raw data
+      const rawTotal = saleItems.reduce((sum, item) => sum + (item.total_sales || 0), 0)
+      console.log('Raw total from saleItems:', rawTotal)
+    }
+  }, [saleItems])
 
   // Fetch products to get unit information
   const { data: allProducts = [] } = useSWR(
@@ -130,8 +181,10 @@ export default function ProductStats() {
     try {
       const params = new URLSearchParams()
       params.set('category_name', data.category)
-      if (range?.from) params.set('from_date', range.from.toISOString())
-      if (range?.to) params.set('to_date', range.to.toISOString())
+      
+      // FIX: Use Manila timezone conversion for product details too
+      if (range?.from) params.set('from_date', manilaDayStartUTCiso(range.from))
+      if (range?.to) params.set('to_date', manilaNextDayStartUTCiso(range.to))
 
       const url = `/sales-items/products-by-category?${params.toString()}`
       const response = await axios.get(url)
@@ -161,10 +214,10 @@ export default function ProductStats() {
 
       // Calculate and store the correct total for this category
       const correctTotal = transformedItems.reduce((acc: number, item: Product) => acc + (Number(item.total) || 0), 0)
-      setCategoryTotals(prev => ({
-        ...prev,
-        [data.category]: correctTotal
-      }))
+      // REMOVE: setCategoryTotals(prev => ({
+      // REMOVE:   ...prev,
+      // REMOVE:   [data.category]: correctTotal
+      // REMOVE: }))
     } catch (error: any) {
       console.error('Error fetching products by category:', error)
       setProducts([])
@@ -200,46 +253,10 @@ export default function ProductStats() {
 
   // Note: do not return early on error — render error inside the chart area so header/footer remain visible.
 
-  // Fetch correct totals for all categories
-  const fetchCategoryTotals = useCallback(async () => {
-    if (!range?.from || !range?.to) return
+  // REMOVE: fetchCategoryTotals function entirely
+  // REMOVE: useEffect that calls fetchCategoryTotals
 
-    try {
-      const categoryTotalsMap: {[key: string]: number} = {}
-      const categories = [...new Set(saleItems.map(si => si.category))]
-      
-      for (const category of categories) {
-        try {
-          const params = new URLSearchParams()
-          params.set('category_name', category)
-          params.set('from_date', range.from.toISOString())
-          params.set('to_date', range.to.toISOString())
-
-          const response = await axios.get(`/sales-items/products-by-category?${params.toString()}`)
-          const items = response.data?.data || response.data || []
-          
-          const total = items.reduce((acc: number, item: any) => acc + (Number(item.total) || 0), 0)
-          categoryTotalsMap[category] = total
-        } catch (error) {
-          const originalItem = saleItems.find(si => si.category === category)
-          categoryTotalsMap[category] = Number(originalItem?.total_sales) || 0
-        }
-      }
-      
-      setCategoryTotals(categoryTotalsMap)
-    } catch (error) {
-      console.error('Error fetching category totals:', error)
-    }
-  }, [saleItems, range])
-
-  // Effect to fetch category totals when data changes
-  useEffect(() => {
-    if (saleItems.length > 0 && range?.from && range?.to) {
-      fetchCategoryTotals()
-    }
-  }, [saleItems, range, fetchCategoryTotals])
-
-  // Update chartData to use correct totals when available
+  // Update chartData to use backend's already-correct totals
   const chartData = useMemo(() => {
     const arr = saleItems.map(si => {
       let unit = 'pcs' // default
@@ -256,7 +273,8 @@ export default function ProductStats() {
         }
       }
 
-      const totalSales = categoryTotals[si.category] || Number(si.total_sales) || 0
+      // FIX: Use backend's already-aggregated total_sales directly
+      const totalSales = Number(si.total_sales) || 0
 
       return {
         category: si.category,
@@ -273,7 +291,7 @@ export default function ProductStats() {
       case 'recent': return [...arr].sort((a, b) => new Date(b.last_purchase).getTime() - new Date(a.last_purchase).getTime())
       default: return [...arr].sort((a, b) => b.total_sales - a.total_sales)
     }
-  }, [saleItems, sortOrder, categoryUnitMap, allProducts, categoryTotals])
+  }, [saleItems, sortOrder, categoryUnitMap, allProducts]) // REMOVE: categoryTotals dependency
 
   const total = useMemo(() => chartData.reduce((acc, curr) => acc + curr.total_sales, 0), [chartData])
 
