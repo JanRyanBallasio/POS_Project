@@ -1,7 +1,7 @@
 {
   "/_not-found/page": "/_not-found",
-  "/(authentication)/login/page": "/login",
   "/(authentication)/register/page": "/register",
+  "/(authentication)/login/page": "/login",
   "/print/receipt/page": "/print/receipt",
   "/page": "/",
   "/dashboard/[site]/page": "/dashboard/[site]"
