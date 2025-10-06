@@ -1,0 +1,83 @@
+ubuntu@ip-172-31-17-78:~/POS_Project/pos-backend/src/middleware$ nano cors.js
+ubuntu@ip-172-31-17-78:~/POS_Project/pos-backend/src/middleware$ sudo systemctl restart backend
+ubuntu@ip-172-31-17-78:~/POS_Project/pos-backend/src/middleware$ sudo journalctl -u backend -f
+Oct 04 00:52:20 ip-172-31-17-78 node[7775]: GET /api/products/search - Origin: http://tauri.localhost
+Oct 04 00:53:45 ip-172-31-17-78 systemd[1]: Stopping backend.service - Node.js Backend Service...
+Oct 04 00:53:45 ip-172-31-17-78 systemd[1]: backend.service: Deactivated successfully.
+Oct 04 00:53:45 ip-172-31-17-78 systemd[1]: Stopped backend.service - Node.js Backend Service.
+Oct 04 00:53:45 ip-172-31-17-78 systemd[1]: Started backend.service - Node.js Backend Service.
+Oct 04 00:53:45 ip-172-31-17-78 node[7799]: [dotenv@17.2.3] injecting env (5) from .env -- tip: 📡 add observability to secrets: https://dotenvx.com/ops
+Oct 04 00:53:45 ip-172-31-17-78 node[7799]: Loaded env - NODE_ENV = production
+Oct 04 00:53:45 ip-172-31-17-78 node[7799]: [dotenv@17.2.3] injecting env (0) from .env -- tip: 📡 add observability to secrets: https://dotenvx.com/ops
+Oct 04 00:53:45 ip-172-31-17-78 node[7799]: Server running on http://0.0.0.0:5000
+Oct 04 00:53:45 ip-172-31-17-78 node[7799]: Enhanced printing available at: http://0.0.0.0:5000/api/print/enhanced
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]: 🚫 CORS rejected origin: http://3.107.238.186:3000
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]: Error: Error: Not allowed by CORS
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]:     at origin (/home/ubuntu/POS_Project/pos-backend/src/middleware/cors.js:47:21)
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]:     at /home/ubuntu/POS_Project/pos-backend/node_modules/cors/lib/index.js:219:13
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]:     at optionsCallback (/home/ubuntu/POS_Project/pos-backend/node_modules/cors/lib/index.js:199:9)
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]:     at corsMiddleware (/home/ubuntu/POS_Project/pos-backend/node_modules/cors/lib/index.js:204:7)
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]:     at Layer.handleRequest (/home/ubuntu/POS_Project/pos-backend/node_modules/router/lib/layer.js:152:17)
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]:     at trimPrefix (/home/ubuntu/POS_Project/pos-backend/node_modules/router/index.js:342:13)
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]:     at /home/ubuntu/POS_Project/pos-backend/node_modules/router/index.js:297:9
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]:     at processParams (/home/ubuntu/POS_Project/pos-backend/node_modules/router/index.js:582:12)
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]:     at next (/home/ubuntu/POS_Project/pos-backend/node_modules/router/index.js:291:5)
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]:     at Function.handle (/home/ubuntu/POS_Project/pos-backend/node_modules/router/index.js:186:3)
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]: 🚫 CORS rejected origin: http://3.107.238.186:3000
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]: Error: Error: Not allowed by CORS
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]:     at origin (/home/ubuntu/POS_Project/pos-backend/src/middleware/cors.js:47:21)
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]:     at /home/ubuntu/POS_Project/pos-backend/node_modules/cors/lib/index.js:219:13
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]:     at optionsCallback (/home/ubuntu/POS_Project/pos-backend/node_modules/cors/lib/index.js:199:9)
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]:     at corsMiddleware (/home/ubuntu/POS_Project/pos-backend/node_modules/cors/lib/index.js:204:7)
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]:     at Layer.handleRequest (/home/ubuntu/POS_Project/pos-backend/node_modules/router/lib/layer.js:152:17)
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]:     at trimPrefix (/home/ubuntu/POS_Project/pos-backend/node_modules/router/index.js:342:13)
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]:     at /home/ubuntu/POS_Project/pos-backend/node_modules/router/index.js:297:9
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]:     at processParams (/home/ubuntu/POS_Project/pos-backend/node_modules/router/index.js:582:12)
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]:     at next (/home/ubuntu/POS_Project/pos-backend/node_modules/router/index.js:291:5)
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]:     at Function.handle (/home/ubuntu/POS_Project/pos-backend/node_modules/router/index.js:186:3)
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]: 🚫 CORS rejected origin: http://3.107.238.186:3000
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]: Error: Error: Not allowed by CORS
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]:     at origin (/home/ubuntu/POS_Project/pos-backend/src/middleware/cors.js:47:21)
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]:     at /home/ubuntu/POS_Project/pos-backend/node_modules/cors/lib/index.js:219:13
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]:     at optionsCallback (/home/ubuntu/POS_Project/pos-backend/node_modules/cors/lib/index.js:199:9)
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]:     at corsMiddleware (/home/ubuntu/POS_Project/pos-backend/node_modules/cors/lib/index.js:204:7)
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]:     at Layer.handleRequest (/home/ubuntu/POS_Project/pos-backend/node_modules/router/lib/layer.js:152:17)
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]:     at trimPrefix (/home/ubuntu/POS_Project/pos-backend/node_modules/router/index.js:342:13)
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]:     at /home/ubuntu/POS_Project/pos-backend/node_modules/router/index.js:297:9
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]:     at processParams (/home/ubuntu/POS_Project/pos-backend/node_modules/router/index.js:582:12)
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]:     at next (/home/ubuntu/POS_Project/pos-backend/node_modules/router/index.js:291:5)
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]:     at Function.handle (/home/ubuntu/POS_Project/pos-backend/node_modules/router/index.js:186:3)
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]: 🚫 CORS rejected origin: http://3.107.238.186:3000
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]: Error: Error: Not allowed by CORS
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]:     at origin (/home/ubuntu/POS_Project/pos-backend/src/middleware/cors.js:47:21)
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]:     at /home/ubuntu/POS_Project/pos-backend/node_modules/cors/lib/index.js:219:13
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]:     at optionsCallback (/home/ubuntu/POS_Project/pos-backend/node_modules/cors/lib/index.js:199:9)
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]:     at corsMiddleware (/home/ubuntu/POS_Project/pos-backend/node_modules/cors/lib/index.js:204:7)
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]:     at Layer.handleRequest (/home/ubuntu/POS_Project/pos-backend/node_modules/router/lib/layer.js:152:17)
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]:     at trimPrefix (/home/ubuntu/POS_Project/pos-backend/node_modules/router/index.js:342:13)
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]:     at /home/ubuntu/POS_Project/pos-backend/node_modules/router/index.js:297:9
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]:     at processParams (/home/ubuntu/POS_Project/pos-backend/node_modules/router/index.js:582:12)
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]:     at next (/home/ubuntu/POS_Project/pos-backend/node_modules/router/index.js:291:5)
+Oct 04 00:53:51 ip-172-31-17-78 node[7799]:     at Function.handle (/home/ubuntu/POS_Project/pos-backend/node_modules/router/index.js:186:3)
+Oct 04 00:54:14 ip-172-31-17-78 node[7799]: ✅ CORS allowed origin: http://tauri.localhost
+Oct 04 00:54:14 ip-172-31-17-78 node[7799]: GET /api/sales - Origin: http://tauri.localhost
+Oct 04 00:54:14 ip-172-31-17-78 node[7799]: �� BACKEND DEBUGGING:
+Oct 04 00:54:14 ip-172-31-17-78 node[7799]: Received query params: [Object: null prototype] {
+Oct 04 00:54:14 ip-172-31-17-78 node[7799]:   aggregate: 'daily',
+Oct 04 00:54:14 ip-172-31-17-78 node[7799]:   from: '2025-09-30T16:00:00.000Z',
+Oct 04 00:54:14 ip-172-31-17-78 node[7799]:   to: '2025-10-04T16:00:00.000Z'
+Oct 04 00:54:14 ip-172-31-17-78 node[7799]: }
+Oct 04 00:54:14 ip-172-31-17-78 node[7799]: Final query range: { from: '2025-09-30T16:00:00.000Z', to: '2025-10-04T16:00:00.000Z' }
+Oct 04 00:54:14 ip-172-31-17-78 node[7799]: Using BATCH FETCHING to get ALL records
+Oct 04 00:54:14 ip-172-31-17-78 node[7799]: Fetching batch starting at 0...
+Oct 04 00:54:14 ip-172-31-17-78 node[7799]: ✅ CORS allowed origin: http://tauri.localhost
+Oct 04 00:54:14 ip-172-31-17-78 node[7799]: GET /api/products - Origin: http://tauri.localhost
+Oct 04 00:54:14 ip-172-31-17-78 node[7799]: ✅ CORS allowed origin: http://tauri.localhost
+Oct 04 00:54:14 ip-172-31-17-78 node[7799]: GET /api/sales-items - Origin: http://tauri.localhost
+Oct 04 00:54:14 ip-172-31-17-78 node[7799]: Sales items query params: { from: '2025-09-30T16:00:00.000Z', to: '2025-10-04T16:00:00.000Z' }
+Oct 04 00:54:14 ip-172-31-17-78 node[7799]: Using direct query instead of RPC for consistency
+Oct 04 00:54:14 ip-172-31-17-78 node[7799]: ✅ CORS allowed origin: http://tauri.localhost
+Oct 04 00:54:14 ip-172-31-17-78 node[7799]: GET /api/sales-items/products - Origin: http://tauri.localhost
+Oct 04 00:54:14 ip-172-31-17-78 node[7799]: 🚀 getProductSales called with SQL function!
+Oct 04 00:54:14 ip-172-31-17-78 node[7799]: 📅 Exact SQL inputs: { from: '2025-09-30T16:00:00.000Z', to: '2025-10-04T16:00:00.000Z' }
+Oct 04 00:54:14 ip-172-31-17-78 node[7799]: 📅 Human readable: { from: '2025-09-30T16:00:00.000Z', to: '2025-10-04T16:00:00.000Z' }

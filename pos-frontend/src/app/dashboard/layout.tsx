@@ -23,14 +23,14 @@ export default function DashboardLayout({
     <ProductModalProvider>
       <SidebarProvider defaultOpen={false}>
         <AppSidebar />
-        <main className="w-full h-screen flex flex-col">
+        <main className="w-full h-dvh flex flex-col">
           <ProductRegisterModal />
           <header className="h-16">
             <Navbar />
           </header>
 
           {/* content: fills the remaining height */}
-          <section className="flex-1 min-h-0 overflow-auto">
+          <section className="flex-1 min-h-0 overflow-hidden">
             {children}
           </section>
         </main>

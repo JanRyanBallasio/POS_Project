@@ -1,4 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
+
 import { useCart } from "@/contexts/cart-context";
 import { useCartSelection } from "@/hooks/pos/leftCol/useCartSelection";
 import { useProducts } from "@/hooks/global/fetching/useProducts";
@@ -27,6 +28,11 @@ interface POSLeftColProps {
 }
 
 export default function POSLeftCol({ step }: POSLeftColProps) {
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const lastScanRef = useRef<{ value: string; at: number }>({ value: "", at: 0 });
   const { selectedRowId, selectRow, clearSelection } = useCartSelection<string>();
   const { products } = useProducts();
   const {
@@ -294,10 +300,119 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
     }
   }, [showRegisterDialog]);
 
+
+
+  // ZXing continuous decode with explicit hints
+  useEffect(() => {
+    if (!isCameraOpen) return;
+
+    let cancelled = false;
+    let reader: any = null;
+    let decodedOnce = false;
+    let notFoundCount = 0;
+    let fallbackStarted = false;
+
+    const start = async () => {
+      try {
+        const { BrowserMultiFormatReader } = await import("@zxing/browser");
+        const { DecodeHintType, BarcodeFormat } = await import("@zxing/library");
+
+        const hints = new Map();
+        hints.set(DecodeHintType.TRY_HARDER, true);
+        hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+          BarcodeFormat.EAN_13,
+          BarcodeFormat.EAN_8,
+          BarcodeFormat.UPC_A,
+          BarcodeFormat.UPC_E,
+          BarcodeFormat.CODE_128,
+          BarcodeFormat.CODE_39,
+          BarcodeFormat.ITF,
+        ]);
+
+        reader = new BrowserMultiFormatReader(hints);
+
+        const video = videoRef.current;
+        if (!video) return;
+
+        video.setAttribute("playsinline", "true");
+        video.autoplay = true;
+
+        const devices = await BrowserMultiFormatReader.listVideoInputDevices().catch(() => []);
+        const preferred =
+          Array.isArray(devices) && devices.find(d => /back|rear|environment|external/i.test(d.label)) || devices[0];
+        const deviceId = preferred?.deviceId;
+
+        const constraints: MediaStreamConstraints = {
+          audio: false,
+          video: deviceId
+            ? { deviceId: { exact: deviceId }, width: { ideal: 1280 }, height: { ideal: 720 } }
+            : { facingMode: { ideal: "environment" as any }, width: { ideal: 1280 }, height: { ideal: 720 } },
+        };
+        console.log("[ZXing] using constraints:", constraints);
+
+        const onResult = async (result: any, err: any) => {
+          if (cancelled) return;
+
+          if (result) {
+            decodedOnce = true;
+            const raw = String(result.getText?.() ?? "");
+            const cleaned = raw.replace(/[\u0000-\u001F\u007F-\u009F]/g, "").trim();
+            const numeric = cleaned.replace(/\s+/g, "").replace(/[^0-9]/g, "");
+            const valueToUse = numeric.length >= 8 ? numeric : cleaned;
+
+            const now = Date.now();
+            if (valueToUse && (lastScanRef.current.value !== valueToUse || now - lastScanRef.current.at > 2000)) {
+              lastScanRef.current = { value: valueToUse, at: now };
+              console.log("[ZXing] decoded:", valueToUse);
+              await handleScanAndAddToCart(valueToUse);
+              setIsCameraOpen(false);
+              try { reader?.reset?.(); } catch {}
+            }
+          } else if (err) {
+            if (err.name === "NotFoundException") {
+              notFoundCount++;
+              if (notFoundCount % 50 === 0) {
+                // Throttled log every ~50 frames with no barcode
+                const vw = video.videoWidth, vh = video.videoHeight;
+                console.log(`[ZXing] still searching… notFound=${notFoundCount}, video=${vw}x${vh}, readyState=${video.readyState}`);
+              }
+            } else {
+              console.warn("[ZXing] error:", err);
+            }
+          }
+        };
+
+        console.log("[ZXing] starting decode loop");
+        reader.decodeFromConstraints(constraints, video, onResult);
+
+        // Watchdog: if no decode within 5s, fallback to decodeFromVideoDevice
+        setTimeout(() => {
+          if (!decodedOnce && !cancelled && !fallbackStarted) {
+            fallbackStarted = true;
+            console.log("[ZXing] no decode after 5s; falling back to decodeFromVideoDevice()");
+            try { reader?.reset?.(); } catch {}
+            reader.decodeFromVideoDevice(deviceId, video, onResult);
+          }
+        }, 5000);
+      } catch (e) {
+        console.warn("[ZXing] setup failed:", e);
+      }
+    };
+
+    start();
+
+    return () => {
+      cancelled = true;
+      try { reader?.reset?.(); } catch {}
+      console.log("[ZXing] stopped");
+    };
+  }, [isCameraOpen, handleScanAndAddToCart]);
+
   return (
-    <div className="flex flex-col h-full">
-      <Card className="flex-1 overflow-hidden">
-        <CardContent className="p-4 h-full flex flex-col">
+    <div className="flex flex-col h-full min-h-0">
+      <Card className="flex flex-col flex-1 overflow-hidden">
+        <CardContent className="p-4 flex-1 flex flex-col overflow-hidden">
+          {/* Search */}
           <ProductSearch
             searchQuery={searchQuery}
             searchResults={searchResults}
@@ -312,7 +427,10 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
             onAddProduct={handleAddProduct}
             handleDebugProductSelect={handleDebugProductSelect}
             isDebugCheatCode={isDebugCheatCode}
+            onOpenCamera={() => setIsCameraOpen(true)}
           />
+
+          
 
           {/* Show scan error if any */}
           {scanError && (
@@ -344,15 +462,18 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
               Searching...
             </div>
           )}
-          <CartTable
-            cart={cart}
-            selectedRowId={selectedRowId}
-            selectRow={selectRow}
-            updateCartItemQuantity={updateCartItemQuantity}
-            updateCartItemPrice={updateCartItemPrice}
-            deleteCartItem={deleteCartItem}
-            disabled={step !== 1}
-          />
+          {/* Cart list: make it fill and scroll */}
+          <div className="flex-1 overflow-auto">
+            <CartTable
+              cart={cart}
+              selectedRowId={selectedRowId}
+              selectRow={selectRow}
+              updateCartItemQuantity={updateCartItemQuantity}
+              updateCartItemPrice={updateCartItemPrice}
+              deleteCartItem={deleteCartItem}
+              disabled={step !== 1}
+            />
+          </div>
         </CardContent>
       </Card>
 
@@ -376,6 +497,37 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Camera modal */}
+      <div className={isCameraOpen ? "" : "hidden"}>
+        <div className="fixed inset-0 bg-black/60 z-50" onClick={() => setIsCameraOpen(false)} />
+        <div className="fixed inset-x-4 bottom-8 md:inset-auto md:left-1/2 md:-translate-x-1/2 md:top-1/2 md:-translate-y-1/2 md:w-[480px] z-50 rounded-lg overflow-hidden bg-white shadow-xl">
+          <div className="flex items-center justify-between px-4 py-3 border-b">
+            <div className="text-sm font-medium">Camera Scanner</div>
+            <button
+              type="button"
+              className="text-sm text-gray-600 hover:text-gray-900"
+              onClick={() => setIsCameraOpen(false)}
+            >
+              Close
+            </button>
+          </div>
+          <div className="bg-black">
+            <video
+              ref={videoRef}
+              playsInline
+              autoPlay
+              muted
+              className="w-full h-[280px] object-contain"
+            />
+            {/* Hidden canvas used for detection */}
+            <canvas ref={canvasRef} className="hidden" />
+          </div>
+          <div className="p-3 text-xs text-gray-600">
+            Point the barcode straight-on, steady, and well-lit. Avoid glare and motion blur.
+          </div>
+        </div>
+      </div>
 
       {/* Product Register Modal */}
       <ProductRegisterModal />

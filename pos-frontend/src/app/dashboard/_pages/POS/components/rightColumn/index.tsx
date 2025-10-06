@@ -330,10 +330,40 @@ export default function POSRight({
   });
 
   return (
-    <Card className="h-full flex flex-col">
-      <CardContent className="flex-1 flex flex-col p-4 pb-0">
-        {/* Header like the reference: centered, compact, with sublabel */}
-        <div className="text-center mb-4">
+    <div className="h-full min-h-0 flex flex-col overflow-hidden">
+      <Card className="flex flex-col flex-1 h-full">
+        <CardContent className="flex-1 flex flex-col px-4 pt-0 pb-0 overflow-hidden">
+          {/* In-card back arrow pill: show on all steps; special handling for step 1 */}
+          <div className="mb-3">
+            <button
+              type="button"
+              onClick={() => {
+                try {
+                  if (step === 1) {
+                    window.dispatchEvent(new Event("pos:mobile-back-to-products"));
+                    setTimeout(() => {
+                      window.dispatchEvent(new Event("focusBarcodeScanner"));
+                    }, 60);
+                  } else {
+                    setStep(1);
+                    setTimeout(() => {
+                      window.dispatchEvent(new Event("focusBarcodeScanner"));
+                    }, 60);
+                  }
+                } catch {}
+              }}
+              className="inline-flex items-center gap-2 rounded-md border border-gray-200 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+            >
+              {/* Arrow Left Icon */}
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+              Back to Products
+            </button>
+          </div>
+
+          {/* Header like the reference: centered, compact, with sublabel */}
+          <div className="text-center mb-4">
           <div className="text-sm md:text-base text-gray-600">Total</div>
           <div className="mt-1 flex items-baseline justify-center gap-1 tabular-nums">
             <span className="text-2xl md:text-3xl font-bold">₱</span>
@@ -389,9 +419,9 @@ export default function POSRight({
               </div>
 
               <div className="flex-1" />
-              <CardFooter className="px-0 pb-4 pt-4">
+              <CardFooter className="px-0 pb-4 pt-4 hidden md:flex md:flex-col gap-3">
                 <Button
-                  className="w-full h-12 md:h-14 text-base md:text-lg  bg-[#0B1220] text-white hover:bg-[#0b1220]/90"
+                  className="w-full h-12 md:h-14 text-base md:text-lg bg-[#0B1220] text-white hover:bg-[#0b1220]/90"
                   onClick={handleNext}
                   disabled={cart.length === 0 || !amount || parseFloat(amount) < cartTotal || isProcessingSale}
                 >
@@ -432,10 +462,10 @@ export default function POSRight({
               />
               <CardFooter className="px-0 pb-4 pt-4 flex flex-col gap-3">
                 <Button
-                  className="w-full h-12 text-base font-medium"
+                  className="hidden md:block w-full h-12 text-base font-medium"
                   variant="outline"
                   onClick={() => setStep(1)}
-                  disabled={isProcessingSale}
+                  disabled={true}
                 >
                   Back
                 </Button>
@@ -503,6 +533,7 @@ export default function POSRight({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Card>
+      </Card>
+    </div>
   );
 }

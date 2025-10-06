@@ -1,0 +1,76 @@
+cd C:\Code\POS_Project\pos-frontend
+
+npm run dev
+npm run tauri dev
+npm run tauri:build
+npm run build
+
+Remove-Item -Recurse -Force -ErrorAction SilentlyContinue -Path .\.next, .\out
+
+# --- LOCAL (Windows PowerShell) ---
+
+# 1. Clean old build
+Remove-Item -Recurse -Force -ErrorAction SilentlyContinue -Path .\.next, .\out
+
+# 2. Install fresh dependencies
+npm ci
+
+# 3. Build Next.js in SSR mode (make sure "output: 'export'" is removed in next.config.js)
+npm run build
+
+# 4. Package files for deployment
+tar -czf deploy.tar.gz .next public package.json package-lock.json
+
+# 5. Upload to AWS
+scp -i "D:\Code\IP\AccessKeyPOS.pem" deploy.tar.gz ubuntu@3.107.238.186:/home/ubuntu/POS_Project/
+
+
+# --- ON AWS (Ubuntu EC2) ---
+
+cd ~/POS_Project
+tar -xzf deploy.tar.gz
+cd pos-frontend
+
+# Install only production dependencies
+npm ci --omit=dev
+
+# Create systemd service
+sudo tee /etc/systemd/system/frontend.service > /dev/null <<EOL
+[Unit]
+Description=POS Frontend Next.js (SSR)
+After=network.target
+
+[Service]
+WorkingDirectory=/home/ubuntu/POS_Project/pos-frontend
+ExecStart=/usr/bin/npm run start
+Restart=always
+RestartSec=10
+Environment=NODE_ENV=production
+User=ubuntu
+StandardOutput=inherit
+StandardError=inherit
+
+[Install]
+WantedBy=multi-user.target
+EOL
+
+# Reload and start service
+sudo systemctl daemon-reload
+sudo systemctl enable frontend
+sudo systemctl restart frontend
+sudo systemctl status frontend
+
+Local:
+npm run build
+tar -czf deploy.tar.gz .next public package.json package-lock.json
+scp -i "D:\Code\IP\AccessKeyPOS.pem" deploy.tar.gz ubuntu@3.107.238.186:/home/ubuntu/POS_Project/
+AWS:
+cd ~/POS_Project
+rm -rf pos-frontend/.next
+tar -xzf deploy.tar.gz -C pos-frontend/
+cd pos-frontend
+npm ci --omit=dev
+sudo systemctl daemon-reload
+sudo systemctl restart frontend
+sudo systemctl status frontend
+npm install --save-dev typescript

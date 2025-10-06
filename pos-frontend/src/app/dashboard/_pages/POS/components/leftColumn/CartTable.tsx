@@ -381,10 +381,10 @@ export default function CartTable({
   }
 
   return (
-    <Table>
+    <Table className="table-fixed w-full">
       <TableHeader>
         <TableRow>
-          <TableHead className="text-sm md:text-base font-semibold py-3">Barcode</TableHead>
+          <TableHead className="text-xs md:text-sm font-semibold py-2 px-2">Barcode</TableHead>
           <TableHead className="text-sm md:text-base font-semibold py-3">Name</TableHead>
           <TableHead className="text-sm md:text-base font-semibold py-3">Price</TableHead>
           <TableHead className="text-sm md:text-base font-semibold py-3">Quantity</TableHead>
@@ -407,14 +407,14 @@ export default function CartTable({
               data-cart-selected={isSelected}
             >
               <TableCell
-                className="font-medium max-w-[140px] break-words whitespace-normal py-3 px-4"
+                className="text-sm font-medium py-3 px-2 align-top break-words whitespace-normal"
                 onClick={(e) => handleCellClick(item.id, e)}
               >
                 {item.product.barcode || "N/A"}
               </TableCell>
 
               <TableCell
-                className="min-w-0 max-w-[320px] break-words whitespace-normal py-3 px-4"
+                className="text-sm py-3 px-2 align-top min-w-0 break-words whitespace-normal leading-snug"
                 onClick={(e) => handleCellClick(item.id, e)}
               >
                 {item.product.__placeholder ? (
@@ -427,7 +427,7 @@ export default function CartTable({
                 )}
               </TableCell>
 
-              <TableCell className="py-3 px-4">
+              <TableCell className="py-3 px-2 align-top">
                 <PriceCell item={item} />
               </TableCell>
 
@@ -447,7 +447,7 @@ export default function CartTable({
                     disabled={disabled}
                     itemId={item.id}
                   />
-                  <span className="text-sm text-gray-600 font-medium">
+                  <span className="text-xs md:text-sm text-gray-600 font-medium">
                     {item.product.unit || "pcs"}
                   </span>
                 </div>
