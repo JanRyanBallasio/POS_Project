@@ -18,6 +18,7 @@ interface ProductSearchProps {
   // Add these new props
   handleDebugProductSelect?: (debugCode: string) => void;
   isDebugCheatCode?: (query: string) => boolean;
+  onOpenCamera?: () => void;
 }
 
 export default function ProductSearch({
@@ -34,6 +35,7 @@ export default function ProductSearch({
   onAddProduct,
   handleDebugProductSelect,
   isDebugCheatCode,
+  onOpenCamera,
 }: ProductSearchProps) {
   const isAutoSelecting = searchResults.length === 1 && searchQuery.trim().length >= 2;
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
@@ -132,16 +134,33 @@ export default function ProductSearch({
           ref={inputRef}
           data-product-search="true"
           data-search-open={showSearchResults ? "true" : "false"}
-          className="pl-9 w-full"
+          className="pl-9 pr-10 w-full"
           placeholder="Search by product name or barcode..."
           value={searchQuery}
           onChange={(e) => handleSearchChange(e.target.value)}
           onClick={(e) => e.stopPropagation()}
           disabled={disabled}
         />
+        {onOpenCamera && !disabled && (
+          <button
+            type="button"
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-900 z-10"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenCamera();
+            }}
+            aria-label="Open camera"
+            title="Open camera"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h8l2 3h3a2 2 0 0 1 2 2z" />
+              <circle cx="12" cy="13" r="4" />
+            </svg>
+          </button>
+        )}
         {isAutoSelecting && !isScannerInputRef?.current && (
           <CheckCircle
-            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-green-500 animate-pulse"
+            className="absolute right-9 top-1/2 transform -translate-y-1/2 text-green-500 animate-pulse"
             size={20}
           />
         )}

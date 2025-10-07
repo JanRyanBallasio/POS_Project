@@ -6,7 +6,9 @@ const defaultOrigins = [
   'http://tauri.localhost',
   'https://tauri.localhost',
   'tauri://localhost',
-  'app://localhost'
+  'app://localhost',
+  'http://3.107.238.186:3000',
+  'http://3.107.238.186' // ✅ add this too
 ];
 
 const allowedOrigins =
