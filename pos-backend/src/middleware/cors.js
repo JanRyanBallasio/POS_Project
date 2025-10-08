@@ -11,18 +11,23 @@ const defaultOrigins = [
   'http://3.107.238.186' // ✅ add this too
 ];
 
-const allowedOrigins =
-  (process.env.ALLOWED_ORIGINS && process.env.ALLOWED_ORIGINS.split(',')) ||
-  defaultOrigins;
+const envOrigins =
+  (process.env.ALLOWED_ORIGINS && process.env.ALLOWED_ORIGINS.split(',')) || [];
+
+const normalize = (s) => String(s).toLowerCase().replace(/\/$/, '');
+
+const allowedOrigins = Array.from(
+  new Set([...defaultOrigins, ...envOrigins].map(normalize))
+);
 
 const options = {
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
 
-    const normalized = origin.toLowerCase().replace(/\/$/, '');
+    const normalized = normalize(origin);
 
     const isAllowed =
-      allowedOrigins.some(o => normalized === o.toLowerCase().replace(/\/$/, '')) ||
+      allowedOrigins.includes(normalized) ||
       normalized.includes('tauri.localhost');
 
     if (isAllowed) {
