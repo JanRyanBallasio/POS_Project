@@ -188,6 +188,15 @@ export default function POSRight({
       setChange(0);
       clearCart();
       (window as any).customerSearchActive = false;
+
+      // Focus the product search input after returning to Step 1
+      setTimeout(() => {
+        try {
+          window.dispatchEvent(new Event("focusBarcodeScanner"));
+        } catch (error) {
+          console.warn('Operation failed:', error);
+        }
+      }, 100);
     } catch (error) {
       console.warn('Transaction operation failed:', error);
     }
