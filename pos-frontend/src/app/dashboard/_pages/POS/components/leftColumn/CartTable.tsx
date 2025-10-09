@@ -40,59 +40,9 @@ export default function CartTable({
 }: CartTableProps) {
   const { lastAddedItemId } = useCart();
   const lastAutoSelectedId = useRef<string | null>(null);
-
-  // Auto-select last added cart row
-  useEffect(() => {
-    if (!lastAddedItemId || lastAutoSelectedId.current === lastAddedItemId) return;
-
-    let cancelled = false;
-    let attempts = 0;
-    const maxAttempts = 20;
-
-    const trySelect = () => {
-      if (cancelled) return;
-      const exists = cart.some((it) => it.id === lastAddedItemId);
-      if (exists) {
-        lastAutoSelectedId.current = lastAddedItemId;
-        try {
-          selectRow(lastAddedItemId);
-        } catch (error) {
-          console.warn('Failed to select row:', error);
-        }
-        return;
-      }
-      attempts++;
-      if (attempts < maxAttempts) requestAnimationFrame(trySelect);
-    };
-
-    requestAnimationFrame(trySelect);
-    return () => {
-      cancelled = true;
-    };
-  }, [lastAddedItemId, cart, selectRow]);
-
-  // Reset tracking if row is removed
-  useEffect(() => {
-    if (lastAutoSelectedId.current && !cart.find((it) => it.id === lastAutoSelectedId.current)) {
-      lastAutoSelectedId.current = null;
-    }
-  }, [cart]);
-
-  const handleRowClick = (itemId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    selectRow(itemId);
-  };
-
-  const handleCellClick = (itemId: string, e: React.MouseEvent) => {
-    const target = e.target as HTMLElement;
-    if (target.tagName !== "INPUT" && target.tagName !== "BUTTON" && !target.closest("button")) {
-      handleRowClick(itemId, e);
-    }
-  };
-
   const priceInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
-  // Utility: focus search bar
+  // Define callbacks BEFORE useEffect to avoid TDZ ReferenceError
   const focusSearchBar = useCallback(() => {
     requestAnimationFrame(() => {
       const ps = document.querySelector<HTMLInputElement>('[data-product-search="true"]');
@@ -101,8 +51,48 @@ export default function CartTable({
     });
   }, []);
 
-  // --- Listen for custom cart events ---
-  // --- Listen for custom cart events ---
+  const handleSelectNext = useCallback((e: Event) => {
+    const currentId =
+      (e as CustomEvent)?.detail?.id ??
+      selectedRowId ??
+      document
+        .querySelector<HTMLElement>('[data-cart-selected="true"]')
+        ?.getAttribute("data-cart-id") ??
+      null;
+
+    if (cart.length === 0) return;
+
+    if (!currentId) {
+      selectRow(cart[0].id);
+      return;
+    }
+
+    const idx = cart.findIndex((it) => it.id === currentId);
+    const nextIdx = Math.min(idx + 1, cart.length - 1);
+    selectRow(cart[nextIdx]?.id ?? currentId);
+  }, [cart, selectedRowId, selectRow]);
+
+  const handleSelectPrev = useCallback((e: Event) => {
+    const currentId =
+      (e as CustomEvent)?.detail?.id ??
+      selectedRowId ??
+      document
+        .querySelector<HTMLElement>('[data-cart-selected="true"]')
+        ?.getAttribute("data-cart-id") ??
+      null;
+
+    if (cart.length === 0) return;
+
+    if (!currentId) {
+      selectRow(cart[0].id);
+      return;
+    }
+
+    const idx = cart.findIndex((it) => it.id === currentId);
+    const prevIdx = Math.max(idx - 1, 0);
+    selectRow(cart[prevIdx]?.id ?? currentId);
+  }, [cart, selectedRowId, selectRow]);
+
   useEffect(() => {
     function handleIncrementQty(e: Event) {
       const id = (e as CustomEvent).detail?.id;
@@ -121,7 +111,13 @@ export default function CartTable({
       }
     }
     function handleEditPrice(e: Event) {
-      const id = (e as CustomEvent).detail?.id;
+      const id =
+        (e as CustomEvent).detail?.id ??
+        selectedRowId ??
+        document
+          .querySelector<HTMLElement>('[data-cart-selected="true"]')
+          ?.getAttribute("data-cart-id") ??
+        null;
       if (!id) return;
       selectRow(id);
       setTimeout(() => {
@@ -130,347 +126,269 @@ export default function CartTable({
         input?.select?.();
       }, 0);
     }
+    function handleFocusQty(e: Event) {
+      const id =
+        (e as CustomEvent).detail?.id ??
+        selectedRowId ??
+        document
+          .querySelector<HTMLElement>('[data-cart-selected="true"]')
+          ?.getAttribute("data-cart-id") ??
+        null;
+      if (!id) return;
+      selectRow(id);
+      setTimeout(() => {
+        const input = document.querySelector<HTMLInputElement>(
+          `input[data-cart-qty-input="${id}"]`
+        );
+        input?.focus();
+        input?.select?.();
+      }, 0);
+    }
     function handleDeleteItem(e: Event) {
       const id = (e as CustomEvent).detail?.id;
-      if (id) {
-        deleteCartItem(id);
-        focusSearchBar();
+      if (!id) return;
+
+      const idx = cart.findIndex((it) => it.id === id);
+      const nextId =
+        idx !== -1 ? (cart[idx + 1]?.id ?? cart[idx - 1]?.id ?? null) : null;
+
+      deleteCartItem(id);
+
+      if (nextId) {
+        selectRow(nextId);
+      }
+      focusSearchBar();
+    }
+
+    // Auto-select the last added item, but DO NOT return early
+    if (lastAddedItemId && lastAutoSelectedId.current !== lastAddedItemId) {
+      const exists = cart.some((it) => it.id === lastAddedItemId);
+      if (exists) {
+        lastAutoSelectedId.current = lastAddedItemId;
+        selectRow(lastAddedItemId);
       }
     }
 
-    // NEW: Selection navigation (disabled if search dropdown is open or component is disabled)
-    const searchInput = () =>
-      document.querySelector<HTMLInputElement>('[data-product-search="true"]');
-    const searchOpen = () => searchInput()?.getAttribute('data-search-open') === 'true';
-
-    function handleSelectNext() {
-      if (disabled || searchOpen()) return;
-      const currentId = selectedRowId ?? cart[0]?.id ?? null;
-      if (!currentId) return;
-      const idx = cart.findIndex(it => it.id === currentId);
-      const nextIdx = Math.min(cart.length - 1, idx + 1);
-      const nextId = cart[nextIdx]?.id;
-      if (nextId) selectRow(nextId);
-    }
-    function handleSelectPrev() {
-      if (disabled || searchOpen()) return;
-      const currentId = selectedRowId ?? cart[0]?.id ?? null;
-      if (!currentId) return;
-      const idx = cart.findIndex(it => it.id === currentId);
-      const prevIdx = Math.max(0, idx - 1);
-      const prevId = cart[prevIdx]?.id;
-      if (prevId) selectRow(prevId);
-    }
-
-    window.addEventListener("cart:increment-qty", handleIncrementQty);
-    window.addEventListener("cart:decrement-qty", handleDecrementQty);
     window.addEventListener("cart:edit-price", handleEditPrice);
+    window.addEventListener("cart:focus-qty", handleFocusQty);
     window.addEventListener("cart:delete-item", handleDeleteItem);
     window.addEventListener("cart:select-next", handleSelectNext);
     window.addEventListener("cart:select-prev", handleSelectPrev);
+    window.addEventListener("cart:increment-qty", handleIncrementQty);
+    window.addEventListener("cart:decrement-qty", handleDecrementQty);
 
     return () => {
-      window.removeEventListener("cart:increment-qty", handleIncrementQty);
-      window.removeEventListener("cart:decrement-qty", handleDecrementQty);
       window.removeEventListener("cart:edit-price", handleEditPrice);
+      window.removeEventListener("cart:focus-qty", handleFocusQty);
       window.removeEventListener("cart:delete-item", handleDeleteItem);
       window.removeEventListener("cart:select-next", handleSelectNext);
       window.removeEventListener("cart:select-prev", handleSelectPrev);
+      window.removeEventListener("cart:increment-qty", handleIncrementQty);
+      window.removeEventListener("cart:decrement-qty", handleDecrementQty);
     };
-  }, [cart, updateCartItemQuantity, selectRow, deleteCartItem, focusSearchBar, disabled, selectedRowId]);
+  }, [
+    cart,
+    updateCartItemQuantity,
+    selectRow,
+    deleteCartItem,
+    focusSearchBar,
+    disabled,
+    selectedRowId,
+    handleSelectNext,
+    handleSelectPrev,
+  ]);
 
-  // --- PriceCell ---
   const PriceCell: React.FC<{ item: CartItem }> = ({ item }) => {
-    const [editing, setEditing] = useState(false);
     const [value, setValue] = useState<string>(String(item.product.price ?? 0));
-    const ref = useRef<HTMLInputElement | null>(null);
 
     useEffect(() => {
-      priceInputRefs.current[item.id] = ref.current;
-      return () => {
-        priceInputRefs.current[item.id] = null;
-      };
-    }, [item.id]);
+      setValue(String(item.product.price ?? 0));
+    }, [item.product.price]);
 
-    useEffect(() => {
-      if (!editing) setValue(String(item.product.price ?? 0));
-    }, [item.product.price, editing]);
-
-    const commit = useCallback(() => {
-      setEditing(false);
+    const commit = () => {
       const parsed = Number(String(value).replace(/,/g, ""));
       const price = Number.isFinite(parsed) ? parsed : 0;
       updateCartItemPrice(item.id, price);
       focusSearchBar();
-    }, [value, item.id, updateCartItemPrice]);
+    };
 
     return (
       <Input
-        ref={ref}
         type="text"
-        data-cart-price-input={item.id}
         value={value}
-        className="w-20 h-8 text-sm"
-        onFocus={() => {
-          selectRow(item.id);
-          setEditing(true);
-        }}
+        className="w-[60px] h-8 text-sm text-center rounded-md border-gray-200 focus:border-gray-300 focus:ring-0 bg-gray-50 mx-auto"
+        onFocus={() => selectRow(item.id)}
         onChange={(e) => setValue(e.target.value)}
         onBlur={commit}
         onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            (e.target as HTMLInputElement).blur();
-          } else if (e.key === "Escape") {
-            setEditing(false);
-            setValue(String(item.product.price ?? 0));
-            focusSearchBar();
-          }
+          if (e.key === "Enter") (e.target as HTMLInputElement).blur();
         }}
         disabled={disabled}
+        ref={(el) => { priceInputRefs.current[item.id] = el; }}
       />
     );
   };
 
-  // Add this custom quantity input component before the main CartTable component
   const QuantityInput: React.FC<{
     value: number;
     onChange: (value: number) => void;
     onFocus: () => void;
     onBlur: () => void;
-    onKeyDown: (e: React.KeyboardEvent) => void;
     disabled?: boolean;
-    itemId: string;
-  }> = ({ value, onChange, onFocus, onBlur, onKeyDown, disabled, itemId }) => {
+    inputId?: string;
+  }> = ({ value, onChange, onFocus, onBlur, disabled, inputId }) => {
     const [inputValue, setInputValue] = useState<string>(value.toString());
-    const [isEditing, setIsEditing] = useState(false);
-    const inputRef = useRef<HTMLInputElement>(null);
 
-    // Update input value when prop value changes (but not when user is editing)
     useEffect(() => {
-      if (!isEditing) {
-        setInputValue(value.toString());
-      }
-    }, [value, isEditing]);
-
-    // Prevent focus loss from external sources while editing
-    useEffect(() => {
-      if (isEditing && inputRef.current) {
-        const handleFocusLoss = (e: FocusEvent) => {
-          // If focus is moving to another input, allow it
-          const target = e.relatedTarget as HTMLElement;
-          if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
-            return;
-          }
-
-          // If focus is being lost to the body or null, prevent it and refocus
-          if (!target || target === document.body) {
-            e.preventDefault();
-            setTimeout(() => {
-              if (inputRef.current && isEditing) {
-                inputRef.current.focus();
-              }
-            }, 0);
-          }
-        };
-
-        const input = inputRef.current;
-        input.addEventListener('blur', handleFocusLoss);
-
-        return () => {
-          input.removeEventListener('blur', handleFocusLoss);
-        };
-      }
-    }, [isEditing]);
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const newValue = e.target.value;
-
-      // Allow empty string, numbers, and valid decimal patterns
-      if (newValue === '' || newValue === '.' || /^\d*\.?\d*$/.test(newValue)) {
-        setInputValue(newValue);
-        // Don't call onChange here - only update on commit to prevent focus loss
-      }
-    };
-
-    const handleFocus = () => {
-      setIsEditing(true);
-      onFocus();
-    };
-
-    const handleBlur = () => {
-      setIsEditing(false);
-
-      let finalValue: number;
-      let displayValue: string;
-
-      // Validate and normalize the value on blur
-      if (inputValue === '' || inputValue === '.') {
-        finalValue = 1;
-        displayValue = '1';
-      } else {
-        const numValue = parseFloat(inputValue);
-        if (isNaN(numValue) || numValue <= 0) {
-          finalValue = 1;
-          displayValue = '1';
-        } else {
-          finalValue = numValue;
-          // Format to max 2 decimals
-          displayValue = numValue % 1 === 0 ? numValue.toString() : numValue.toFixed(2).replace(/\.?0+$/, '');
-        }
-      }
-
-      // Update both the display and the actual value
-      setInputValue(displayValue);
-      onChange(finalValue);
-
-      // Call the original onBlur handler
-      onBlur();
-    };
-
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-      // Handle Enter key
-      if (e.key === "Enter") {
-        handleBlur();
-        return;
-      }
-
-      // Allow: backspace, delete, tab, escape, decimal point, and numbers
-      if (
-        [8, 9, 27, 46, 110, 190].indexOf(e.keyCode) !== -1 ||
-        // Allow Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
-        (e.keyCode === 65 && e.ctrlKey === true) ||
-        (e.keyCode === 67 && e.ctrlKey === true) ||
-        (e.keyCode === 86 && e.ctrlKey === true) ||
-        (e.keyCode === 88 && e.ctrlKey === true) ||
-        // Allow home, end, left, right, up, down arrows
-        (e.keyCode >= 35 && e.keyCode <= 40) ||
-        // Allow numbers and decimal point
-        (e.keyCode >= 48 && e.keyCode <= 57) ||
-        (e.keyCode >= 96 && e.keyCode <= 105)
-      ) {
-        return;
-      }
-      e.preventDefault();
-    };
+      setInputValue(value.toString());
+    }, [value]);
 
     return (
       <Input
-        ref={inputRef}
         type="text"
-        data-cart-qty-input={itemId}
         value={inputValue}
-        className="w-16 h-8 text-sm"
-        onFocus={handleFocus}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        onKeyDown={handleKeyDown}
+        className="w-[45px] h-8 text-sm text-center rounded-md border-gray-200 focus:border-gray-300 focus:ring-0 bg-gray-50 mx-auto"
+        onFocus={onFocus}
+        onChange={(e) => setInputValue(e.target.value)}
+        onBlur={() => {
+          const num = parseFloat(inputValue);
+          onChange(isNaN(num) || num <= 0 ? 1 : num);
+          onBlur();
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+        }}
         disabled={disabled}
-        placeholder="1"
+        data-cart-qty-input={inputId}
       />
     );
   };
 
   if (cart.length === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center w-full h-full">
-        <div className="text-center space-y-4">
-          <span className="text-gray-500">🛒 Scan or search to add products</span>
-        </div>
+      <div className="flex flex-col items-center justify-center h-full border border-gray-100 rounded-xl bg-white text-gray-400">
+        🛒 Scan or search to add products
       </div>
     );
   }
 
   return (
-    <Table className="table-fixed w-full">
-      <TableHeader>
-        <TableRow>
-          <TableHead className="text-xs md:text-sm font-semibold py-2 px-2">Barcode</TableHead>
-          <TableHead className="text-sm md:text-base font-semibold py-3">Name</TableHead>
-          <TableHead className="text-sm md:text-base font-semibold py-3">Price</TableHead>
-          <TableHead className="text-sm md:text-base font-semibold py-3">Quantity</TableHead>
-          <TableHead className="text-sm md:text-base font-semibold py-3">Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {cart.map((item) => {
-          const isSelected = selectedRowId === item.id;
+    <div className="rounded-xl border border-gray-100 bg-white shadow-sm overflow-x-auto">
+      <Table className="w-full table-fixed text-sm">
+        <colgroup>
+          <col className="w-[50%]" />
+          <col className="w-[15%]" />
+          <col className="w-[15%]" />
+          <col className="w-[10%]" />
+          <col className="w-[10%]" />
+        </colgroup>
 
-          return (
-            <TableRow
-              key={item.id}
-              data-cart-id={item.id}
-              className={cn(
-                "hover:bg-gray-50 cursor-pointer transition-all duration-200",
-                isSelected ? "bg-gray-100 dark:bg-gray-800" : ""
-              )}
-              onClick={(e) => handleRowClick(item.id, e)}
-              data-cart-selected={isSelected}
-            >
-              <TableCell
-                className="text-sm font-medium py-3 px-2 align-top break-words whitespace-normal"
-                onClick={(e) => handleCellClick(item.id, e)}
-              >
-                {item.product.barcode || "N/A"}
-              </TableCell>
+        <TableHeader className="bg-gray-50 border-b border-gray-100">
+          <TableRow>
+            <TableHead className="px-4 py-2 text-left font-medium text-gray-600">
+              Product
+            </TableHead>
+            <TableHead className="px-2 py-2 text-center font-medium text-gray-600">
+              Price
+            </TableHead>
+            <TableHead className="px-2 py-2 text-center font-medium text-gray-600">
+              Quantity
+            </TableHead>
+            <TableHead className="px-2 py-2 text-center font-medium text-gray-600">
+              Total
+            </TableHead>
+            <TableHead className="px-2 py-2 text-center font-medium text-gray-600">
+              Action
+            </TableHead>
+          </TableRow>
+        </TableHeader>
 
-              <TableCell
-                className="text-sm py-3 px-2 align-top min-w-0 break-words whitespace-normal leading-snug"
-                onClick={(e) => handleCellClick(item.id, e)}
-              >
-                {item.product.__placeholder ? (
-                  <div className="flex items-center gap-2 text-gray-500">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>Fetching product…</span>
-                  </div>
-                ) : (
-                  item.product.name
+        <TableBody>
+          {cart.map((item) => {
+            const isSelected = selectedRowId === item.id;
+
+            return (
+              <TableRow
+                key={item.id}
+                data-cart-id={item.id}
+                data-cart-selected={isSelected ? "true" : undefined}
+                className={cn(
+                  "transition-all duration-100 border-b last:border-0",
+                  isSelected ? "bg-gray-100 border-gray-300" : "hover:bg-gray-50"
                 )}
-              </TableCell>
+                onClick={() => selectRow(item.id)}
+              >
+                {/* Product */}
+                <TableCell className="px-4 py-3 text-gray-800 font-medium text-left align-middle break-words whitespace-normal leading-snug">
+                  {item.product.__placeholder ? (
+                    <div className="flex items-center gap-2 text-gray-400">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Loading…</span>
+                    </div>
+                  ) : (
+                    <div className="break-words whitespace-normal leading-snug">
+                      {item.product.name}
+                    </div>
+                  )}
+                </TableCell>
 
-              <TableCell className="py-3 px-2 align-top">
-                <PriceCell item={item} />
-              </TableCell>
+                {/* Price */}
+                <TableCell className="px-2 py-3 text-center align-middle">
+                  <PriceCell item={item} />
+                </TableCell>
 
-              <TableCell className="py-3 px-4">
-                <div className="flex items-center gap-2">
-                  <QuantityInput
-                    value={item.quantity}
-                    onChange={(qty) => updateCartItemQuantity(item.id, qty)}
-                    onFocus={() => selectRow(item.id)}
-                    onBlur={focusSearchBar}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        (e.target as HTMLInputElement).blur();
-                        focusSearchBar();
+                {/* Quantity */}
+                <TableCell className="px-2 py-3 text-center align-middle">
+                  <div className="flex items-center justify-center gap-2">
+                    <QuantityInput
+                      value={item.quantity}
+                      onChange={(qty) => updateCartItemQuantity(item.id, qty)}
+                      onFocus={() => selectRow(item.id)}
+                      onBlur={focusSearchBar}
+                      disabled={disabled}
+                      inputId={item.id}
+                    />
+                    <span className="text-xs text-gray-500">
+                      {item.product.unit || "pcs"}
+                    </span>
+                  </div>
+                </TableCell>
+
+                {/* Total */}
+                <TableCell className="px-2 py-3 text-center font-semibold text-gray-800 align-middle">
+                  ₱{(Number(item.product.price || 0) * item.quantity).toFixed(2)}
+                </TableCell>
+
+                {/* Delete */}
+                <TableCell className="px-2 py-3 text-center align-middle">
+                  <button
+                    type="button"
+                    className="text-sm text-red-500 hover:text-red-600 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const idx = cart.findIndex((it) => it.id === item.id);
+                      const nextId =
+                        idx !== -1
+                          ? (cart[idx + 1]?.id ?? cart[idx - 1]?.id ?? null)
+                          : null;
+
+                      deleteCartItem(item.id);
+
+                      if (nextId) {
+                        selectRow(nextId);
                       }
+                      focusSearchBar();
                     }}
                     disabled={disabled}
-                    itemId={item.id}
-                  />
-                  <span className="text-xs md:text-sm text-gray-600 font-medium">
-                    {item.product.unit || "pcs"}
-                  </span>
-                </div>
-              </TableCell>
-
-              <TableCell className="py-3 px-4">
-                <button
-                  type="button"
-                  className="text-sm text-red-600 hover:underline disabled:opacity-50"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deleteCartItem(item.id);
-                    focusSearchBar();
-                  }}
-                  disabled={disabled}
-                >
-                  Delete
-                </button>
-              </TableCell>
-            </TableRow>
-          );
-        })}
-      </TableBody>
-    </Table>
+                  >
+                    Delete
+                  </button>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </div>
   );
 }

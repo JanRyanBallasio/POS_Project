@@ -15,17 +15,28 @@ export default function ProductStats() {
   });
 
   const stats = useMemo(() => {
-    let totalProducts = 0;
+    const list = products as Product[];
+
+    // Count all non-deleted products returned by API
+    const totalProducts = Array.isArray(list) ? list.length : 0;
+
     let lowStockItems = 0;
     let outOfStockItems = 0;
     let totalValue = 0;
 
-    for (const p of products as Product[]) {
-      if (!p || typeof p.quantity !== "number" || typeof p.price !== "number") continue;
-      totalProducts++;
-      if (p.quantity === 0) outOfStockItems++;
-      else if (p.quantity < 5) lowStockItems++;
-      totalValue += p.price * p.quantity;
+    for (const p of list) {
+      if (!p) continue;
+
+      // Stock status only when quantity is numeric
+      if (typeof p.quantity === "number") {
+        if (p.quantity === 0) outOfStockItems++;
+        else if (p.quantity < 5) lowStockItems++;
+      }
+
+      // Inventory value only when both price and quantity are numeric
+      if (typeof p.quantity === "number" && typeof p.price === "number") {
+        totalValue += p.price * p.quantity;
+      }
     }
 
     return {

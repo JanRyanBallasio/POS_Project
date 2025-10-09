@@ -229,66 +229,138 @@ export function useCartKeyboard(selectedRowId: string | null) {
     const dispatch = (name: string, detail?: any) =>
       window.dispatchEvent(new CustomEvent(name, { detail }));
 
+    const getSelectedId = (): string | null =>
+      selectedRowId ||
+      document
+        .querySelector<HTMLElement>('[data-cart-selected="true"]')
+        ?.getAttribute("data-cart-id") ||
+      null;
+
     const handler = (e: KeyboardEvent) => {
       const active = document.activeElement as HTMLElement | null;
-      const isSearchInput = active?.getAttribute?.("data-product-search") === "true";
-      const isSearchOpen = active?.getAttribute?.("data-search-open") === "true";
+
+      // Robust search state detection
+      const searchInputEl = document.querySelector<HTMLInputElement>('[data-product-search="true"]');
+      const isSearchFocused = active === searchInputEl;
+      const isSearchOpen = searchInputEl?.getAttribute("data-search-open") === "true";
 
       const key = e.key;
+      const isPosStep1 = (window as any)?.posStep === 1;
 
-      if (isSearchInput && isSearchOpen) return;
+      const isArrow = key === "ArrowDown" || key === "ArrowUp";
+      const isPlusMinus = key === "+" || key === "=" || key === "-";
+      const isCtrlShortcut =
+        e.ctrlKey &&
+        (key.toLowerCase() === "p" ||
+          key.toLowerCase() === "q" ||
+          key.toLowerCase() === "d" ||
+          key === "Enter");
+      const isPriceQtyShortcut =
+        key === "/" || key === "*" || key === "Divide" || key === "Multiply";
 
-      if (key === "ArrowDown") {
-        e.preventDefault();
-        dispatch("cart:select-next", { id: selectedRowId });
-      } else if (key === "ArrowUp") {
-        e.preventDefault();
-        dispatch("cart:select-prev", { id: selectedRowId });
-      } else if (key === "+" || key === "=") {
-        e.preventDefault();
-        dispatch("cart:increment-qty", { id: selectedRowId });
-      } else if (key === "-") {
-        e.preventDefault();
-        dispatch("cart:decrement-qty", { id: selectedRowId });
-      } else if (e.ctrlKey && e.shiftKey && key.toLowerCase() === "p") {
-        e.preventDefault();
-        const ps = document.querySelector<HTMLInputElement>('[data-product-search="true"]');
-        ps?.blur();
-        const id =
-          selectedRowId ||
-          document.querySelector<HTMLElement>('[data-cart-selected="true"]')?.getAttribute("data-cart-id") ||
-          null;
-        if (id) dispatch("cart:edit-price", { id });
-      } else if (key === "Enter" && e.ctrlKey) {
-        e.preventDefault();
-        dispatch("cart:focus-cash", { id: selectedRowId });
-      } else if (e.ctrlKey && key.toLowerCase() === "q") {
+      // Allow typing into search unless it's our shortcut keys
+      if (isSearchFocused && isSearchOpen && !isArrow && !isPlusMinus && !isCtrlShortcut && !isPriceQtyShortcut) {
+        return;
+      }
+
+      // Arrow navigation:
+      // - If search dropdown is open and focused, let ProductSearch handle it
+      // - Otherwise (Step 1), move cart selection
+      if (isArrow) {
+        if (isSearchFocused && isSearchOpen) {
+          // Do not block ProductSearch's own keydown handler
+          return;
+        }
+        if (!isPosStep1) return;
         e.preventDefault();
         e.stopPropagation();
-        const id =
-          selectedRowId ||
-          document.querySelector<HTMLElement>('[data-cart-selected="true"]')?.getAttribute("data-cart-id") ||
-          null;
+        dispatch(key === "ArrowDown" ? "cart:select-next" : "cart:select-prev", {
+          id: getSelectedId(),
+        });
+        return;
+      }
+
+      // Increase qty (Step 1 only)
+      if (key === "+" || key === "=") {
+        if (!isPosStep1) return;
+        e.preventDefault();
+        dispatch("cart:increment-qty", { id: getSelectedId() });
+        return;
+      }
+
+      // Decrease qty (Step 1 only)
+      if (key === "-") {
+        if (!isPosStep1) return;
+        e.preventDefault();
+        dispatch("cart:decrement-qty", { id: getSelectedId() });
+        return;
+      }
+
+      // Slash '/' or Numpad Divide → Focus price (Step 1 only)
+      if (key === "/" || key === "Divide") {
+        if (!isPosStep1) return;
+        e.preventDefault();
+        searchInputEl?.blur();
+        const id = getSelectedId();
+        if (id) dispatch("cart:edit-price", { id });
+        return;
+      }
+
+      // Asterisk '*' or Numpad Multiply → Focus quantity (Step 1 only)
+      if (key === "*" || key === "Multiply") {
+        if (!isPosStep1) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const id = getSelectedId();
+        if (id) dispatch("cart:focus-qty", { id });
+        return;
+      }
+
+      // Ctrl + P → Focus price (Step 1 only)
+      if (e.ctrlKey && !e.shiftKey && key.toLowerCase() === "p") {
+        if (!isPosStep1) return;
+        e.preventDefault();
+        searchInputEl?.blur();
+        const id = getSelectedId();
+        if (id) dispatch("cart:edit-price", { id });
+        return;
+      }
+
+      // Ctrl + Q → Focus quantity
+      if (e.ctrlKey && key.toLowerCase() === "q") {
+        e.preventDefault();
+        e.stopPropagation();
+        const id = getSelectedId();
         if (id) {
-          // Focus the quantity input for the selected item
           const qtyInput = document.querySelector<HTMLInputElement>(`[data-cart-qty-input="${id}"]`);
           if (qtyInput) {
-            // Use requestAnimationFrame to ensure focus happens after any competing handlers
             requestAnimationFrame(() => {
               qtyInput.focus();
               qtyInput.select();
             });
           }
         }
-      } else if (e.ctrlKey && key.toLowerCase() === "d") {
+        return;
+      }
+
+      // Ctrl + D → Delete item (Step 1 only)
+      if (e.ctrlKey && key.toLowerCase() === "d") {
+        if (!isPosStep1) return;
         e.preventDefault();
         e.stopPropagation();
-        const id =
-          selectedRowId ||
-          document.querySelector<HTMLElement>('[data-cart-selected="true"]')?.getAttribute("data-cart-id") ||
-          null;
+        const id = getSelectedId();
         if (id) dispatch("cart:delete-item", { id });
+        return;
       }
+
+      // Ctrl + Enter → Focus cash input
+      if (key === "Enter" && e.ctrlKey) {
+        e.preventDefault();
+        dispatch("cart:focus-cash", { id: getSelectedId() });
+        return;
+      }
+
+      // Enter → Step 2 (handled by right column)
     };
 
     window.addEventListener("keydown", handler, { capture: true });
