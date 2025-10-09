@@ -302,7 +302,106 @@ const salesController = {
     }
   },
 
-  validateDailySalesConsistency: async (req, res) => {
+  listSales: async (req, res) => {
+      try {
+        let { from, to, limit } = req.query;
+        const max = Math.min(Number(limit) || 200, 1000);
+
+        if (!from || !to) {
+          const range = getManilaDayRangeAsUTC();
+          from = range.from;
+          to = range.to;
+        }
+
+        const { data, error } = await supabase
+          .from('Sales')
+          .select(`
+            id,
+            total_purchase,
+            created_at,
+            Customer!left(id, name)
+          `)
+          .gte('created_at', from)
+          .lt('created_at', to)
+          .order('created_at', { ascending: false })
+          .limit(max);
+
+        if (error) throw error;
+
+        // Normalize shape for frontend
+        const result = (data || []).map((s) => ({
+          id: s.id,
+          total_purchase: Number(s.total_purchase) || 0,
+          created_at: s.created_at,
+          customer_id: s.Customer?.id ?? null,
+          customer: { id: s.Customer?.id ?? null, name: s.Customer?.name ?? 'N/A' },
+        }));
+
+        return res.json({ success: true, data: result });
+      } catch (err) {
+        console.error('listSales error:', err);
+        return res.status(500).json({ success: false, error: err?.message || String(err) });
+      }
+    },
+
+    getSaleDetails: async (req, res) => {
+      try {
+        const saleId = Number(req.params.id);
+        if (!Number.isFinite(saleId)) {
+          return res.status(400).json({ success: false, error: 'Invalid sale id' });
+        }
+        const { data: sale, error: saleError } = await supabase
+          .from('Sales')
+          .select(`
+            id,
+            total_purchase,
+            created_at,
+            customer_id,
+            Customer!left(id, name)
+          `)
+          .eq('id', saleId)
+          .single();
+        if (saleError) throw saleError;
+
+        const { data: items, error: itemsError } = await supabase
+          .from('SaleItems')
+          .select(`
+            quantity,
+            price,
+            Products!inner(id, name, unit)
+          `)
+          .eq('sale_id', saleId);
+        if (itemsError) throw itemsError;
+
+        const normalizedItems = (items || []).map((it) => ({
+          product_id: it.Products?.id ?? null,
+          name: it.Products?.name ?? 'Unknown',
+          unit: it.Products?.unit ?? 'pcs',
+          quantity: Number(it.quantity) || 0,
+          price: Number(it.price) || 0,
+          total: (Number(it.quantity) || 0) * (Number(it.price) || 0),
+        }));
+
+        return res.json({
+          success: true,
+          data: {
+            sale: {
+              id: sale.id,
+              created_at: sale.created_at,
+              total_purchase: Number(sale.total_purchase) || 0,
+              customer_id: sale.customer_id ?? null,
+              customer: { id: sale.Customer?.id ?? null, name: sale.Customer?.name ?? 'N/A' },
+            },
+            items: normalizedItems,
+          },
+        });
+      } catch (err) {
+        console.error('getSaleDetails error:', err);
+        return res.status(500).json({ success: false, error: err?.message || String(err) });
+      }
+    },
+
+    validateDailySalesConsistency: async (req, res) => {
     try {
       let { from, to } = req.query;
       

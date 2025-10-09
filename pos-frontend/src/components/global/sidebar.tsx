@@ -1,6 +1,6 @@
 "use client";
 
-import { Calculator, NotebookPen, Truck, ShoppingCart, Home as IconInnerShadowTop, LayoutDashboard, LogOut } from "lucide-react";
+import { Calculator, NotebookPen, Truck, Receipt, Home as IconInnerShadowTop, LayoutDashboard, LogOut } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -19,7 +19,7 @@ import {
   SidebarHeader
 } from "@/components/ui/sidebar";
 
-import { ChevronRight, ChevronsUpDown, Sparkles } from "lucide-react";
+import { ChevronRight, ChevronsUpDown, Sparkles, Banknote} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -65,6 +65,11 @@ const inventory = [
     url: "/dashboard/stock",
     icon: Truck,
   },
+  {
+    title: "Transaction",
+    url: "/dashboard/transaction",
+    icon: Receipt,
+  },
   // {
   //   title: "Categories",
   //   url: "/dashboard/asdasda",
@@ -92,7 +97,7 @@ export function AppSidebar() {
   // Remove logout functionality
 
   return (
-    <Sidebar variant="inset">
+    <Sidebar variant="inset" collapsible="icon">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -101,7 +106,7 @@ export function AppSidebar() {
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
                   <Image src="/img/logoW.png" alt="YZY" width={24} height={24} />
                 </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
+                <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
                   <span className="truncate font-semibold">YZY Store</span>
                   <span className="truncate text-xs">Point of Sale</span>
                 </div>
@@ -116,10 +121,10 @@ export function AppSidebar() {
           <SidebarMenu>
             {main.map((item) => (
               <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton asChild isActive={pathname === item.url}>
+                <SidebarMenuButton asChild isActive={pathname === item.url} tooltip={item.title}>
                   <Link href={item.url}>
                     <item.icon />
-                    <span>{item.title}</span>
+                    <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -155,11 +160,11 @@ export function AppSidebar() {
                     <AvatarImage src="/img/logoW.png" alt="User" />
                     <AvatarFallback className="rounded-lg">YZ</AvatarFallback>
                   </Avatar>
-                  <div className="grid flex-1 text-left text-sm leading-tight">
+                  <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
                     <span className="truncate font-semibold">YZY User</span>
                     <span className="truncate text-xs">No Auth Mode</span>
                   </div>
-                  <ChevronsUpDown className="ml-auto size-4" />
+                  <ChevronsUpDown className="ml-auto size-4 group-data-[collapsible=icon]:hidden" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent

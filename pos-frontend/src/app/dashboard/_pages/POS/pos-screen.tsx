@@ -150,9 +150,9 @@ export default function MainDashboard() {
             className={
               step === 1
                 ? mobilePane === 'left'
-                  ? 'pb-24 md:pb-0'
-                  : 'hidden md:block'
-                : 'hidden md:block'
+                  ? 'h-full pb-24 md:pb-0'
+                  : 'hidden md:block md:h-full'
+                : 'hidden md:block md:h-full'
             }
           >
             <POSleft step={step} />
