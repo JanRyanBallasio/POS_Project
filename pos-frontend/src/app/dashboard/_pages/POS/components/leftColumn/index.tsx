@@ -410,7 +410,7 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      <Card className="flex flex-col flex-1 overflow-hidden">
+      <Card className="flex flex-col flex-1 h-full overflow-hidden">
         <CardContent className="p-4 flex-1 flex flex-col overflow-hidden">
           {/* Search */}
           <ProductSearch

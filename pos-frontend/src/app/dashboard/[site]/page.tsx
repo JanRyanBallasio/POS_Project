@@ -8,6 +8,7 @@ export function generateStaticParams() {
     { site: "db" },
     { site: "products" },
     { site: "stock" },
+    { site: "transaction" },
   ];
 }
 

@@ -4,6 +4,7 @@ import axios from "@/lib/axios";
 export interface Sale {
   id: number;
   customer_id: number | null;
+  customer?: { id: number | null; name: string | null };
   total_purchase: number;
   created_at: string;
 }
@@ -23,7 +24,7 @@ export const useSales = (params?: UseSalesParams) => {
       setLoading(true);
       setError(null);
 
-      const res = await axios.get("/sales", {
+      const res = await axios.get("/sales/list", {
         params: {
           from: params?.from,
           to: params?.to,
