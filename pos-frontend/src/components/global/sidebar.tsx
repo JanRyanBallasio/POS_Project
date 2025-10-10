@@ -61,7 +61,7 @@ const inventory = [
     icon: NotebookPen,
   },
   {
-    title: "Stock Movements",
+    title: "Purchases",
     url: "/dashboard/stock",
     icon: Truck,
   },

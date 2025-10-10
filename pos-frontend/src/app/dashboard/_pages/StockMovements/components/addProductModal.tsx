@@ -132,6 +132,15 @@ export default function AddProductModal({ onAdd }: Props) {
     }
   }, [apiProducts, productItems, query, filtered])
 
+  // Auto-fill product price when a product is selected
+  useEffect(() => {
+    if (!selected) return
+    const p = apiProducts?.find((ap: any) => String(ap.id) === selected)
+    if (p && typeof p.price === 'number') {
+      setUnitPrice(Number(p.price))
+    }
+  }, [selected, apiProducts])
+
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault()
@@ -235,12 +244,13 @@ export default function AddProductModal({ onAdd }: Props) {
                               className="w-full text-left px-3 py-2 hover:bg-muted-foreground/5 flex items-center gap-3"
                               onClick={() => {
                                 setSelected(it.value)
+                                const p = apiProducts?.find((ap: any) => String(ap.id) === it.value)
+                                if (p && typeof p.price === 'number') setUnitPrice(Number(p.price))
                                 setPopOpen(false)
                                 setTimeout(() => qtyRef.current?.focus(), 60)
                               }}
                             >
                               <span className="flex-1 truncate">{String(it.label)}</span>
-
                             </button>
                           </li>
                         ))}
@@ -264,7 +274,7 @@ export default function AddProductModal({ onAdd }: Props) {
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="unit-price">Unit price (purchased)</Label>
+              <Label htmlFor="unit-price">Product Price</Label>
               <Input
                 id="unit-price"
                 type="number"

@@ -102,6 +102,29 @@ export const columns: ColumnDef<Products>[] = [
       cellClassName: "hidden lg:table-cell",
     },
   },
+  // New computed column: Total = currentStock * productPrice
+  {
+    // New computed column: Total = currentStock * productPrice
+    id: "total",
+    header: ({ column }) => (
+      <button
+        className="flex items-center gap-2 font-medium focus:outline-none"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Total
+        <ArrowUpDown className="ml-1 h-4 w-4" />
+      </button>
+    ),
+    accessorFn: (row) => Number(row.currentStock || 0) * Number(row.productPrice || 0),
+    cell: ({ row }) => {
+      const total = Number(row.getValue("total") || 0);
+      return <div className="font-medium">₱{total.toLocaleString()}</div>;
+    },
+    meta: {
+      headerClassName: "hidden lg:table-cell",
+      cellClassName: "hidden lg:table-cell",
+    },
+  },
   {
     accessorKey: "status",
     header: "Status",
