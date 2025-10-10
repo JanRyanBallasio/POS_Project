@@ -248,7 +248,8 @@ export function useCartKeyboard(selectedRowId: string | null) {
       const isPosStep1 = (window as any)?.posStep === 1;
 
       const isArrow = key === "ArrowDown" || key === "ArrowUp";
-      const isPlusMinus = key === "+" || key === "=" || key === "-";
+      // Limit +/- shortcuts to numpad keys only
+      const isPlusMinus = e.code === "NumpadAdd" || e.code === "NumpadSubtract";
       const isCtrlShortcut =
         e.ctrlKey &&
         (key.toLowerCase() === "p" ||
@@ -258,7 +259,7 @@ export function useCartKeyboard(selectedRowId: string | null) {
       const isPriceQtyShortcut =
         key === "/" || key === "*" || key === "Divide" || key === "Multiply";
 
-      // Allow typing into search unless it's our shortcut keys
+      // Allow typing in search unless it's our shortcut keys
       if (isSearchFocused && isSearchOpen && !isArrow && !isPlusMinus && !isCtrlShortcut && !isPriceQtyShortcut) {
         return;
       }
@@ -280,16 +281,16 @@ export function useCartKeyboard(selectedRowId: string | null) {
         return;
       }
 
-      // Increase qty (Step 1 only)
-      if (key === "+" || key === "=") {
+      // Increase qty (Step 1 only) — numpad '+'
+      if (e.code === "NumpadAdd") {
         if (!isPosStep1) return;
         e.preventDefault();
         dispatch("cart:increment-qty", { id: getSelectedId() });
         return;
       }
 
-      // Decrease qty (Step 1 only)
-      if (key === "-") {
+      // Decrease qty (Step 1 only) — numpad '-'
+      if (e.code === "NumpadSubtract") {
         if (!isPosStep1) return;
         e.preventDefault();
         dispatch("cart:decrement-qty", { id: getSelectedId() });

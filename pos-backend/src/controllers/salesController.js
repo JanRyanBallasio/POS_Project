@@ -44,12 +44,17 @@ const salesController = {
 
       console.log("📝 Items to process:", items.length);
 
-      // 1. Insert the sale
-      // IMPORTANT: don't set created_at here — let DB default now() (UTC) handle timestamp
+      // Compute authoritative total from items (quantity * price)
+      const computedTotalPurchase = items.reduce(
+        (sum, item) => sum + (Number(item.quantity) || 0) * (Number(item.price) || 0),
+        0
+      );
+
+      // 1. Insert the sale (use computed total, ignore client-provided total)
       console.log("🔄 Creating sale record...");
       const { data: saleData, error: saleError } = await supabase
         .from("Sales")
-        .insert([{ customer_id, total_purchase }])
+        .insert([{ customer_id, total_purchase: computedTotalPurchase }])
         .select("id")
         .single();
 
@@ -78,6 +83,13 @@ const salesController = {
 
       if (itemsError) {
         console.log("❌ Sale items creation error:", itemsError);
+        // Roll back the sale to avoid drift between Sales and SaleItems
+        try {
+          await supabase.from("Sales").delete().eq("id", sale_id);
+          console.log("↩️ Rolled back sale due to item insert failure");
+        } catch (rollbackErr) {
+          console.log("⚠️ Failed to roll back sale:", rollbackErr);
+        }
         throw itemsError;
       }
 
@@ -118,12 +130,12 @@ const salesController = {
       await Promise.all(updatePromises);
 
       // 4. AWARD CUSTOMER POINTS (₱100 = 0.01 points)
-      if (customer_id && total_purchase > 0) {
+      if (customer_id && computedTotalPurchase > 0) {
         console.log("🎯 Awarding customer points...");
 
         // 100 pesos = 0.01 points
         // Allow decimals: points = total_purchase / 10000
-        const pointsToAwardRaw = Number(parseFloat(total_purchase));
+        const pointsToAwardRaw = Number(parseFloat(computedTotalPurchase));
         const pointsToAward = Number.isFinite(pointsToAwardRaw) ? pointsToAwardRaw / 10000 : 0;
         // Keep a reasonable number of decimals (optional) — store raw float to DB
         console.log(`ℹ️ Points to award (raw): ${pointsToAward}`);
@@ -166,74 +178,25 @@ const salesController = {
   getSales: async (req, res) => {
     try {
       let { from, to } = req.query;
-      
-      console.log('�� BACKEND DEBUGGING:')
-      console.log('Received query params:', req.query)
 
-      if (!from || !to) {
-        const range = getManilaDayRangeAsUTC();
-        from = range.from;
-        to = range.to;
-      }
-
-      console.log('Final query range:', { from, to })
-      console.log('Using BATCH FETCHING to get ALL records')
-      
-      // Batch fetching to get ALL records
-      let allSalesData = [];
-      let start = 0;
-      const batchSize = 1000;
-      let hasMore = true;
-
-      while (hasMore) {
-        console.log(`Fetching batch starting at ${start}...`)
-        
-        const { data: batch, error } = await supabase
-          .from('Sales')
-          .select('created_at, total_purchase')
-          .gte('created_at', from)
-          .lt('created_at', to)
-          .range(start, start + batchSize - 1)
-          .order('created_at', { ascending: true }); // Consistent ordering
-
-        if (error) throw error;
-
-        if (batch && batch.length > 0) {
-          allSalesData = allSalesData.concat(batch);
-          hasMore = batch.length === batchSize; // Continue if we got a full batch
-          start += batchSize;
-          console.log(`Got ${batch.length} records, total so far: ${allSalesData.length}`)
-        } else {
-          hasMore = false;
-        }
-      }
-
-      console.log('🎉 TOTAL records fetched:', allSalesData.length)
-
-      // Group by Manila date manually
-      const grouped = {};
-      allSalesData.forEach(sale => {
-        const manilaDate = new Date(new Date(sale.created_at).getTime() + 8 * 60 * 60 * 1000);
-        const dateKey = manilaDate.toISOString().split('T')[0];
-        
-        if (!grouped[dateKey]) {
-          grouped[dateKey] = 0;
-        }
-        grouped[dateKey] += sale.total_purchase || 0;
+      // Use unified RPC for Manila-day totals
+      const { data, error } = await supabase.rpc('get_sales_items_analytics', {
+        from_date: from,
+        to_date: to,
+        group_by: 'day',
+        category_name: null
       });
+      if (error) throw error;
 
-      const aggregatedData = Object.entries(grouped)
-        .map(([date, total]) => ({
-          sale_date: date,
-          total_sales: total
-        }))
-        .sort((a, b) => a.sale_date.localeCompare(b.sale_date));
+      const aggregatedData = (data || []).map(row => ({
+        sale_date: row.key,                       // 'YYYY-MM-DD'
+        total_sales: Number(row.total) || 0
+      }));
 
-      console.log('�� Final aggregation:')
-      console.log('- Total unique dates:', aggregatedData.length)
-      console.log('- Date range:', aggregatedData[0]?.sale_date, 'to', aggregatedData[aggregatedData.length - 1]?.sale_date)
-      
-      return res.json({ success: true, data: aggregatedData });
+      // Use the same source to compute a single authoritative total
+      const grand_total = (data || []).reduce((sum, row) => sum + (Number(row.total) || 0), 0);
+
+      return res.json({ success: true, data: aggregatedData, grand_total });
     } catch (error) {
       console.error('❌ Sales query error:', error)
       return res.status(500).json({
@@ -450,21 +413,21 @@ const salesController = {
         .select(`
           quantity,
           price,
-          Products!inner(
+          Products!left(
             category_id,
-            Categories!inner(name)
+            Categories!left(name)
           ),
           Sales!inner(created_at)
         `)
         .gte('Sales.created_at', from)
         .lt('Sales.created_at', to);
-
+    
       if (categoryError) throw categoryError;
-
-      const categoryTotal = categoryData.reduce((sum, item) => 
+    
+      const categoryTotal = categoryData.reduce((sum, item) =>
         sum + (Number(item.quantity) * Number(item.price)), 0
       );
-
+    
       const result = {
         sales_table_total: salesTableTotal,
         sale_items_total: saleItemsTotal,
@@ -479,9 +442,7 @@ const salesController = {
       };
 
       console.log('📊 Sales consistency result:', result);
-      
       return res.json({ success: true, data: result });
-
     } catch (error) {
       console.error('❌ Sales consistency validation error:', error);
       return res.status(500).json({

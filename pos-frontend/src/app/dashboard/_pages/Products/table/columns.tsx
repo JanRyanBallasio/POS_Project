@@ -25,6 +25,16 @@ const statusConfig: Record<
 };
 
 export const columns: ColumnDef<Products>[] = [
+  // Mobile Card Column - Shows on small screens (lg and below)
+  {
+    id: "mobileCard",
+    header: () => null,
+    cell: () => null, // Will be overridden in ProductTable
+    meta: {
+      headerClassName: "lg:hidden",
+      cellClassName: "lg:hidden",
+    },
+  },
   {
     accessorKey: "productName",
     header: ({ column }) => (
@@ -38,23 +48,34 @@ export const columns: ColumnDef<Products>[] = [
     ),
     cell: ({ row }) => (
       <div className="flex w-full">
-        <div
-          className="flex-1 flex flex-col items-start font-medium break-words whitespace-normal leading-tight"
-          title={String(row.getValue("productName"))}
-          style={{ wordBreak: "break-word", whiteSpace: "normal" }}
-        >
+        <div className="flex-1 font-medium break-words whitespace-normal leading-tight">
           {row.getValue("productName")}
         </div>
       </div>
     ),
+    meta: {
+      headerClassName: "hidden lg:table-cell",
+      cellClassName: "hidden lg:table-cell",
+    },
   },
   {
     accessorKey: "barcode",
     header: "Barcode",
+    cell: ({ row }) => (
+      <div className="font-mono">{String(row.getValue("barcode") || "—")}</div>
+    ),
+    meta: {
+      headerClassName: "hidden lg:table-cell",
+      cellClassName: "hidden lg:table-cell",
+    },
   },
   {
     accessorKey: "category",
     header: "Category",
+    meta: {
+      headerClassName: "hidden lg:table-cell",
+      cellClassName: "hidden lg:table-cell",
+    },
   },
   {
     accessorKey: "currentStock",
@@ -67,11 +88,19 @@ export const columns: ColumnDef<Products>[] = [
         <ArrowUpDown className="ml-1 h-4 w-4" />
       </button>
     ),
-    cell: ({ row }) => <div className="flex items-center font-medium">{row.getValue("currentStock")}</div>,
+    cell: ({ row }) => <div className="font-medium">{row.getValue("currentStock")}</div>,
+    meta: {
+      headerClassName: "hidden lg:table-cell",
+      cellClassName: "hidden lg:table-cell",
+    },
   },
   {
     accessorKey: "productPrice",
     header: "Price",
+    meta: {
+      headerClassName: "hidden lg:table-cell",
+      cellClassName: "hidden lg:table-cell",
+    },
   },
   {
     accessorKey: "status",
@@ -80,20 +109,22 @@ export const columns: ColumnDef<Products>[] = [
       const status = row.original.status;
       const cfg = statusConfig[status];
       const label = status.charAt(0).toUpperCase() + status.slice(1);
-      return (
-        <Badge variant={cfg.variant} className={cfg.className}>
-          {label}
-        </Badge>
-      );
+      return <Badge variant={cfg.variant} className={cfg.className}>{label}</Badge>;
+    },
+    meta: {
+      headerClassName: "hidden lg:table-cell",
+      cellClassName: "hidden lg:table-cell",
     },
   },
   {
     id: "actions",
     header: () => <div className="text-center font-medium">Actions</div>,
-    // leave actions cell empty here — table parent can provide the real handlers to avoid duplicate button code and reduce bundle
     cell: () => <div className="flex gap-5 justify-center" aria-hidden />,
     enableSorting: false,
     enableHiding: false,
+    meta: {
+      headerClassName: "hidden lg:table-cell",
+      cellClassName: "hidden lg:table-cell",
+    },
   },
 ];
-//
