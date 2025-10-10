@@ -43,9 +43,15 @@ const chartConfig: ChartConfig = {
   }
 }
 
+// Add a typed API response and return full payload from fetcher
+type ApiResponse<T> = {
+  data: T[]
+  grand_total?: number
+}
+
 const fetcher = async (url: string) => {
-  const response = await axios.get(url);
-  return response.data?.data || []
+  const response = await axios.get(url)
+  return response.data // keep full payload: { data, grand_total, ... }
 }
 
 // Manila offset in ms
@@ -131,11 +137,12 @@ export default function SalesStats() {
   }, [range?.from?.getTime(), range?.to?.getTime()])
 
   // Keep previous data during revalidation to avoid flicker
-  const { data: sales = [], error, isLoading, isValidating } = useSWR<SalesData[]>(
+  const { data: payload, error, isLoading, isValidating } = useSWR<ApiResponse<SalesData>>(
     salesUrl,
     fetcher,
     { keepPreviousData: true, revalidateOnFocus: false }
   )
+  const sales = payload?.data ?? []
 
   // Group by Manila date (YYYY-MM-DD)
   const groupedByDateMap = React.useMemo(() => {
@@ -206,11 +213,12 @@ export default function SalesStats() {
     return arr
   }, [chartSeries, sortOrder])
 
-  // total sums the filtered chartSeries values
-  const total = React.useMemo(
-    () => chartSeries.reduce((acc, curr) => acc + curr.customer, 0),
-    [chartSeries]
-  )
+  // total sums the filtered chartSeries values, prefer backend grand_total when present
+  const total = React.useMemo(() => {
+    const apiTotal = Number(payload?.grand_total)
+    if (!Number.isNaN(apiTotal) && apiTotal > 0) return apiTotal
+    return chartSeries.reduce((acc, curr) => acc + curr.customer, 0)
+  }, [payload?.grand_total, chartSeries])
 
   // Detect "empty" period: all points are zero
   const isEmptyPeriod = React.useMemo(() => {
@@ -386,6 +394,10 @@ export default function SalesStats() {
                             year: 'numeric'
                           })
                         }
+                        formatter={(value) => [
+                          `₱ ${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                          ''
+                        ]}
                       />
                     }
                   />
@@ -427,7 +439,7 @@ export default function SalesStats() {
 
       <CardFooter className='border-t'>
         <div className='text-sm'>
-          You had <span className='font-semibold'>₱ {total.toLocaleString()}</span> total sales for the selected period.
+          You had <span className='font-semibold'>₱ {Number(total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span> total sales for the selected period.
         </div>
       </CardFooter>
     </Card>

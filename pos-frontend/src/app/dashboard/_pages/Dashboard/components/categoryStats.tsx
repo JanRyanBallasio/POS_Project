@@ -55,152 +55,92 @@ const chartConfig: ChartConfig = {
   }
 }
 
-const fetcher = async (url: string) => {
-  const response = await axios.get(url)
-  return response.data?.data || response.data || []
-}
-
-// Fetch products to get unit information
-const productsFetcher = async () => {
-  const response = await axios.get('/products?limit=all')
-  return response.data?.data || response.data || []
-}
-
-// Manila timezone conversion functions (same as in salesStats.tsx)
-const MANILA_OFFSET_MS = 8 * 60 * 60 * 1000
-
-// Return UTC ISO that corresponds to Manila 00:00:00.000 for the provided date (inclusive start).
-function manilaDayStartUTCiso(d: Date) {
-  const y = d.getFullYear()
-  const m = d.getMonth()
-  const day = d.getDate()
-  
-  // Create Manila midnight for this date, then convert to UTC
-  const manilaMidnightUTCms = Date.UTC(y, m, day, 0, 0, 0) - MANILA_OFFSET_MS
-  return new Date(manilaMidnightUTCms).toISOString()
-}
-
-function manilaNextDayStartUTCiso(d: Date) {
-  const y = d.getFullYear()
-  const m = d.getMonth()
-  const day = d.getDate()
-  
-  // Create Manila midnight for this date, add 24 hours, then convert to UTC
-  const manilaMidnightUTCms = Date.UTC(y, m, day, 0, 0, 0) - MANILA_OFFSET_MS
-  const nextMidnight = manilaMidnightUTCms + 24 * 60 * 60 * 1000
-  return new Date(nextMidnight).toISOString()
-}
-
 export default function ProductStats() {
+  // ADD: Manila timezone helpers (used when building URLs)
+  const MANILA_OFFSET_MS = 8 * 60 * 60 * 1000
+  function manilaDayStartUTCiso(d: Date) {
+    const y = d.getFullYear()
+    const m = d.getMonth()
+    const day = d.getDate()
+    const manilaMidnightUTCms = Date.UTC(y, m, day, 0, 0, 0) - MANILA_OFFSET_MS
+    return new Date(manilaMidnightUTCms).toISOString()
+  }
+  function manilaNextDayStartUTCiso(d: Date) {
+    const y = d.getFullYear()
+    const m = d.getMonth()
+    const day = d.getDate()
+    const manilaMidnightUTCms = Date.UTC(y, m, day, 0, 0, 0) - MANILA_OFFSET_MS
+    const nextMidnight = manilaMidnightUTCms + 24 * 60 * 60 * 1000
+    return new Date(nextMidnight).toISOString()
+  }
+
+  // Types and fetchers that return full payload from backend
+  type ApiResponse<T> = { data: T[]; grand_total?: number }
+  const fetcher = async (url: string) => {
+    const response = await axios.get(url)
+    return response.data
+  }
+  const productsFetcher = async () => {
+    const response = await axios.get('/products?limit=all')
+    return response.data?.data || response.data || []
+  }
+
+  // Range state
   const today = new Date()
   const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
-
-  const [range, setRange] = useState<DateRange | undefined>({
-    from: startOfMonth,
-    to: today
-  })
-  // Change the default sort order from 'desc' to 'recent':
+  const [range, setRange] = useState<DateRange | undefined>({ from: startOfMonth, to: today })
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | 'recent'>('recent')
-  
-  // ADD: Move these state declarations here
   const [open, setOpen] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [products, setProducts] = useState<Product[]>([])
   const [loadingProducts, setLoadingProducts] = useState(false)
-  // Also change the table sort order default:
   const [tableSortOrder, setTableSortOrder] = useState<'asc' | 'desc' | 'recent'>('recent')
-  // REMOVE: const [categoryTotals, setCategoryTotals] = useState<{[key: string]: number}>({})
 
-  // FIX: Use Manila timezone conversion for date range
+  // Build URL using Manila day boundaries
   const saleItemsUrl = useMemo(() => {
     if (!range?.from || !range?.to) return '/sales-items'
-    
     const fromIso = manilaDayStartUTCiso(range.from)
     const toIso = manilaNextDayStartUTCiso(range.to)
-    
-    console.log('🔍 CATEGORY ANALYTICS DEBUGGING:')
-    console.log('Selected range:', {
-      from: range.from.toISOString(),
-      to: range.to.toISOString()
-    })
-    console.log('Converted to Manila UTC:', {
-      fromIso,
-      toIso
-    })
-    console.log('Category Analytics URL:', `/sales-items?from=${encodeURIComponent(fromIso)}&to=${encodeURIComponent(toIso)}`)
-    
     return `/sales-items?from=${encodeURIComponent(fromIso)}&to=${encodeURIComponent(toIso)}`
   }, [range?.from?.getTime(), range?.to?.getTime()])
 
-  // Keep previous data during revalidation and avoid refetch on window focus
-  const { data: saleItems = [], error, isLoading, isValidating } = useSWR<SaleItem[]>(
+  // SWR for category analytics — keep full payload, derive rows
+  const { data: payload, error, isLoading, isValidating } = useSWR<ApiResponse<SaleItem>>(
     saleItemsUrl,
     fetcher,
     { keepPreviousData: true, revalidateOnFocus: false }
   )
+  const saleItems = payload?.data ?? []
 
-  // Add debugging effect after the useSWR call
-  useEffect(() => {
-    if (saleItems.length > 0) {
-      console.log('📊 CATEGORY ANALYTICS DATA:')
-      console.log('Raw sale items count:', saleItems.length)
-      console.log('Raw sale items sample:', saleItems.slice(0, 3))
-      
-      // Calculate total from raw data
-      const rawTotal = saleItems.reduce((sum, item) => sum + (item.total_sales || 0), 0)
-      console.log('Raw total from saleItems:', rawTotal)
-    }
-  }, [saleItems])
+  // Products list for unit mapping
+  const { data: allProducts = [] } = useSWR('/products?limit=all', productsFetcher, {
+    keepPreviousData: true, revalidateOnFocus: false
+  })
 
-  // Fetch products to get unit information
-  const { data: allProducts = [] } = useSWR(
-    '/products?limit=all',
-    productsFetcher,
-    { keepPreviousData: true, revalidateOnFocus: false }
-  )
-
-  // Create a map of category to unit (assuming products in same category have same unit)
   const categoryUnitMap = useMemo(() => {
     const map = new Map<string, string>()
     allProducts.forEach((product: any) => {
       if (product.category_id && product.unit) {
         map.set(`Category ${product.category_id}`, product.unit)
-        if (product.category_name) {
-          map.set(product.category_name, product.unit)
-        }
+        if (product.category_name) map.set(product.category_name, product.unit)
       }
     })
     return map
   }, [allProducts])
 
+  // Click on bar → open modal and fetch products by category (Manila range)
   const handleBarClick = async (data: any) => {
     setSelectedCategory(data.category)
     setOpen(true)
     setLoadingProducts(true)
-
     try {
       const params = new URLSearchParams()
       params.set('category_name', data.category)
-      
-      // FIX: Use Manila timezone conversion for product details too
       if (range?.from) params.set('from_date', manilaDayStartUTCiso(range.from))
       if (range?.to) params.set('to_date', manilaNextDayStartUTCiso(range.to))
-
       const url = `/sales-items/products-by-category?${params.toString()}`
       const response = await axios.get(url)
       const items = response.data?.data || response.data || []
-
-      // Find the correct unit for this category
-      let categoryUnit = 'pcs' // default
-      const categoryProduct = allProducts.find((p: any) => {
-        return p.category_name === data.category ||
-          p.category_id && `Category ${p.category_id}` === data.category
-      })
-      if (categoryProduct && categoryProduct.unit) {
-        categoryUnit = categoryProduct.unit
-      }
-
-      // Transform the data to match expected structure
       const transformedItems = items.map((item: any) => ({
         name: item.product_name || 'Unknown Product',
         qty: item.qty || 0,
@@ -209,32 +149,54 @@ export default function ProductStats() {
         unit: item.unit || 'pcs',
         last_purchase: item.last_purchase
       }))
-
       setProducts(transformedItems)
-
-      // Calculate and store the correct total for this category
-      const correctTotal = transformedItems.reduce((acc: number, item: Product) => acc + (Number(item.total) || 0), 0)
-      // REMOVE: setCategoryTotals(prev => ({
-      // REMOVE:   ...prev,
-      // REMOVE:   [data.category]: correctTotal
-      // REMOVE: }))
-    } catch (error: any) {
-      console.error('Error fetching products by category:', error)
+    } catch (e) {
+      console.error('Error fetching products by category:', e)
       setProducts([])
     } finally {
       setLoadingProducts(false)
     }
   }
-  // Sort table data locally based on tableSortOrder
+
+  // Chart data built from backend totals
+  const chartData = useMemo(() => {
+    const arr = saleItems.map(si => {
+      let unit = 'pcs'
+      if (categoryUnitMap.has(si.category)) {
+        unit = categoryUnitMap.get(si.category)!
+      } else {
+        const categoryProduct = (allProducts as any[]).find(p =>
+          p.category_name === si.category ||
+          (p.category_id && `Category ${p.category_id}` === si.category)
+        )
+        if (categoryProduct?.unit) unit = categoryProduct.unit
+      }
+      const totalSales = Number(si.total_sales) || 0
+      return {
+        category: si.category,
+        quantity: Number(si.quantity) || 0,
+        total_sales: totalSales,
+        last_purchase: si.last_purchase,
+        unit
+      }
+    })
+    switch (sortOrder) {
+      case 'asc': return [...arr].sort((a, b) => a.total_sales - b.total_sales)
+      case 'desc': return [...arr].sort((a, b) => b.total_sales - a.total_sales)
+      case 'recent': return [...arr].sort((a, b) =>
+        new Date(b.last_purchase).getTime() - new Date(a.last_purchase).getTime()
+      )
+      default: return [...arr].sort((a, b) => b.total_sales - a.total_sales)
+    }
+  }, [saleItems, sortOrder, categoryUnitMap, allProducts])
+
+  // Modal table sorting
   const sortedProducts = useMemo(() => {
     switch (tableSortOrder) {
-      case 'asc':
-        return [...products].sort((a, b) => (a.total || 0) - (b.total || 0))
-      case 'desc':
-        return [...products].sort((a, b) => (b.total || 0) - (a.total || 0))
+      case 'asc': return [...products].sort((a, b) => (a.total || 0) - (b.total || 0))
+      case 'desc': return [...products].sort((a, b) => (b.total || 0) - (a.total || 0))
       case 'recent':
       default:
-        // newest first by last_purchase (robust to missing values)
         return [...products].sort((a, b) => {
           const ta = a.last_purchase ? new Date(a.last_purchase).getTime() : 0
           const tb = b.last_purchase ? new Date(b.last_purchase).getTime() : 0
@@ -243,57 +205,27 @@ export default function ProductStats() {
     }
   }, [products, tableSortOrder])
 
-  // compute total of products currently shown in modal
   const productsTotal = products.reduce((acc, p) => acc + (Number(p.total) || 0), 0)
-
-  // initial empty state: show skeleton full-chart if first load and no data
   const initialLoadingNoData = isLoading && saleItems.length === 0
-  // updating overlay while revalidating (keep previous chart visible)
   const isUpdating = isValidating && saleItems.length > 0
 
-  // Note: do not return early on error — render error inside the chart area so header/footer remain visible.
+  // Footer total — prefer backend grand_total, fallback to local sum
+  const total = useMemo(() => {
+    const apiTotal = Number(payload?.grand_total)
+    if (!Number.isNaN(apiTotal) && apiTotal > 0) return apiTotal
+    return chartData.reduce((acc, curr) => acc + curr.total_sales, 0)
+  }, [payload?.grand_total, chartData])
 
-  // REMOVE: fetchCategoryTotals function entirely
-  // REMOVE: useEffect that calls fetchCategoryTotals
-
-  // Update chartData to use backend's already-correct totals
-  const chartData = useMemo(() => {
-    const arr = saleItems.map(si => {
-      let unit = 'pcs' // default
-
-      if (categoryUnitMap.has(si.category)) {
-        unit = categoryUnitMap.get(si.category)!
-      } else {
-        const categoryProduct = allProducts.find((p: any) => {
-          return p.category_name === si.category ||
-            p.category_id && `Category ${p.category_id}` === si.category
-        })
-        if (categoryProduct && categoryProduct.unit) {
-          unit = categoryProduct.unit
-        }
-      }
-
-      // FIX: Use backend's already-aggregated total_sales directly
-      const totalSales = Number(si.total_sales) || 0
-
-      return {
-        category: si.category,
-        quantity: Number(si.quantity) || 0,
-        total_sales: totalSales,
-        last_purchase: si.last_purchase,
-        unit: unit
-      }
-    })
-
-    switch (sortOrder) {
-      case 'asc': return [...arr].sort((a, b) => a.total_sales - b.total_sales)
-      case 'desc': return [...arr].sort((a, b) => b.total_sales - a.total_sales)
-      case 'recent': return [...arr].sort((a, b) => new Date(b.last_purchase).getTime() - new Date(a.last_purchase).getTime())
-      default: return [...arr].sort((a, b) => b.total_sales - a.total_sales)
-    }
-  }, [saleItems, sortOrder, categoryUnitMap, allProducts]) // REMOVE: categoryTotals dependency
-
-  const total = useMemo(() => chartData.reduce((acc, curr) => acc + curr.total_sales, 0), [chartData])
+  // 🔍 Debug logs to trace the discrepancy
+  useEffect(() => {
+    const localSum = chartData.reduce((acc, curr) => acc + curr.total_sales, 0)
+    console.log('🔎 [CategoryStats] URL:', saleItemsUrl)
+    console.log('🔎 [CategoryStats] rows:', saleItems.length)
+    console.log('🔎 [CategoryStats] sample:', saleItems.slice(0, 3))
+    console.log('🧮 [CategoryStats] payload.grand_total:', payload?.grand_total)
+    console.log('🧮 [CategoryStats] local chart sum:', localSum)
+    console.log('🧮 [CategoryStats] displayed total:', total)
+  }, [saleItemsUrl, saleItems, payload?.grand_total, chartData, total])
 
   return (
     <>

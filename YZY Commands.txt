@@ -61,6 +61,7 @@ sudo systemctl restart frontend
 sudo systemctl status frontend
 
 Local:
+Remove-Item -Recurse -Force -ErrorAction SilentlyContinue -Path .\.next, .\out
 npm run build
 tar -czf deploy.tar.gz .next public package.json package-lock.json
 scp -i "D:\Code\IP\AccessKeyPOS.pem" deploy.tar.gz ubuntu@3.107.238.186:/home/ubuntu/POS_Project/

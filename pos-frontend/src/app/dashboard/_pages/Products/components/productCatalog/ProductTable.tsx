@@ -94,7 +94,7 @@ export default function ProductTable({
         category_id: "",
         price: 0,
         quantity: 0,
-        unit: "pcs", // Change to lowercase
+        unit: "pcs",
     });
 
     // Optimized filtering with useMemo
@@ -154,7 +154,7 @@ export default function ProductTable({
                 category_id: String(editProduct.category_id || ""),
                 price: editProduct.price || 0,
                 quantity: editProduct.quantity || 0,
-                unit: editProduct.unit || "pcs", // Change to lowercase
+                unit: editProduct.unit || "pcs",
             });
         }
     }, [showEditDialog, editProduct]);
@@ -179,7 +179,7 @@ export default function ProductTable({
             category_id: Number(editForm.category_id),
             price: Number(editForm.price),
             quantity: Number(editForm.quantity),
-            unit: editForm.unit, // Add unit field
+            unit: editForm.unit,
         };
 
         try {
@@ -241,35 +241,111 @@ export default function ProductTable({
         }
     }, [deleteProduct, onProductDeleted]);
 
-    // Enhanced columns with actions
-    const enhancedColumns = useMemo(() =>
-        columns.map((col) =>
-            col.id === "actions"
-                ? {
-                    ...col,
-                    cell: ({ row }: any) => (
-                        <div className="flex gap-2 justify-center">
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                onClick={() => handleEdit(row.original)}
-                                disabled={isLoading}
-                            >
-                                <Pencil className="w-4 h-4" />
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                onClick={() => handleDelete(row.original)}
-                                disabled={isLoading}
-                            >
-                                <Trash2 className="w-4 h-4" />
-                            </Button>
-                        </div>
-                    ),
-                }
-                : col
-        ), [handleEdit, handleDelete, isLoading]);
+    // Enhanced columns with actions and mobile card
+    const enhancedColumns = useMemo(
+        () =>
+            columns.map((col) =>
+                col.id === "actions"
+                    ? {
+                        ...col,
+                        cell: ({ row }: any) => (
+                            <div className="flex gap-2 justify-center">
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={() => handleEdit(row.original)}
+                                    disabled={isLoading}
+                                >
+                                    <Pencil className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={() => handleDelete(row.original)}
+                                    disabled={isLoading}
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </Button>
+                            </div>
+                        ),
+                    }
+                    : col.id === "mobileCard"
+                    ? {
+                        ...col,
+                        cell: ({ row }: any) => {
+                            const statusText = String(row.original.status || "");
+                            const statusClass =
+                              statusText === "in stock"
+                                ? "bg-green-100 text-green-800"
+                                : statusText === "low stock"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-red-100 text-red-800";
+
+                            return (
+                              <div className="w-full py-2">
+                                <div className="bg-white rounded-lg p-3 shadow-sm max-w-full overflow-hidden">
+                                  {/* Top row: Product Name + Actions - FIXED layout */}
+                                  <div className="flex items-start gap-2 mb-3 w-full">
+                                    {/* Product Name - grows but limited by container */}
+                                    <div className="flex-1 min-w-0 max-w-[calc(100%-72px)]">
+                                      <h3 className="font-semibold text-sm leading-tight break-words whitespace-normal overflow-wrap-anywhere">
+                                        {row.original.productName}
+                                      </h3>
+                                    </div>
+                                    
+                                    {/* Action buttons - FIXED width 72px (2 buttons * 32px + gap) */}
+                                    <div className="flex gap-1 flex-shrink-0 w-[68px]">
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 hover:bg-gray-100 flex-shrink-0"
+                                        onClick={() => handleEdit(row.original)}
+                                        disabled={isLoading}
+                                      >
+                                        <Pencil className="h-3.5 w-3.5" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 hover:bg-gray-100 flex-shrink-0"
+                                        onClick={() => handleDelete(row.original)}
+                                        disabled={isLoading}
+                                      >
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                      </Button>
+                                    </div>
+                                  </div>
+
+                                  {/* Grid: Lane, Status, Quantity, Price */}
+                                  <div className="grid grid-cols-2 gap-2.5">
+                                    <div className="bg-gray-50 rounded-md px-2.5 py-2">
+                                      <div className="text-xs text-gray-500 mb-0.5 uppercase tracking-wide">Lane</div>
+                                      <div className="text-sm font-medium text-gray-900 truncate">{row.original.category}</div>
+                                    </div>
+                                    <div className="bg-gray-50 rounded-md px-2.5 py-2">
+                                      <div className="text-xs text-gray-500 mb-0.5 uppercase tracking-wide">Status</div>
+                                      <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${statusClass}`}>
+                                        {statusText.charAt(0).toUpperCase() + statusText.slice(1)}
+                                      </span>
+                                    </div>
+                                    <div className="bg-gray-50 rounded-md px-2.5 py-2">
+                                      <div className="text-xs text-gray-500 mb-0.5 uppercase tracking-wide">Quantity</div>
+                                      <div className="text-sm font-medium text-gray-900">{row.original.currentStock}</div>
+                                    </div>
+                                    <div className="bg-gray-50 rounded-md px-2.5 py-2">
+                                      <div className="text-xs text-gray-500 mb-0.5 uppercase tracking-wide">Price</div>
+                                      <div className="text-sm font-medium text-gray-900">₱{row.original.productPrice}</div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                        },
+                    }
+                    : col
+            ),
+        [handleEdit, handleDelete, isLoading]
+    );
 
     return (
         <div className="w-full mt-4 relative">

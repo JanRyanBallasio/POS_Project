@@ -87,38 +87,35 @@ export function DataTable<TData, TValue>({
   }, [rowCount, onFilteredCountChange])
 
   return (
-    <div className="rounded-md border">
+    <div className="rounded-md lg:border overflow-hidden">
       <Table>
         <TableHeader>
-          {table.getHeaderGroups().map((headerGroup) => (
+          {table.getHeaderGroups().map(headerGroup => (
             <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <TableHead key={header.id}>
+              {headerGroup.headers.map(header => (
+                <TableHead
+                  key={header.id}
+                  className={(header.column.columnDef.meta as any)?.headerClassName}
+                >
                   {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                 </TableHead>
               ))}
             </TableRow>
           ))}
         </TableHeader>
-
         <TableBody>
-          {paginatedRows.length > 0 ? (
-            paginatedRows.map((row) => (
-              <TableRow key={row.id} data-state={row.getIsSelected() ? "selected" : undefined}>
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id} className="align-top break-words whitespace-normal">
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={columns.length} className="h-24 text-center">
-                No results.
-              </TableCell>
+          {paginatedRows.map(row => (
+            <TableRow key={row.id}>
+              {row.getVisibleCells().map(cell => (
+                <TableCell
+                  key={cell.id}
+                  className={(cell.column.columnDef.meta as any)?.cellClassName}
+                >
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </TableCell>
+              ))}
             </TableRow>
-          )}
+          ))}
         </TableBody>
       </Table>
     </div>

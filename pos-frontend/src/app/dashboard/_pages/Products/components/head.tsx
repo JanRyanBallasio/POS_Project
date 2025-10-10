@@ -1,33 +1,47 @@
 import React, { useCallback, memo } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, FolderPlus, PackagePlus } from "lucide-react";
 import { useProductModal } from "@/contexts/productRegister-context";
 
-function HeadComponent() {
+function ProductsHead() {
   const { openModal } = useProductModal();
 
+  // Handlers
   const openAddCategory = useCallback(() => openModal("addCategory"), [openModal]);
   const openAddProduct = useCallback(() => openModal("addProduct"), [openModal]);
 
-  const btnClass = "flex items-center justify-center gap-2 p-3";
-
   return (
-    <div className="flex justify-between items-center">
-      <h1 className="text-4xl font-bold">Products</h1>
+    <header className="w-full max-w-full overflow-x-hidden">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between md:gap-0">
+        {/* Title */}
+        <h1 className="text-2xl font-bold text-foreground">Products</h1>
+        
+        {/* Action Buttons - Responsive */}
+        <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+          {/* Add Category Button */}
+          <Button
+            onClick={openAddCategory}
+            variant="outline"
+            className="flex-1 sm:flex-none justify-center gap-2 h-11"
+            aria-label="Add category"
+          >
+            <FolderPlus className="h-4 w-4" />
+            <span className="font-medium">Add Category</span>
+          </Button>
 
-      <div className="flex gap-3">
-        <Button className={btnClass} onClick={openAddCategory} aria-label="Add category">
-          <Plus size={16} />
-          Add Category
-        </Button>
-
-        <Button className={btnClass} onClick={openAddProduct} aria-label="Add product">
-          <Plus size={16} />
-          Add Product
-        </Button>
+          {/* Add Product Button - Primary */}
+          <Button
+            onClick={openAddProduct}
+            className="flex-1 sm:flex-none justify-center gap-2 h-11"
+            aria-label="Add product"
+          >
+            <PackagePlus className="h-4 w-4" />
+            <span className="font-medium">Add Product</span>
+          </Button>
+        </div>
       </div>
-    </div>
+    </header>
   );
 }
 
-export default memo(HeadComponent);
+export default memo(ProductsHead);

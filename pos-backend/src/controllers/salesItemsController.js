@@ -29,87 +29,34 @@ const salesItemsController = {
         to = range.to;
       }
 
-      console.log('Sales items query params:', { from, to });
+      console.log('🔎 [getSalesItems] Params:', { from, to });
 
-      // TEMPORARY FIX: Skip RPC and use direct query to ensure consistency
-      // TODO: Fix the RPC function get_sales_items_aggregated
-      console.log('Using direct query instead of RPC for consistency');
-      
-      // Direct SQL query to aggregate sales items by category
-      const { data, error } = await supabase
-        .from('SaleItems')
-        .select(`
-          quantity,
-          price,
-          created_at,
-          Products!inner(
-            category_id,
-            Categories!inner(name)
-          ),
-          Sales!inner(created_at)
-        `)
-        .gte('Sales.created_at', from)
-        .lt('Sales.created_at', to);
-
+      // Unified RPC for category aggregation (includes 'Uncategorized')
+      const { data, error } = await supabase.rpc('get_sales_items_analytics', {
+        from_date: from,
+        to_date: to,
+        group_by: 'category',
+        category_name: null
+      });
       if (error) throw error;
 
-      console.log('Direct query result count:', data.length);
-
-      // Aggregate the data by category
-      const aggregatedData = {};
-      
-      data.forEach(item => {
-        const categoryName = item.Products.Categories.name;
-        const quantity = Number(item.quantity) || 0;
-        const totalSales = quantity * (Number(item.price) || 0);
-        const lastPurchase = item.Sales.created_at;
-
-        // ADD: Debug logging for Lane 3 specifically
-        if (categoryName === 'Lane 3') {
-          console.log('Lane 3 item:', {
-            product: item.Products?.name || 'Unknown',
-            quantity,
-            price: item.price,
-            totalSales,
-            lastPurchase
-          });
-        }
-
-        if (!aggregatedData[categoryName]) {
-          aggregatedData[categoryName] = {
-            category: categoryName,
-            quantity: 0,
-            total_sales: 0,
-            last_purchase: lastPurchase
-          };
-        }
-
-        aggregatedData[categoryName].quantity += quantity;
-        aggregatedData[categoryName].total_sales += totalSales;
-        
-        // Keep the most recent purchase date
-        if (new Date(lastPurchase) > new Date(aggregatedData[categoryName].last_purchase)) {
-          aggregatedData[categoryName].last_purchase = lastPurchase;
-        }
-      });
-
-      const result = Object.values(aggregatedData);
-      console.log('Aggregated result:', result);
-
-      // ADD: Debug Lane 3 specifically
-      const lane3Result = result.find(r => r.category === 'Lane 3');
-      if (lane3Result) {
-        console.log('Lane 3 final result:', lane3Result);
-      } else {
-        console.log('Lane 3 not found in results');
+      console.log('📦 [getSalesItems] RPC rows:', data?.length || 0);
+      if ((data || []).length > 0) {
+        console.log('📦 [getSalesItems] First 3 rows:', (data || []).slice(0, 3));
       }
-      
-      // Debug: Log each category's total
-      result.forEach(item => {
-        console.log(`Category: ${item.category}, Total Sales: ₱${item.total_sales.toLocaleString()}`);
-      });
-      
-      return res.json({ success: true, data: result });
+
+      const result = (data || []).map(row => ({
+        category: row.key,
+        quantity: Number(row.qty) || 0,
+        total_sales: Number(row.total) || 0,
+        last_purchase: row.last_purchase
+      }));
+
+      // Authoritative total for the chart footer
+      const grand_total = (data || []).reduce((sum, row) => sum + (Number(row.total) || 0), 0);
+      console.log('🧮 [getSalesItems] grand_total:', grand_total);
+
+      return res.json({ success: true, data: result, grand_total });
     } catch (error) {
       return res.status(500).json({
         success: false,
