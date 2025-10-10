@@ -156,7 +156,7 @@ export default function AddStockModal({ onSave }: Props) {
             <DialogTrigger asChild>
                 <Button className="h-full flex items-center gap-2">
                     <Plus size={16} />
-                    Add Stocks
+                    Add Purchase
                 </Button>
             </DialogTrigger>
 

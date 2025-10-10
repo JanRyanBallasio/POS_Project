@@ -99,15 +99,6 @@ const salesController = {
       console.log("🔄 Starting product quantity updates...");
 
       const updatePromises = items.map(async (item) => {
-        // Get current quantity and update in single query using RPC
-        // const { error: updateError } = await supabase
-        //   .rpc('decrease_product_quantity', {
-        //     product_id_param: item.product_id,
-        //     quantity_to_subtract: item.quantity
-        //   });
-
-        // if (updateError) {
-        // Fallback to manual update if RPC fails
         const { data: currentProduct, error: fetchError } = await supabase
           .from("Products")
           .select("quantity")
@@ -116,17 +107,16 @@ const salesController = {
 
         if (!fetchError) {
           const currentQuantity = Number(currentProduct.quantity) || 0;
-          const newQuantity = Math.max(0, currentQuantity - item.quantity);
+          const soldQty = Number(item.quantity) || 0;
+          const newQuantity = currentQuantity - soldQty; // allow negative inventory
 
           await supabase
             .from("Products")
             .update({ quantity: newQuantity })
             .eq("id", item.product_id);
         }
-        // }
       });
 
-      // Execute all updates in parallel
       await Promise.all(updatePromises);
 
       // 4. AWARD CUSTOMER POINTS (₱100 = 0.01 points)
