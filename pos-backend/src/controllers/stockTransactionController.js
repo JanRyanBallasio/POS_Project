@@ -49,34 +49,42 @@ const stockTransactionController = {
         return res.status(500).json({ success: false, error: itemsErr.message || itemsErr })
       }
 
-      // ADD THIS: Update product quantities (INCREASE for stock additions)
-      console.log('🔄 Starting product quantity updates...');
-      
+      // Update product quantities and prices (INCREASE quantity for stock additions, UPDATE price when provided)
+      console.log('🔄 Starting product quantity and price updates...');
+
       const updatePromises = items.map(async (item) => {
         const productId = item.product_id ?? item.productId;
         const quantity = parseInt(item.quantity ?? item.qty ?? 0, 10) || 0;
-        
+        const purchasedPrice = cleanNumber(item.purchased_price ?? item.purchasedPrice ?? item.price ?? 0);
+
         if (productId && quantity > 0) {
-          // Get current quantity and add the new stock
+          // Get current product data
           const { data: currentProduct, error: fetchError } = await supabase
             .from('Products')
-            .select('quantity')
+            .select('quantity, price')
             .eq('id', productId)
             .single();
 
           if (!fetchError && currentProduct) {
             const currentQuantity = Number(currentProduct.quantity) || 0;
-            const newQuantity = currentQuantity + quantity; // ADD instead of subtract (opposite of sales)
-            
+            const newQuantity = currentQuantity + quantity;
+            const updates = { quantity: newQuantity };
+
+            // Update price if a valid purchasedPrice was provided
+            if (Number.isFinite(purchasedPrice) && purchasedPrice >= 0) {
+              updates.price = purchasedPrice;
+              console.log(`📝 Price set for product ${productId}: ${currentProduct.price} → ${purchasedPrice}`);
+            }
+
             const { error: updateError } = await supabase
               .from('Products')
-              .update({ quantity: newQuantity })
+              .update(updates)
               .eq('id', productId);
 
             if (updateError) {
-              console.error(`Failed to update quantity for product ${productId}:`, updateError);
+              console.error(`Failed to update product ${productId}:`, updateError);
             } else {
-              console.log(`✅ Updated product ${productId}: ${currentQuantity} + ${quantity} = ${newQuantity}`);
+              console.log(`✅ Updated product ${productId}: quantity ${currentQuantity} + ${quantity} = ${newQuantity}${updates.price != null ? `, price set to ${updates.price}` : ''}`);
             }
           } else {
             console.error(`Product ${productId} not found or fetch error:`, fetchError);
@@ -84,9 +92,8 @@ const stockTransactionController = {
         }
       });
 
-      // Execute all updates in parallel
       await Promise.all(updatePromises);
-      console.log('✅ Product quantity updates completed');
+      console.log('✅ Product quantity and price updates completed');
 
       return res.status(201).json({ success: true, transaction: tx, items: insertedItems })
     } catch (err) {
@@ -156,4 +163,3 @@ const stockTransactionController = {
 }
 
 module.exports = stockTransactionController
-// ...existing code...

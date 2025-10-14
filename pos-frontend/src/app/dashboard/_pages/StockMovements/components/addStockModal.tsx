@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from "react";
-import { ChevronLeft as ChevronLeftIcon, Plus, X, Calendar as CalendarIcon } from "lucide-react";
+import { ChevronLeft as ChevronLeftIcon, Plus, X, Calendar as CalendarIcon, Wallet, Package, Hash, BadgeDollarSign, Calculator, Building2, Check, CalendarClock } from "lucide-react";
 import { useSWRConfig } from 'swr'
 import axios from "@/lib/axios";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,7 @@ import {
     TableHeader,
     TableRow
 } from '@/components/ui/table'
+import { useProductModal } from "@/contexts/productRegister-context";
 
 type ProductItem = { id: string; productId?: string | number | null; name: string; qty: number; unitPrice: number };
 type StockPayload = { company: string; date: string; price: number; products: ProductItem[] };
@@ -44,6 +45,7 @@ type Props = { onSave?: (payload: StockPayload) => void };
 export default function AddStockModal({ onSave }: Props) {
     const [open, setOpen] = useState(false);
     const [month, setMonth] = useState<Date | undefined>(new Date());
+    const [datePopOpen, setDatePopOpen] = useState(false);
     useEffect(() => {
         const handler = (e: Event) => {
             const ce = e as CustomEvent<{ name: string; qty: number; unitPrice: number }>;
@@ -57,25 +59,36 @@ export default function AddStockModal({ onSave }: Props) {
 
     const [company, setCompany] = useState("");
     const [date, setDate] = useState<Date | undefined>(undefined);
-    const [price, setPrice] = useState<number | "">("");
     const [products, setProducts] = useState<ProductItem[]>([])
     const [saving, setSaving] = useState(false);
+    const [validationError, setValidationError] = useState<string>("");
     const { mutate } = useSWRConfig()
 
+    const { openModal } = useProductModal();
     const handleSave = async () => {
-        if (!company || products.length === 0) {
-            // minimal validation
-            alert('Company and at least one product are required.')
+        // Clear previous validation error
+        setValidationError("")
+
+        // Validate
+        if (!company.trim()) {
+            setValidationError("Company name is required")
             return
         }
+        if (products.length === 0) {
+            setValidationError("At least one product is required")
+            return
+        }
+
+        // Calculate total from products
+        const calculatedTotal = products.reduce((sum, p) => sum + (p.qty * p.unitPrice), 0)
 
         const payload = {
             company_name: company,
             date: date ? date.toISOString() : new Date().toISOString(),
-            total: Number(price) || 0,
+            total: calculatedTotal,
             items: products.map(p => ({
                 product_id: p.productId ?? null,
-                purchased_price: p.unitPrice ?? (Number(price) || 0),
+                purchased_price: p.unitPrice,
                 quantity: p.qty
             }))
         }
@@ -91,7 +104,7 @@ export default function AddStockModal({ onSave }: Props) {
             onSave?.({
                 company,
                 date: date ? date.toISOString() : new Date().toISOString(),
-                price: Number(price) || 0,
+                price: calculatedTotal,
                 products,
             })
 
@@ -101,7 +114,6 @@ export default function AddStockModal({ onSave }: Props) {
             // reset and close
             setCompany("")
             setDate(undefined)
-            setPrice("")
             setProducts([])
             setOpen(false)
         } catch (err: any) {
@@ -114,6 +126,7 @@ export default function AddStockModal({ onSave }: Props) {
 
     // Merge same product by name: increase qty and update unitPrice to the newly provided one
     const handleAddProduct = (p: { name: string; qty: number; unitPrice: number; productId?: string | number | null }) => {
+        setValidationError("") // Clear validation error when adding products
         setProducts(prev => {
             // prefer matching by productId when available, otherwise fallback to name
             const idx = prev.findIndex(x => (p.productId != null ? x.productId === p.productId : x.name === p.name))
@@ -148,181 +161,236 @@ export default function AddStockModal({ onSave }: Props) {
             })
         )
     }
+    
+    // handle date selected from Calendar
+    const handleSelectDate = (d: Date | undefined) => {
+        setDate(d)
+        if (d) setMonth(d)
+        setDatePopOpen(false)
+    }
 
     const total = products.reduce((sum, p) => sum + p.qty * p.unitPrice, 0)
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button className="h-full flex items-center gap-2">
+                <Button className="h-11 flex items-center gap-2">
                     <Plus size={16} />
                     Add Purchase
                 </Button>
             </DialogTrigger>
 
-            <DialogContent className=" flex h-[calc(80vh-2rem)] min-w-[calc(80vw-2rem)] flex-col justify-between gap-0 p-0">
-                <ScrollArea className="flex-1 overflow-hidden">
-                    <DialogHeader className="contents space-y-0 text-left">
-                        <DialogTitle className="px-6 pt-6">Add Stock</DialogTitle>
-                        <DialogDescription asChild>
-                            <div className="pt-2 px-6">
-                                <p className="text-sm text-muted-foreground">Enter stock details and add products.</p>
-                            </div>
-                        </DialogDescription>
-                    </DialogHeader>
+            {/* Taller modal height (no width change) */}
+            <DialogContent className="flex flex-col gap-0 p-0 border-none shadow-xl sm:max-w-[95vw] lg:max-w-[1100px] max-h-[98vh]">
+                <ScrollArea className="flex-1 max-h-[96vh]">
+                    <div className="flex flex-col">
+                        {/* Compact header */}
+                        <DialogHeader className="px-6 pt-6 pb-4 space-y-2 border-b bg-muted/20">
+                            <DialogTitle className="text-2xl font-bold tracking-tight">Add Purchase</DialogTitle>
+                            <DialogDescription className="text-sm text-muted-foreground">
+                                Enter supplier details and add products to record a new purchase.
+                            </DialogDescription>
+                        </DialogHeader>
 
-                    <div className="px-6 pt-2">
-                        <div className="flex w-full gap-6">
-                            {/* Left column - basic info */}
-                            <div className="flex-[40%] ">
-                                <div className="mt-2">
-                                    <label className="text-sm block mb-1">Company</label>
-                                    <Input value={company} onChange={(e) => setCompany(e.target.value)} placeholder="Company name" />
-                                </div>
+                        <div className="px-6 py-6">
+                            <div className="flex flex-col lg:flex-row w-full gap-6">
+                                {/* Left column - basic info */}
+                                <div className="w-full lg:w-[320px] flex-shrink-0 space-y-5">
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-semibold text-foreground flex items-center gap-2">
+                                            <Building2 className="h-4 w-4 opacity-70" />
+                                            <span>Supplier / Company</span>
+                                        </label>
+                                        <Input
+                                            value={company}
+                                            onChange={(e) => setCompany(e.target.value)}
+                                            placeholder="Enter supplier name"
+                                            className="h-11 text-sm border-muted-foreground/20 focus-visible:border-primary/50 rounded-lg"
+                                        />
+                                    </div>
 
-                                <div className="mt-2">
-                                    <label className="text-sm block mb-1">Date</label>
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <Button
-                                                variant="outline"
-                                                className="w-full h-10 justify-between text-left px-3"
+                                    <div className="space-y-2">
+                                        {/* Label row with Today quick-select on the right */}
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-sm font-semibold text-foreground flex items-center gap-2">
+                                                <CalendarIcon className="h-4 w-4 opacity-70" />
+                                                <span>Purchase Date</span>
+                                            </label>
+                                            <button
                                                 type="button"
-                                                aria-label="Choose date"
+                                                aria-label="Set date to today"
+                                                className="p-1 rounded-md hover:bg-muted/40"
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    const now = new Date();
+                                                    setDate(now);
+                                                    setMonth(now);
+                                                    setDatePopOpen(false);
+                                                }}
                                             >
-                                                <span className="truncate">
-                                                    {date ? date.toLocaleDateString() : 'mm/dd/yyyy'}
-                                                </span>
-                                                <CalendarIcon className="ml-2 opacity-70" />
+                                                <CalendarClock className="opacity-80 h-4 w-4" />
+                                            </button>
+                                        </div>
+
+                                        <Popover open={datePopOpen} onOpenChange={setDatePopOpen}>
+                                            <PopoverTrigger asChild>
+                                                <Button
+                                                    variant="outline"
+                                                    className="w-full h-11 justify-between text-left px-3 text-sm border-muted-foreground/20 hover:border-foreground/40 hover:bg-muted/30 transition-all duration-200 rounded-lg"
+                                                    type="button"
+                                                    aria-label="Choose date"
+                                                >
+                                                    <span className="truncate text-foreground">
+                                                        {date
+                                                            ? date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+                                                            : 'Select date'}
+                                                    </span>
+                                                </Button>
+                                            </PopoverTrigger>
+                                            {/* Added padding around the calendar */}
+                                            <PopoverContent className="w-auto p-3 border-0 shadow-none">
+                                                <Calendar
+                                                    mode="single"
+                                                    defaultMonth={date}
+                                                    selected={date}
+                                                    onSelect={(d) => {
+                                                        setDate(d);
+                                                        setDatePopOpen(false);
+                                                    }}
+                                                    className="bg-transparent p-2"
+                                                />
+                                            </PopoverContent>
+                                        </Popover>
+                                    </div>
+
+                                    <div className="mt-6 p-5 bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20 rounded-xl shadow-sm">
+                                        <label className="text-xs mb-2 text-muted-foreground font-semibold uppercase tracking-wider flex items-center gap-2">
+                                            <Wallet className="h-4 w-4 opacity-70" />
+                                            <span>Total Purchase Amount</span>
+                                        </label>
+                                        <div className="text-2xl font-bold text-primary">
+                                            ₱{total.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Right column - products */}
+                                <div className="flex-1 flex flex-col min-w-0">
+                                    <div className="flex items-center justify-between mb-5">
+                                        <h3 className="text-lg font-bold flex items-center gap-2">
+                                            <Package className="h-5 w-5 opacity-70" />
+                                            <span>Products</span>
+                                        </h3>
+                                        <div className="flex items-center gap-3">
+                                            <AddProductModal onAdd={handleAddProduct} />
+                                            <Button className="h-10 gap-2" onClick={() => openModal("addProduct")}>
+                                                <Plus className="h-4 w-4" />
+                                                Add New Product
                                             </Button>
-                                        </PopoverTrigger>
+                                        </div>
+                                    </div>
 
-                                        <PopoverContent className="w-auto p-2">
-                                            <Card className="w-[290px]">
-                                                <CardHeader className="flex items-start gap-2">
-                                                    <div>
-                                                        <CardDescription className="text-xs text-muted-foreground">
-                                                            <CardTitle className="text-sm">Choose date</CardTitle>
-                                                            Select a date for this stock entry
-                                                        </CardDescription>
-                                                    </div>
-                                                    <CardAction>
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            onClick={() => {
-                                                                const now = new Date()
-                                                                setMonth(now)
-                                                                setDate(now)
-                                                            }}
-                                                        >
-                                                            Today
-                                                        </Button>
-                                                    </CardAction>
-                                                </CardHeader>
-                                                <CardContent className="p-2">
-                                                    <Calendar
-                                                        mode="single"
-                                                        month={month}
-                                                        onMonthChange={setMonth}
-                                                        selected={date}
-                                                        onSelect={setDate}
-                                                        className="bg-transparent p-0 rounded-md"
-                                                    />
-                                                </CardContent>
-                                            </Card>
-                                        </PopoverContent>
-                                    </Popover>
-                                </div>
-
-                                <div className="mt-2">
-                                    <label className="text-sm block mb-1">Price</label>
-                                    <Input
-                                        type="number"
-                                        step="0.01"
-                                        value={price === "" ? "" : String(price)}
-                                        onChange={(e) => setPrice(e.target.value === "" ? "" : Number(e.target.value))}
-                                        placeholder="0.00"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Right column - products */}
-                            <div className="flex flex-col h-full flex-[60%]">
-                                <div className="flex items-center justify-between mb-3">
-                                    <h3 className="font-medium">Products</h3>
-                                    <AddProductModal onAdd={handleAddProduct} />
-                                </div>
-
-                                <div className='[&>div]:max-h-[400px] [&>div]:rounded-sm [&>div]:border'>
-                                    <div className="overflow-x-auto">
-                                        <Table className="table-fixed w-full">
-                                            <TableHeader>
-                                                <TableRow className="bg-background sticky top-0">
-                                                    <TableHead className="w-[35%]">Product</TableHead>
-                                                    <TableHead className="w-[10%] text-center">Quantity</TableHead>
-                                                    <TableHead className="w-[10%] text-center">Unit Price</TableHead>
-
-                                                    <TableHead className="w-[8%]" />
-                                                </TableRow>
-                                            </TableHeader>
-
-                                            <TableBody>
-                                                {products.length === 0 ? (
-                                                    <TableRow>
-                                                        <TableCell colSpan={4}>
-                                                            <div className="w-full h-24 flex items-center justify-center text-sm text-muted-foreground">
-                                                                No products added.
-                                                            </div>
-                                                        </TableCell>
+                                    <div className="rounded-xl border border-muted-foreground/10 shadow-sm bg-card">
+                                        {/* show up to ~4 rows then scroll; responsive heights */}
+                                        <div className="overflow-y-auto max-h-[16rem] sm:max-h-[18rem] md:max-h-[20rem] lg:max-h-[22rem]">
+                                            <Table>
+                                                <TableHeader>
+                                                    <TableRow className="bg-muted/40 hover:bg-muted/40 border-b border-muted-foreground/10">
+                                                        <TableHead className="h-12 text-xs font-bold uppercase tracking-wide">
+                                                            <span className="inline-flex items-center gap-1.5">
+                                                                <Package className="h-3.5 w-3.5 opacity-60" /> Product Name
+                                                            </span>
+                                                        </TableHead>
+                                                        <TableHead className="h-12 text-center text-xs font-bold uppercase tracking-wide w-[120px]">
+                                                            <span className="inline-flex items-center justify-center gap-1.5">
+                                                                <Hash className="h-3.5 w-3.5 opacity-60" /> Quantity
+                                                            </span>
+                                                        </TableHead>
+                                                        <TableHead className="h-12 text-center text-xs font-bold uppercase tracking-wide w-[160px]">
+                                                            <span className="inline-flex items-center justify-center gap-1.5">
+                                                                <BadgeDollarSign className="h-3.5 w-3.5 opacity-60" /> Unit Price
+                                                            </span>
+                                                        </TableHead>
+                                                        <TableHead className="h-12 text-right text-xs font-bold uppercase tracking-wide w-[140px]">
+                                                            <span className="inline-flex items-center justify-end gap-1.5">
+                                                                <Calculator className="h-3.5 w-3.5 opacity-60" /> Subtotal
+                                                            </span>
+                                                        </TableHead>
+                                                        <TableHead className="h-12 w-[50px]" />
                                                     </TableRow>
-                                                ) : (
-                                                    products.map(p => (
-                                                        <TableRow key={p.id}>
-                                                            {/* Product column: prevent flex expansion and allow wrapping */}
-                                                            <TableCell className="min-w-0 break-words whitespace-normal pr-4">
-                                                                <div className="font-medium">{p.name}</div>
-                                                            </TableCell>
+                                                </TableHeader>
 
-                                                            {/* Quantity: compact centered input so it won't push layout */}
-                                                            <TableCell className="text-center align-middle">
-                                                                <Input
-                                                                    type="number"
-                                                                    min={0}
-                                                                    value={String(p.qty)}
-                                                                    onChange={(e) => updateProductField(p.id, 'qty', e.target.value)}
-                                                                    onBlur={(e) => updateProductField(p.id, 'qty', e.target.value)}
-                                                                    className="focus-visible:ring-ring h-8 w-20 border-0 bg-transparent p-1 text-center focus-visible:ring-1 mx-auto"
-                                                                    aria-label={`qty-${p.id}`}
-                                                                />
-                                                            </TableCell>
-
-                                                            {/* Unit Price: compact centered input */}
-                                                            <TableCell className="text-center align-middle">
-                                                                <Input
-                                                                    type="number"
-                                                                    step="0.01"
-                                                                    min={0}
-                                                                    value={String(p.unitPrice)}
-                                                                    onChange={(e) => updateProductField(p.id, 'unitPrice', e.target.value)}
-                                                                    onBlur={(e) => updateProductField(p.id, 'unitPrice', e.target.value)}
-                                                                    className="focus-visible:ring-ring h-8 w-24 border-0 bg-transparent p-1 text-center focus-visible:ring-1 mx-auto"
-                                                                    aria-label={`unit-${p.id}`}
-                                                                />
-                                                            </TableCell>
-
-                                                            {/* Delete button in small column */}
-                                                            <TableCell className="text-center align-middle">
-                                                                <Button variant="ghost" size="sm" onClick={() => handleRemoveProduct(p.id)} aria-label="Remove product">
-                                                                    <X className="h-4 w-4" />
-                                                                </Button>
+                                                <TableBody>
+                                                    {products.length === 0 ? (
+                                                        <TableRow>
+                                                            <TableCell colSpan={5} className="h-[200px]">
+                                                                <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground">
+                                                                    <Package className="h-10 w-10 mb-3 opacity-30" />
+                                                                    <p className="text-base font-medium">No products added yet</p>
+                                                                    <p className="text-xs mt-1.5">Click "Add Product" to start building your purchase order</p>
+                                                                </div>
                                                             </TableCell>
                                                         </TableRow>
-                                                    ))
-                                                )}
-                                            </TableBody>
+                                                    ) : (
+                                                        products.map(p => (
+                                                            <TableRow key={p.id} className="hover:bg-muted/30 transition-colors border-b border-muted-foreground/5">
+                                                                <TableCell className="py-4">
+                                                                    {/* wrap long names, limit width on lg+ */}
+                                                                    <div className="font-semibold text-sm break-words whitespace-normal max-w-full lg:max-w-[520px]">{p.name}</div>
+                                                                </TableCell>
 
-                                        </Table>
+                                                                <TableCell className="text-center py-4">
+                                                                    <Input
+                                                                        type="number"
+                                                                        min={0}
+                                                                        value={String(p.qty)}
+                                                                        onChange={(e) => updateProductField(p.id, 'qty', e.target.value)}
+                                                                        onBlur={(e) => updateProductField(p.id, 'qty', e.target.value)}
+                                                                        className="h-10 w-24 border-muted-foreground/20 bg-background text-center focus-visible:ring-2 focus-visible:border-primary/50 mx-auto text-sm rounded-lg"
+                                                                        aria-label={`qty-${p.id}`}
+                                                                    />
+                                                                </TableCell>
+
+                                                                <TableCell className="text-center py-4">
+                                                                    <div className="flex items-center justify-center gap-1.5">
+                                                                        <span className="text-muted-foreground font-medium text-sm">₱</span>
+                                                                        <Input
+                                                                            type="number"
+                                                                            step="0.01"
+                                                                            min={0}
+                                                                            value={String(p.unitPrice)}
+                                                                            onChange={(e) => updateProductField(p.id, 'unitPrice', e.target.value)}
+                                                                            onBlur={(e) => updateProductField(p.id, 'unitPrice', e.target.value)}
+                                                                            className="h-10 w-28 border-muted-foreground/20 bg-background text-center focus-visible:ring-2 focus-visible:border-primary/50 text-sm rounded-lg"
+                                                                            aria-label={`unit-${p.id}`}
+                                                                        />
+                                                                    </div>
+                                                                </TableCell>
+
+                                                                <TableCell className="text-right py-4">
+                                                                    <div className="font-bold text-base">
+                                                                        ₱{(p.qty * p.unitPrice).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                                    </div>
+                                                                </TableCell>
+
+                                                                <TableCell className="text-center py-4">
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        onClick={() => handleRemoveProduct(p.id)}
+                                                                        aria-label="Remove product"
+                                                                        className="h-9 w-9 p-0 hover:bg-destructive/10 hover:text-destructive rounded-lg transition-all"
+                                                                    >
+                                                                        <X className="h-4 w-4" />
+                                                                    </Button>
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        ))
+                                                    )}
+                                                </TableBody>
+                                            </Table>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -330,17 +398,38 @@ export default function AddStockModal({ onSave }: Props) {
                     </div>
                 </ScrollArea>
 
-                <DialogFooter className="px-6 pb-6 sm:justify-end">
-                    <DialogClose asChild>
-                        <Button variant="outline" onClick={() => setOpen(false)} disabled={saving}>
-                            <ChevronLeftIcon />
-                            Back
-                        </Button>
-                    </DialogClose>
+                {/* Compact footer */}
+                <DialogFooter className="px-6 py-5 border-t bg-muted/10 sm:justify-end flex-col sm:flex-row gap-3">
+                    {validationError && (
+                        <div className="w-full text-sm text-destructive bg-destructive/10 border border-destructive/30 px-4 py-3 rounded-xl flex items-center gap-2 shadow-sm">
+                            <svg className="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span className="font-medium">{validationError}</span>
+                        </div>
+                    )}
+                    <div className="flex gap-3 justify-end w-full">
+                        <DialogClose asChild>
+                            <Button
+                                variant="outline"
+                                onClick={() => setOpen(false)}
+                                disabled={saving}
+                                className="h-11 px-6 text-sm rounded-lg border-muted-foreground/20 hover:bg-muted/50 transition-all font-medium"
+                            >
+                                <ChevronLeftIcon className="mr-2 h-4 w-4" />
+                                Cancel
+                            </Button>
+                        </DialogClose>
 
-                    <Button onClick={handleSave} disabled={saving}>
-                        {saving ? 'Saving...' : 'Save'}
-                    </Button>
+                        <Button
+                            onClick={handleSave}
+                            disabled={saving}
+                            className="h-11 px-8 text-sm rounded-lg shadow-sm hover:shadow-md transition-all font-semibold"
+                        >
+                            <Check className="mr-2 h-4 w-4" />
+                            {saving ? 'Saving Purchase...' : 'Save Purchase'}
+                        </Button>
+                    </div>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
