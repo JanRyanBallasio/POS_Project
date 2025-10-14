@@ -199,16 +199,50 @@ export default function CartTable({
   ]);
 
   const PriceCell: React.FC<{ item: CartItem }> = ({ item }) => {
-    const [value, setValue] = useState<string>(String(item.product.price ?? 0));
+    const isKg = String(item.product.unit || "").toLowerCase().includes("kg");
+
+    // Track last typed amount for kg items and whether it came from Price input
+    const lastTypedAmountRef = useRef<string>("");
+    const updatedViaPriceRef = useRef<boolean>(false);
+
+    const [value, setValue] = useState<string>(
+      isKg
+        ? (Number(item.product.price || 0) * Number(item.quantity || 0)).toFixed(2)
+        : String(item.product.price ?? 0)
+    );
 
     useEffect(() => {
-      setValue(String(item.product.price ?? 0));
-    }, [item.product.price]);
+      if (isKg) {
+        if (updatedViaPriceRef.current) {
+          setValue(lastTypedAmountRef.current);
+          updatedViaPriceRef.current = false;
+        } else {
+          setValue((Number(item.product.price || 0) * Number(item.quantity || 0)).toFixed(2));
+        }
+      } else {
+        setValue(String(item.product.price ?? 0));
+      }
+    }, [item.product.price, item.quantity, isKg]);
 
     const commit = () => {
       const parsed = Number(String(value).replace(/,/g, ""));
-      const price = Number.isFinite(parsed) ? parsed : 0;
-      updateCartItemPrice(item.id, price);
+      const inputAmount = Number.isFinite(parsed) ? parsed : 0;
+
+      if (isKg) {
+        const pricePerKg = Number(item.product.price || 0);
+        if (pricePerKg > 0) {
+          // DO NOT round quantity here; keep full precision so total equals typed amount
+          const newQty = inputAmount / pricePerKg;
+          updatedViaPriceRef.current = true;
+          lastTypedAmountRef.current = inputAmount.toFixed(2);
+          updateCartItemQuantity(item.id, newQty);
+          setValue(lastTypedAmountRef.current); // keep the typed amount visible
+        }
+        focusSearchBar();
+        return;
+      }
+
+      updateCartItemPrice(item.id, inputAmount);
       focusSearchBar();
     };
 
@@ -216,7 +250,7 @@ export default function CartTable({
       <Input
         type="text"
         value={value}
-        className="w-[60px] h-8 text-sm text-center rounded-md border-gray-200 focus:border-gray-300 focus:ring-0 bg-gray-50 mx-auto"
+        className="w-[90px] h-8 text-sm text-center rounded-md border-gray-200 focus:border-gray-300 focus:ring-0 bg-gray-50 mx-auto"
         onFocus={() => selectRow(item.id)}
         onChange={(e) => setValue(e.target.value)}
         onBlur={commit}
@@ -236,23 +270,32 @@ export default function CartTable({
     onBlur: () => void;
     disabled?: boolean;
     inputId?: string;
-  }> = ({ value, onChange, onFocus, onBlur, disabled, inputId }) => {
-    const [inputValue, setInputValue] = useState<string>(value.toString());
+    decimalPlaces?: number;
+  }> = ({ value, onChange, onFocus, onBlur, disabled, inputId, decimalPlaces }) => {
+    const [inputValue, setInputValue] = useState<string>(
+      decimalPlaces != null ? value.toFixed(decimalPlaces) : value.toString()
+    );
 
     useEffect(() => {
-      setInputValue(value.toString());
-    }, [value]);
+      setInputValue(decimalPlaces != null ? value.toFixed(decimalPlaces) : value.toString());
+    }, [value, decimalPlaces]);
 
     return (
       <Input
         type="text"
         value={inputValue}
-        className="w-[45px] h-8 text-sm text-center rounded-md border-gray-200 focus:border-gray-300 focus:ring-0 bg-gray-50 mx-auto"
+        className="w-[80px] h-8 text-sm text-center rounded-md border-gray-200 focus:border-gray-300 focus:ring-0 bg-gray-50 mx-auto"
         onFocus={onFocus}
         onChange={(e) => setInputValue(e.target.value)}
         onBlur={() => {
           const num = parseFloat(inputValue);
-          onChange(isNaN(num) || num <= 0 ? 1 : num);
+          const normalized =
+            isNaN(num) || num <= 0
+              ? 1
+              : decimalPlaces != null
+              ? Number(num.toFixed(decimalPlaces))
+              : num;
+          onChange(normalized);
           onBlur();
         }}
         onKeyDown={(e) => {
@@ -276,10 +319,10 @@ export default function CartTable({
     <div className="rounded-xl border border-gray-100 bg-white shadow-sm overflow-x-auto">
       <Table className="w-full table-fixed text-sm">
         <colgroup>
-          <col className="w-[50%]" />
+          <col className="w-[35%]" />
+          <col className="w-[20%]" />
+          <col className="w-[20%]" />
           <col className="w-[15%]" />
-          <col className="w-[15%]" />
-          <col className="w-[10%]" />
           <col className="w-[10%]" />
         </colgroup>
 
@@ -306,6 +349,7 @@ export default function CartTable({
         <TableBody>
           {cart.map((item) => {
             const isSelected = selectedRowId === item.id;
+            const isKg = String(item.product.unit || "").toLowerCase().includes("kg");
 
             return (
               <TableRow
@@ -319,14 +363,22 @@ export default function CartTable({
                 onClick={() => selectRow(item.id)}
               >
                 {/* Product */}
-                <TableCell className="px-4 py-3 text-gray-800 font-medium text-left align-middle break-words whitespace-normal leading-snug">
+                <TableCell className="px-4 py-3 text-gray-800 font-medium text-left align-middle leading-snug whitespace-normal break-words">
                   {item.product.__placeholder ? (
                     <div className="flex items-center gap-2 text-gray-400">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       <span>Loading…</span>
                     </div>
                   ) : (
-                    <div className="break-words whitespace-normal leading-snug">
+                    <div
+                      title={item.product.name}
+                      style={{
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                      }}
+                    >
                       {item.product.name}
                     </div>
                   )}
@@ -347,6 +399,7 @@ export default function CartTable({
                       onBlur={focusSearchBar}
                       disabled={disabled}
                       inputId={item.id}
+                      decimalPlaces={isKg ? 3 : undefined}
                     />
                     <span className="text-xs text-gray-500">
                       {item.product.unit || "pcs"}

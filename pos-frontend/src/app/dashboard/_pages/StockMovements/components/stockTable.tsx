@@ -48,25 +48,25 @@ export type StockItem = {
 export const columns: ColumnDef<StockTransaction>[] = [
     {
         accessorKey: 'company_name',
-        header: 'Company Name',
-        cell: ({ row }) => <div className='font-medium'>{row.getValue('company_name')}</div>
+        header: 'Supplier / Company',
+        cell: ({ row }) => <div className='font-semibold text-base'>{row.getValue('company_name')}</div>
     },
     {
         accessorKey: 'date',
-        header: 'Date',
+        header: 'Purchase Date',
         cell: ({ row }) => {
             const raw = row.getValue('date') as string
-            const formatted = raw ? new Date(raw).toLocaleDateString() : ''
+            const formatted = raw ? new Date(raw).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : ''
             return <div className='text-sm text-muted-foreground'>{formatted}</div>
         }
     },
     {
         accessorKey: 'total',
-        header: () => <div className='text-right'>Total</div>,
+        header: () => <div className='text-right'>Total Amount</div>,
         cell: ({ row }) => {
             const price = parseFloat(String(row.getValue('total') ?? 0))
-            const formatted = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price)
-            return <div className='text-right font-medium'>{formatted}</div>
+            const formatted = `₱${price.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+            return <div className='text-right font-semibold text-base'>{formatted}</div>
         }
     },
 
@@ -76,9 +76,9 @@ export const columns: ColumnDef<StockTransaction>[] = [
         cell: ({ row }) => {
             const company = String(row.getValue('company_name') ?? '')
             const rawDate = String(row.getValue('date') ?? '')
-            const formattedDate = rawDate ? new Date(rawDate).toLocaleDateString() : ''
+            const formattedDate = rawDate ? new Date(rawDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : ''
             const total = parseFloat(String(row.getValue('total') ?? 0))
-            const formattedTotal = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(total)
+            const formattedTotal = `₱${total.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
             // transaction id from original row
             const txId = (row.original as any)?.id
@@ -121,51 +121,52 @@ export const columns: ColumnDef<StockTransaction>[] = [
                 return (
                     <Dialog open={open} onOpenChange={setOpen}>
                         <DialogTrigger asChild>
-                            <Button variant="ghost" size="sm" aria-label="View details">
-                                <Eye className="h-4 w-4" />
+                            <Button variant="ghost" size="sm" aria-label="View details" className="hover:bg-primary/10">
+                                <Eye className="h-4 w-4 mr-2" />
+                                <span className="text-sm">View Details</span>
                             </Button>
                         </DialogTrigger>
 
-                        <DialogContent className="flex max-h-[min(640px,84vh)] flex-col gap-0 p-0 sm:max-w-lg">
+                        <DialogContent className="flex max-h-[min(720px,90vh)] flex-col gap-0 p-0 sm:max-w-2xl">
                             <DialogHeader className="contents space-y-0 text-left">
                                 <ScrollArea className="flex max-h-full flex-col overflow-hidden">
-                                    <DialogTitle className="px-6 pt-6 text-lg md:text-xl font-semibold text-foreground">Transaction Details</DialogTitle>
+                                    <DialogTitle className="px-8 pt-8 pb-6 text-2xl font-semibold text-foreground border-b">Purchase Details</DialogTitle>
                                     <DialogDescription asChild>
-                                        <div className="p-6">
-                                            <div className="space-y-4">
-                                                <div className="flex flex-col gap-2">
-                                                    <div className="flex items-baseline gap-3">
-                                                        <span className="text-sm text-muted-foreground">Company:</span>
-                                                        <span className="text-base font-medium text-foreground">{company}</span>
+                                        <div className="p-8">
+                                            <div className="space-y-6">
+                                                <div className="grid grid-cols-2 gap-4 p-4 bg-muted/30 rounded-lg">
+                                                    <div className="space-y-1">
+                                                        <span className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Supplier</span>
+                                                        <div className="text-base font-semibold text-foreground">{company}</div>
                                                     </div>
-                                                    <div className="flex items-baseline gap-3">
-                                                        <span className="text-sm text-muted-foreground">Date:</span>
-                                                        <span className="text-sm text-foreground">{formattedDate}</span>
+                                                    <div className="space-y-1">
+                                                        <span className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Purchase Date</span>
+                                                        <div className="text-sm text-foreground">{formattedDate}</div>
                                                     </div>
-                                                    <div className="flex items-baseline gap-3">
-                                                        <span className="text-sm text-muted-foreground">Total:</span>
-                                                        <span className="text-base font-semibold text-foreground">{formattedTotal}</span>
+                                                    <div className="col-span-2 space-y-1 pt-2 border-t">
+                                                        <span className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Total Amount</span>
+                                                        <div className="text-2xl font-bold text-primary">{formattedTotal}</div>
                                                     </div>
                                                 </div>
 
-                                                <div className="mt-3">
-                                                    <h4 className="text-sm font-medium text-muted-foreground">Products</h4>
+                                                <div>
+                                                    <h4 className="text-base font-semibold mb-3">Products Purchased</h4>
 
                                                     {loadingItems ? (
-                                                        <div className="text-sm text-muted-foreground mt-3">Loading products…</div>
+                                                        <div className="text-sm text-muted-foreground text-center py-8">Loading products…</div>
                                                     ) : loadError ? (
-                                                        <div className="text-sm text-destructive mt-3">Failed to load products: {loadError}</div>
+                                                        <div className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-4">Failed to load products: {loadError}</div>
                                                     ) : !shownItems || shownItems.length === 0 ? (
-                                                        <div className="text-sm text-muted-foreground mt-3">No products available for this transaction.</div>
+                                                        <div className="text-sm text-muted-foreground text-center py-8">No products available for this transaction.</div>
                                                     ) : (
-                                                        <div className="mt-3 overflow-auto rounded-sm border">
-                                                            <table className="w-full text-sm">
+                                                        <div className="overflow-auto rounded-lg border">
+                                                            <table className="w-full">
                                                                 <thead>
-                                                                    <tr className="bg-muted/5">
-                                                                        <th className="px-4 py-3 text-left text-xs text-muted-foreground">Product</th>
-                                                                        <th className="px-4 py-3 text-right text-xs text-muted-foreground">Qty</th>
-                                                                        <th className="px-4 py-3 text-right text-xs text-muted-foreground">Unit</th>
-                                                                        <th className="px-4 py-3 text-right text-xs text-muted-foreground">Subtotal</th>
+                                                                    <tr className="bg-muted/50 border-b">
+                                                                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Product Name</th>
+                                                                        <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">Qty</th>
+                                                                        <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">Unit Price</th>
+                                                                        <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">Subtotal</th>
                                                                     </tr>
                                                                 </thead>
                                                                 <tbody>
@@ -178,15 +179,15 @@ export const columns: ColumnDef<StockTransaction>[] = [
                                                                         const qty = Number(it.quantity ?? it.qty ?? 0)
                                                                         const unit = Number(it.purchased_price ?? it.unit_price ?? it.price ?? 0)
                                                                         const subtotal = qty * unit
-                                                                        const formattedUnit = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(unit)
-                                                                        const formattedSubtotal = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(subtotal)
+                                                                        const formattedUnit = `₱${unit.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                                                                        const formattedSubtotal = `₱${subtotal.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
                                                                         return (
-                                                                            <tr key={i} className="border-t last:border-b">
-                                                                                <td className="px-4 py-3 align-top text-sm text-foreground max-w-[260px] break-words whitespace-normal">{name}</td>
-                                                                                <td className="px-4 py-3 align-top text-sm text-right text-foreground">{qty}</td>
-                                                                                <td className="px-4 py-3 align-top text-sm text-right text-foreground">{formattedUnit}</td>
-                                                                                <td className="px-4 py-3 align-top text-sm text-right font-medium text-foreground">{formattedSubtotal}</td>
+                                                                            <tr key={i} className="border-b last:border-b-0 hover:bg-muted/20">
+                                                                                <td className="px-4 py-4 align-top text-sm font-medium text-foreground max-w-[260px] break-words whitespace-normal">{name}</td>
+                                                                                <td className="px-4 py-4 align-top text-sm text-right text-foreground">{qty}</td>
+                                                                                <td className="px-4 py-4 align-top text-sm text-right text-foreground">{formattedUnit}</td>
+                                                                                <td className="px-4 py-4 align-top text-sm text-right font-semibold text-foreground">{formattedSubtotal}</td>
                                                                             </tr>
                                                                         )
                                                                     })}
@@ -201,11 +202,11 @@ export const columns: ColumnDef<StockTransaction>[] = [
                                 </ScrollArea>
                             </DialogHeader>
 
-                            <DialogFooter className="flex-row items-center justify-end border-t px-6 py-4">
+                            <DialogFooter className="flex-row items-center justify-end border-t px-8 py-5 bg-muted/20">
                                 <DialogClose asChild>
-                                    <Button variant="outline" size="sm">
-                                        <ChevronLeftIcon />
-                                        Back
+                                    <Button variant="outline" className="h-11 px-6">
+                                        <ChevronLeftIcon className="mr-2 h-5 w-5" />
+                                        Close
                                     </Button>
                                 </DialogClose>
                             </DialogFooter>
@@ -257,13 +258,13 @@ const StockMovementTable = () => {
 
     return (
         <div className='w-full h-full'>
-            <div className='flex justify-between gap-2 pb-4 max-sm:flex-col sm:items-center'>
+            <div className='flex justify-between gap-4 pb-6 max-sm:flex-col sm:items-center'>
                 <div className='flex items-center space-x-2'>
                     <Input
-                        placeholder='Search all columns...'
+                        placeholder='Search purchases...'
                         value={globalFilter ?? ''}
                         onChange={event => setGlobalFilter(String(event.target.value))}
-                        className='max-w-sm'
+                        className='max-w-sm h-11 text-base'
                     />
                 </div>
                 <div className='flex items-center space-x-2'>
@@ -279,14 +280,14 @@ const StockMovementTable = () => {
                     {/* Refresh button removed since SWR handles revalidation; call mutate() if you want manual refresh */}
                 </div>
             </div>
-            <div className='rounded-md border'>
+            <div className='rounded-lg border shadow-sm overflow-hidden'>
                 <Table>
                     <TableHeader>
                         {table.getHeaderGroups().map(headerGroup => (
-                            <TableRow key={headerGroup.id}>
+                            <TableRow key={headerGroup.id} className="bg-muted/50 hover:bg-muted/50">
                                 {headerGroup.headers.map(header => {
                                     return (
-                                        <TableHead key={header.id}>
+                                        <TableHead key={header.id} className="h-12 font-semibold">
                                             {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                                         </TableHead>
                                     )
@@ -297,16 +298,19 @@ const StockMovementTable = () => {
                     <TableBody>
                         {table.getRowModel().rows?.length ? (
                             table.getRowModel().rows.map(row => (
-                                <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
+                                <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'} className="hover:bg-muted/30">
                                     {row.getVisibleCells().map(cell => (
-                                        <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
+                                        <TableCell key={cell.id} className="py-4">{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
                                     ))}
                                 </TableRow>
                             ))
                         ) : (
                             <TableRow>
-                                <TableCell colSpan={columns.length} className='h-24 text-center'>
-                                    No results.
+                                <TableCell colSpan={columns.length} className='h-32 text-center'>
+                                    <div className="flex flex-col items-center justify-center text-muted-foreground">
+                                        <p className="text-base">No purchases found.</p>
+                                        <p className="text-sm mt-1">Add a new purchase to get started.</p>
+                                    </div>
                                 </TableCell>
                             </TableRow>
                         )}
@@ -317,5 +321,4 @@ const StockMovementTable = () => {
     )
 }
 
-export default StockMovementTable
-// ...existing
+export default StockMovementTable// ...existing
