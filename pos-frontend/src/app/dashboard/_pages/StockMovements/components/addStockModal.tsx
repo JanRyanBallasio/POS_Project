@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { ChevronLeft as ChevronLeftIcon, Plus, X, Calendar as CalendarIcon, Wallet, Package, Hash, BadgeDollarSign, Calculator, Building2, Check, CalendarClock } from "lucide-react";
 import { useSWRConfig } from 'swr'
+import useSWR from 'swr'
 import axios from "@/lib/axios";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,6 +20,13 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import {
     Card,
     CardAction,
     CardContent,
@@ -27,6 +35,7 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import AddProductModal from "./addProductModal";
+import AddSupplierModal from "./addSupplierModal";
 import {
     Table,
     TableBody,
@@ -46,6 +55,19 @@ export default function AddStockModal({ onSave }: Props) {
     const [open, setOpen] = useState(false);
     const [month, setMonth] = useState<Date | undefined>(new Date());
     const [datePopOpen, setDatePopOpen] = useState(false);
+    const [showAddSupplier, setShowAddSupplier] = useState(false);
+
+    // Fetch suppliers
+    const { data: suppliersData, mutate: mutateSuppliers } = useSWR(
+        '/stock-transactions/suppliers/list',
+        async (url) => {
+            const res = await axios.get(url);
+            return res.data;
+        }
+    );
+
+    const suppliers = suppliersData?.data || [];
+
     useEffect(() => {
         const handler = (e: Event) => {
             const ce = e as CustomEvent<{ name: string; qty: number; unitPrice: number }>;
@@ -65,6 +87,11 @@ export default function AddStockModal({ onSave }: Props) {
     const { mutate } = useSWRConfig()
 
     const { openModal } = useProductModal();
+
+    // Callback when new supplier is added
+    const handleSupplierAdded = () => {
+        mutateSuppliers();
+    };
     const handleSave = async () => {
         // Clear previous validation error
         setValidationError("")
@@ -197,16 +224,38 @@ export default function AddStockModal({ onSave }: Props) {
                                 {/* Left column - basic info */}
                                 <div className="w-full lg:w-[320px] flex-shrink-0 space-y-5">
                                     <div className="space-y-2">
-                                        <label className="text-sm font-semibold text-foreground flex items-center gap-2">
-                                            <Building2 className="h-4 w-4 opacity-70" />
-                                            <span>Supplier / Company</span>
-                                        </label>
-                                        <Input
-                                            value={company}
-                                            onChange={(e) => setCompany(e.target.value)}
-                                            placeholder="Enter supplier name"
-                                            className="h-11 text-sm border-muted-foreground/20 focus-visible:border-primary/50 rounded-lg"
-                                        />
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-sm font-semibold text-foreground flex items-center gap-2">
+                                                <Building2 className="h-4 w-4 opacity-70" />
+                                                <span>Supplier / Company</span>
+                                            </label>
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowAddSupplier(true)}
+                                                className="text-xs text-primary hover:underline flex items-center gap-1"
+                                            >
+                                                <Plus className="h-3 w-3" />
+                                                Add New
+                                            </button>
+                                        </div>
+                                        <Select value={company} onValueChange={setCompany}>
+                                            <SelectTrigger className="w-full h-11 text-sm border-muted-foreground/20 focus-visible:border-primary/50 rounded-lg">
+                                                <SelectValue placeholder="Select supplier" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {suppliers.length === 0 ? (
+                                                    <div className="px-2 py-4 text-sm text-muted-foreground text-center">
+                                                        No suppliers found. Click "Add New" to create one.
+                                                    </div>
+                                                ) : (
+                                                    suppliers.map((supplier: { company_name: string }) => (
+                                                        <SelectItem key={supplier.company_name} value={supplier.company_name}>
+                                                            {supplier.company_name}
+                                                        </SelectItem>
+                                                    ))
+                                                )}
+                                            </SelectContent>
+                                        </Select>
                                     </div>
 
                                     <div className="space-y-2">
@@ -432,6 +481,13 @@ export default function AddStockModal({ onSave }: Props) {
                     </div>
                 </DialogFooter>
             </DialogContent>
+
+            {/* Add Supplier Modal */}
+            <AddSupplierModal
+                isOpen={showAddSupplier}
+                onOpenChange={setShowAddSupplier}
+                onAdded={handleSupplierAdded}
+            />
         </Dialog>
     );
 }

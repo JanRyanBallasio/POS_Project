@@ -1,4 +1,4 @@
-import StockMovementHead from "./components/stockHead";
+    import StockMovementHead from "./components/stockHead";
 
 import CardTable from "./components/cardTable";
 export default function StockMovementScreen() {

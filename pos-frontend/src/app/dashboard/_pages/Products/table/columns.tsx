@@ -97,6 +97,10 @@ export const columns: ColumnDef<Products>[] = [
   {
     accessorKey: "productPrice",
     header: "Price",
+    cell: ({ row }) => {
+      const price = Number(row.getValue("productPrice") || 0);
+      return <div className="font-medium">₱{price.toFixed(2)}</div>;
+    },
     meta: {
       headerClassName: "hidden lg:table-cell",
       cellClassName: "hidden lg:table-cell",
