@@ -1,14 +1,10 @@
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import AddStockModal from "./addStockModal";
+import AddProductModal from "./addProductModal";
+import AddSupplierModal from "./addSupplierModal";
 
 export default function StockMovementHead() {
     return (
         <div className="flex justify-between items-center h-full">
             <h1 className="text-3xl font-bold">Purchases</h1>
-            <div className="flex gap-3">
-                <AddStockModal />
-            </div>
         </div>
     );
 }

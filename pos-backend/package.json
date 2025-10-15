@@ -26,6 +26,7 @@
     "escpos-network": "^3.0.0-alpha.5",
     "escpos-usb": "^3.0.0-alpha.4",
     "express": "^5.1.0",
+    "luxon": "^3.7.2",
     "node-fetch": "^3.3.2"
   },
   "devDependencies": {

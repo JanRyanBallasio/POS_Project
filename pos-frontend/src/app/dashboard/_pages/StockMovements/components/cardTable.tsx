@@ -8,13 +8,9 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 
-import StockMovementTable from "./stockTable";
+import PurchasesView from "./purchasesView";
 export default function CardTable() {
     return (
-        <Card className="h-full border">
-            <CardContent>
-                <StockMovementTable />
-            </CardContent>
-        </Card>
+        <PurchasesView />
     )
 }

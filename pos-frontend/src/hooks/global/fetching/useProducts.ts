@@ -18,16 +18,23 @@ export const useProducts = (enabled: boolean = true) => {
     enabled ? PRODUCTS_KEY : null,
     fetcher,
     {
-      revalidateOnFocus: false,
+      revalidateOnFocus: true, // Revalidate when window gains focus
       revalidateOnReconnect: true,
-      dedupingInterval: 10_000,
+      dedupingInterval: 2000, // Reduced from 10 seconds to 2 seconds for faster updates
       errorRetryCount: 2,
       refreshInterval: 0,
       compare: (a, b) => {
         if (!a && !b) return true;
         if (!a || !b) return false;
         if (a.length !== b.length) return false;
-        return a.every((item, index) => item.id === b[index].id && item.name === b[index].name);
+        // More thorough comparison including price and quantity
+        return a.every((item, index) => {
+          const bItem = b[index];
+          return item.id === bItem.id &&
+                 item.name === bItem.name &&
+                 item.price === bItem.price &&
+                 item.quantity === bItem.quantity;
+        });
       },
     }
   );
@@ -36,6 +43,6 @@ export const useProducts = (enabled: boolean = true) => {
     products: data ?? [],
     loading: !!isLoading,
     error: error ? (error as Error).message : null,
-    refetch: mutate,
+    refetch: () => mutate(undefined, { revalidate: true }), // Force revalidation
   };
 };
