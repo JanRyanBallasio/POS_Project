@@ -141,3 +141,17 @@
     --sidebar-ring: oklch(0.439 0 0);
   }
 }
+
+/* Barcode scanner animation */
+@keyframes scan {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+.animate-scan {
+  animation: scan 2s linear infinite;
+}

@@ -6,10 +6,11 @@ import useStockTransactions, { StockTransaction } from '@/hooks/stocks/useStockT
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { DateTime } from 'luxon'
-import { ChevronRight, Home, Percent, Search } from 'lucide-react'
+import { ChevronRight, Home, Percent, Search, Pencil, Trash2 } from 'lucide-react'
 import PercentModal from './percentModal'
 import AddProductModal from './addProductModal'
 import AddSupplierModal from './addSupplierModal'
+import EditPurchaseModal from './editPurchaseModal'
 import useSWR from 'swr'
 
 type ViewLevel = 'companies' | 'dates' | 'products'
@@ -51,6 +52,13 @@ export default function PurchasesView() {
   // Percent modal state
   const [percentModalOpen, setPercentModalOpen] = useState(false)
   const [percentModalCompany, setPercentModalCompany] = useState<string>('')
+
+  // Edit modal state
+  const [editModalOpen, setEditModalOpen] = useState(false)
+  const [editingItem, setEditingItem] = useState<ProductDetail | null>(null)
+
+  // Delete confirmation state
+  const [deletingItemId, setDeletingItemId] = useState<string | number | null>(null)
 
   // Fetch suppliers with percent data
   const { data: suppliersData, mutate: mutateSuppliers } = useSWR(
@@ -257,6 +265,36 @@ export default function PurchasesView() {
         // Reload without showing loading state for seamless update
         await loadProducts(currentDateGroup, false)
       }
+    }
+  }
+
+  // Handle edit button click
+  const handleEditClick = (e: React.MouseEvent, product: ProductDetail) => {
+    e.stopPropagation()
+    setEditingItem(product)
+    setEditModalOpen(true)
+  }
+
+  // Handle delete button click
+  const handleDeleteClick = async (e: React.MouseEvent, productId: string | number) => {
+    e.stopPropagation()
+
+    if (!confirm('Are you sure you want to delete this purchase item? This will also update the product quantity.')) {
+      return
+    }
+
+    setDeletingItemId(productId)
+
+    try {
+      await axios.delete(`/stock-transactions/items/${productId}`)
+
+      // Refresh the products list
+      await handleProductAdded()
+    } catch (err: any) {
+      console.error('Error deleting purchase item:', err)
+      alert(err.response?.data?.message || err.message || 'Failed to delete item')
+    } finally {
+      setDeletingItemId(null)
     }
   }
 
@@ -579,18 +617,19 @@ export default function PurchasesView() {
                   <TableHead className="h-12 font-semibold text-gray-900 text-right">Quantity</TableHead>
                   <TableHead className="h-12 font-semibold text-gray-900 text-right">Supplier Price</TableHead>
                   <TableHead className="h-12 font-semibold text-gray-900 text-right">Saved Price</TableHead>
+                  <TableHead className="h-12 w-24"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loadingProducts ? (
                   <TableRow>
-                    <TableCell colSpan={5} className='h-32 text-center text-gray-500'>
+                    <TableCell colSpan={6} className='h-32 text-center text-gray-500'>
                       Loading products...
                     </TableCell>
                   </TableRow>
                 ) : products.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className='h-32 text-center text-gray-500'>
+                    <TableCell colSpan={6} className='h-32 text-center text-gray-500'>
                       No products found for this transaction.
                     </TableCell>
                   </TableRow>
@@ -611,6 +650,29 @@ export default function PurchasesView() {
                       </TableCell>
                       <TableCell className="py-4 text-right font-semibold text-gray-900">
                         ₱{product.saved_price?.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </TableCell>
+                      <TableCell className="py-4">
+                        <div className="flex items-center gap-1 justify-end">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 hover:bg-blue-50 rounded-lg"
+                            onClick={(e) => handleEditClick(e, product)}
+                            title="Edit item"
+                          >
+                            <Pencil className="h-4 w-4 text-blue-600" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 hover:bg-red-50 rounded-lg"
+                            onClick={(e) => handleDeleteClick(e, product.id)}
+                            disabled={deletingItemId === product.id}
+                            title="Delete item"
+                          >
+                            <Trash2 className="h-4 w-4 text-red-600" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -640,9 +702,30 @@ export default function PurchasesView() {
                       <h3 className="font-semibold text-gray-900 mb-1">{product.product_name}</h3>
                       <p className="text-xs text-gray-500">{selectedCompany}</p>
                     </div>
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-gray-100 text-sm font-medium text-gray-900 ml-2 flex-shrink-0">
-                      Qty: {product.quantity}
-                    </span>
+                    <div className="flex items-center gap-2 ml-2 flex-shrink-0">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-gray-100 text-sm font-medium text-gray-900">
+                        Qty: {product.quantity}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 hover:bg-blue-50 rounded-lg"
+                        onClick={(e) => handleEditClick(e, product)}
+                        title="Edit item"
+                      >
+                        <Pencil className="h-4 w-4 text-blue-600" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 hover:bg-red-50 rounded-lg"
+                        onClick={(e) => handleDeleteClick(e, product.id)}
+                        disabled={deletingItemId === product.id}
+                        title="Delete item"
+                      >
+                        <Trash2 className="h-4 w-4 text-red-600" />
+                      </Button>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
@@ -664,6 +747,17 @@ export default function PurchasesView() {
             )}
           </div>
         </>
+      )}
+
+      {/* Edit Modal */}
+      {editingItem && (
+        <EditPurchaseModal
+          isOpen={editModalOpen}
+          onOpenChange={setEditModalOpen}
+          item={editingItem}
+          companyName={selectedCompany || ''}
+          onSuccess={handleProductAdded}
+        />
       )}
     </div>
   )

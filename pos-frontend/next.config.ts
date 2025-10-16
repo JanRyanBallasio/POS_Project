@@ -25,7 +25,7 @@ import type { NextConfig } from "next";
 const isProd = process.env.NODE_ENV === "production";
 
 const nextConfig: NextConfig = {
-  // output: "export", // ⚠️ keep disabled for SSR
+  //output: "export", // ⚠️ keep disabled for SSR
   assetPrefix: isProd ? "" : undefined,
   reactStrictMode: true,
   productionBrowserSourceMaps: !isProd,
