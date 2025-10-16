@@ -464,6 +464,169 @@ const stockTransactionController = {
       console.error('addStockItems error', err)
       return res.status(500).json({ success: false, error: err.message || 'Internal error' })
     }
+  },
+
+  // PUT /api/stock-transactions/items/:itemId
+  // Update a stock item (quantity and/or purchased_price)
+  updateStockItem: async (req, res) => {
+    try {
+      const { itemId } = req.params
+      const { quantity, purchased_price, product_id } = req.body
+
+      if (!itemId) {
+        return res.status(400).json({ success: false, message: 'Item ID is required' })
+      }
+
+      // Get the current item to know the old values
+      const { data: currentItem, error: fetchError } = await supabase
+        .from('StockItems')
+        .select('*, stock_transaction_id')
+        .eq('id', itemId)
+        .maybeSingle()
+
+      if (fetchError) throw fetchError
+      if (!currentItem) {
+        return res.status(404).json({ success: false, message: 'Stock item not found' })
+      }
+
+      // Build update object
+      const updates = {}
+      if (quantity !== undefined) updates.quantity = parseInt(quantity, 10) || 0
+      if (purchased_price !== undefined) updates.purchased_price = cleanNumber(purchased_price)
+      if (product_id !== undefined) updates.product_id = product_id
+
+      // Update the stock item
+      const { data: updatedItem, error: updateError } = await supabase
+        .from('StockItems')
+        .update(updates)
+        .eq('id', itemId)
+        .select()
+        .single()
+
+      if (updateError) throw updateError
+
+      // Get the product_id to update (use new one if changed, otherwise use current)
+      const targetProductId = updates.product_id ?? currentItem.product_id
+
+      // Update the product price if purchased_price changed
+      if (targetProductId && updates.purchased_price !== undefined) {
+        const { error: productUpdateError } = await supabase
+          .from('Products')
+          .update({ price: updates.purchased_price })
+          .eq('id', targetProductId)
+
+        if (productUpdateError) {
+          console.error(`Failed to update product ${targetProductId} price:`, productUpdateError)
+        } else {
+          console.log(`✅ Updated product ${targetProductId} price to ${updates.purchased_price}`)
+        }
+      }
+
+      // Recalculate transaction total
+      const { data: allItems, error: itemsError } = await supabase
+        .from('StockItems')
+        .select('quantity, purchased_price')
+        .eq('stock_transaction_id', currentItem.stock_transaction_id)
+
+      if (!itemsError && allItems) {
+        const newTotal = allItems.reduce((sum, item) => {
+          return sum + (cleanNumber(item.quantity) * cleanNumber(item.purchased_price))
+        }, 0)
+
+        await supabase
+          .from('StockTransaction')
+          .update({ total: newTotal })
+          .eq('id', currentItem.stock_transaction_id)
+      }
+
+      return res.json({ success: true, data: updatedItem })
+    } catch (err) {
+      console.error('updateStockItem error', err)
+      return res.status(500).json({ success: false, error: err.message || 'Internal error' })
+    }
+  },
+
+  // DELETE /api/stock-transactions/items/:itemId
+  // Hard delete a stock item and update product quantity accordingly
+  deleteStockItem: async (req, res) => {
+    try {
+      const { itemId } = req.params
+
+      if (!itemId) {
+        return res.status(400).json({ success: false, message: 'Item ID is required' })
+      }
+
+      // Get the item before deleting to know the quantity to subtract from product
+      const { data: item, error: fetchError } = await supabase
+        .from('StockItems')
+        .select('*, stock_transaction_id')
+        .eq('id', itemId)
+        .maybeSingle()
+
+      if (fetchError) throw fetchError
+      if (!item) {
+        return res.status(404).json({ success: false, message: 'Stock item not found' })
+      }
+
+      // Hard delete the item
+      const { error: deleteError } = await supabase
+        .from('StockItems')
+        .delete()
+        .eq('id', itemId)
+
+      if (deleteError) throw deleteError
+
+      // Update the product quantity (subtract the deleted quantity)
+      if (item.product_id && item.quantity > 0) {
+        const { data: currentProduct, error: productFetchError } = await supabase
+          .from('Products')
+          .select('quantity')
+          .eq('id', item.product_id)
+          .single()
+
+        if (!productFetchError && currentProduct) {
+          const currentQuantity = Number(currentProduct.quantity) || 0
+          const newQuantity = Math.max(0, currentQuantity - item.quantity)
+
+          const { error: productUpdateError } = await supabase
+            .from('Products')
+            .update({ quantity: newQuantity })
+            .eq('id', item.product_id)
+
+          if (productUpdateError) {
+            console.error(`Failed to update product ${item.product_id} quantity:`, productUpdateError)
+          } else {
+            console.log(`✅ Updated product ${item.product_id}: quantity ${currentQuantity} - ${item.quantity} = ${newQuantity}`)
+          }
+        }
+      }
+
+      // Recalculate transaction total
+      const { data: remainingItems, error: itemsError } = await supabase
+        .from('StockItems')
+        .select('quantity, purchased_price')
+        .eq('stock_transaction_id', item.stock_transaction_id)
+
+      if (!itemsError) {
+        const newTotal = (remainingItems || []).reduce((sum, it) => {
+          return sum + (cleanNumber(it.quantity) * cleanNumber(it.purchased_price))
+        }, 0)
+
+        await supabase
+          .from('StockTransaction')
+          .update({ total: newTotal })
+          .eq('id', item.stock_transaction_id)
+      }
+
+      return res.json({
+        success: true,
+        message: 'Stock item deleted successfully',
+        deleted_item_id: itemId
+      })
+    } catch (err) {
+      console.error('deleteStockItem error', err)
+      return res.status(500).json({ success: false, error: err.message || 'Internal error' })
+    }
   }
 }
 

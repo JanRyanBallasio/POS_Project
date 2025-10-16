@@ -29,6 +29,8 @@ interface POSLeftColProps {
 
 export default function POSLeftCol({ step }: POSLeftColProps) {
   const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [cameraLoading, setCameraLoading] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -304,7 +306,11 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
 
   // ZXing continuous decode with explicit hints
   useEffect(() => {
-    if (!isCameraOpen) return;
+    if (!isCameraOpen) {
+      setCameraError(null);
+      setCameraLoading(false);
+      return;
+    }
 
     let cancelled = false;
     let reader: any = null;
@@ -313,6 +319,9 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
     let fallbackStarted = false;
 
     const start = async () => {
+      setCameraLoading(true);
+      setCameraError(null);
+
       try {
         const { BrowserMultiFormatReader } = await import("@zxing/browser");
         const { DecodeHintType, BarcodeFormat } = await import("@zxing/library");
@@ -327,26 +336,58 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
           BarcodeFormat.CODE_128,
           BarcodeFormat.CODE_39,
           BarcodeFormat.ITF,
+          BarcodeFormat.QR_CODE,
         ]);
 
         reader = new BrowserMultiFormatReader(hints);
 
         const video = videoRef.current;
-        if (!video) return;
+        if (!video) {
+          setCameraError("Video element not found");
+          setCameraLoading(false);
+          return;
+        }
 
+        // Set video attributes for mobile compatibility (especially iOS)
         video.setAttribute("playsinline", "true");
+        video.setAttribute("webkit-playsinline", "true"); // For older iOS devices
+        video.setAttribute("autoplay", "true");
+        video.setAttribute("muted", "true");
         video.autoplay = true;
+        video.muted = true;
+        video.playsInline = true;
 
+        // Get available cameras
         const devices = await BrowserMultiFormatReader.listVideoInputDevices().catch(() => []);
+        console.log("[ZXing] Available cameras:", devices);
+
+        if (devices.length === 0) {
+          setCameraError("No camera found. Please check camera permissions.");
+          setCameraLoading(false);
+          return;
+        }
+
+        // Prefer rear/back camera for mobile
         const preferred =
-          Array.isArray(devices) && devices.find(d => /back|rear|environment|external/i.test(d.label)) || devices[0];
+          devices.find(d => /back|rear|environment|external/i.test(d.label)) || devices[devices.length - 1];
         const deviceId = preferred?.deviceId;
+
+        console.log("[ZXing] Selected camera:", preferred?.label || "Default");
 
         const constraints: MediaStreamConstraints = {
           audio: false,
           video: deviceId
-            ? { deviceId: { exact: deviceId }, width: { ideal: 1280 }, height: { ideal: 720 } }
-            : { facingMode: { ideal: "environment" as any }, width: { ideal: 1280 }, height: { ideal: 720 } },
+            ? {
+                deviceId: { ideal: deviceId }, // Use 'ideal' instead of 'exact' for better compatibility
+                facingMode: { ideal: "environment" },
+                width: { ideal: 1920, max: 1920 },
+                height: { ideal: 1080, max: 1080 }
+              }
+            : {
+                facingMode: { ideal: "environment" },
+                width: { ideal: 1920, max: 1920 },
+                height: { ideal: 1080, max: 1080 }
+              },
         };
         console.log("[ZXing] using constraints:", constraints);
 
@@ -355,6 +396,7 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
 
           if (result) {
             decodedOnce = true;
+            setCameraLoading(false); // Camera is working
             const raw = String(result.getText?.() ?? "");
             const cleaned = raw.replace(/[\u0000-\u001F\u007F-\u009F]/g, "").trim();
             const numeric = cleaned.replace(/\s+/g, "").replace(/[^0-9]/g, "");
@@ -363,7 +405,16 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
             const now = Date.now();
             if (valueToUse && (lastScanRef.current.value !== valueToUse || now - lastScanRef.current.at > 2000)) {
               lastScanRef.current = { value: valueToUse, at: now };
-              console.log("[ZXing] decoded:", valueToUse);
+              console.log("[ZXing] ✅ Barcode decoded:", valueToUse);
+
+              // Visual feedback
+              if (video) {
+                video.style.filter = "brightness(1.5)";
+                setTimeout(() => {
+                  if (video) video.style.filter = "";
+                }, 200);
+              }
+
               await handleScanAndAddToCart(valueToUse);
               setIsCameraOpen(false);
               try { reader?.reset?.(); } catch {}
@@ -371,6 +422,10 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
           } else if (err) {
             if (err.name === "NotFoundException") {
               notFoundCount++;
+              // Mark camera as ready after first frame
+              if (notFoundCount === 1) {
+                setCameraLoading(false);
+              }
               if (notFoundCount % 50 === 0) {
                 // Throttled log every ~50 frames with no barcode
                 const vw = video.videoWidth, vh = video.videoHeight;
@@ -383,7 +438,8 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
         };
 
         console.log("[ZXing] starting decode loop");
-        reader.decodeFromConstraints(constraints, video, onResult);
+        await reader.decodeFromConstraints(constraints, video, onResult);
+        console.log("[ZXing] decode loop started successfully");
 
         // Watchdog: if no decode within 5s, fallback to decodeFromVideoDevice
         setTimeout(() => {
@@ -394,8 +450,20 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
             reader.decodeFromVideoDevice(deviceId, video, onResult);
           }
         }, 5000);
-      } catch (e) {
-        console.warn("[ZXing] setup failed:", e);
+      } catch (e: any) {
+        console.error("[ZXing] setup failed:", e);
+        setCameraLoading(false);
+
+        // Handle specific errors
+        if (e.name === "NotAllowedError" || e.name === "PermissionDeniedError") {
+          setCameraError("Camera permission denied. Please allow camera access in your browser settings.");
+        } else if (e.name === "NotFoundError") {
+          setCameraError("No camera found on this device.");
+        } else if (e.name === "NotReadableError") {
+          setCameraError("Camera is being used by another application.");
+        } else {
+          setCameraError(`Camera error: ${e.message || "Unknown error"}`);
+        }
       }
     };
 
@@ -403,7 +471,16 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
 
     return () => {
       cancelled = true;
-      try { reader?.reset?.(); } catch {}
+      try {
+        reader?.reset?.();
+        // Stop all video tracks
+        if (mediaStreamRef.current) {
+          mediaStreamRef.current.getTracks().forEach(track => track.stop());
+          mediaStreamRef.current = null;
+        }
+      } catch (e) {
+        console.warn("[ZXing] cleanup error:", e);
+      }
       console.log("[ZXing] stopped");
     };
   }, [isCameraOpen, handleScanAndAddToCart]);
@@ -499,35 +576,110 @@ export default function POSLeftCol({ step }: POSLeftColProps) {
       </AlertDialog>
 
       {/* Camera modal */}
-      <div className={isCameraOpen ? "" : "hidden"}>
-        <div className="fixed inset-0 bg-black/60 z-50" onClick={() => setIsCameraOpen(false)} />
-        <div className="fixed inset-x-4 bottom-8 md:inset-auto md:left-1/2 md:-translate-x-1/2 md:top-1/2 md:-translate-y-1/2 md:w-[480px] z-50 rounded-lg overflow-hidden bg-white shadow-xl">
-          <div className="flex items-center justify-between px-4 py-3 border-b">
-            <div className="text-sm font-medium">Camera Scanner</div>
-            <button
-              type="button"
-              className="text-sm text-gray-600 hover:text-gray-900"
-              onClick={() => setIsCameraOpen(false)}
-            >
-              Close
-            </button>
+      {isCameraOpen && (
+        <>
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 transition-opacity" onClick={() => setIsCameraOpen(false)} />
+          <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 md:inset-auto md:left-1/2 md:-translate-x-1/2 md:w-[520px] z-50 rounded-xl overflow-hidden bg-white shadow-2xl">
+            <div className="flex items-center justify-between px-5 py-4 border-b bg-gradient-to-r from-blue-600 to-blue-700">
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                </svg>
+                <span className="text-base font-semibold text-white">Barcode Scanner</span>
+              </div>
+              <button
+                type="button"
+                className="text-white/80 hover:text-white transition-colors"
+                onClick={() => setIsCameraOpen(false)}
+                aria-label="Close scanner"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="bg-black relative">
+              <video
+                ref={videoRef}
+                playsInline
+                autoPlay
+                muted
+                className="w-full h-[320px] object-contain"
+              />
+
+              {/* Loading overlay */}
+              {cameraLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                  <div className="text-center">
+                    <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                    <p className="text-white text-sm">Starting camera...</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Error overlay */}
+              {cameraError && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/80 p-4">
+                  <div className="text-center max-w-xs">
+                    <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-3">
+                      <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <p className="text-white text-sm">{cameraError}</p>
+                    <button
+                      onClick={() => {
+                        setCameraError(null);
+                        setIsCameraOpen(false);
+                      }}
+                      className="mt-4 px-4 py-2 bg-white text-gray-900 rounded-md text-sm font-medium hover:bg-gray-100"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Scanning overlay - only show when camera is ready */}
+              {!cameraLoading && !cameraError && (
+                <div className="absolute inset-0 pointer-events-none">
+                  <div className="absolute inset-0 border-2 border-blue-500/30"></div>
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-1/3 border-2 border-blue-500 rounded-lg">
+                    <div className="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-blue-500 rounded-tl-lg"></div>
+                    <div className="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-blue-500 rounded-tr-lg"></div>
+                    <div className="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-blue-500 rounded-bl-lg"></div>
+                    <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-blue-500 rounded-br-lg"></div>
+                  </div>
+                  {/* Scanning line animation */}
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-1/3 overflow-hidden rounded-lg">
+                    <div className="absolute inset-x-0 h-0.5 bg-blue-500 animate-scan"></div>
+                  </div>
+                </div>
+              )}
+
+              {/* Hidden canvas used for detection */}
+              <canvas ref={canvasRef} className="hidden" />
+            </div>
+            <div className="px-5 py-4 bg-gray-50 border-t">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                  <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div className="flex-1 text-sm text-gray-700">
+                  <p className="font-medium mb-1">Scanning Tips:</p>
+                  <ul className="space-y-1 text-xs">
+                    <li>• Hold barcode steady within the frame</li>
+                    <li>• Ensure good lighting (avoid glare)</li>
+                    <li>• Keep camera parallel to barcode</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="bg-black">
-            <video
-              ref={videoRef}
-              playsInline
-              autoPlay
-              muted
-              className="w-full h-[280px] object-contain"
-            />
-            {/* Hidden canvas used for detection */}
-            <canvas ref={canvasRef} className="hidden" />
-          </div>
-          <div className="p-3 text-xs text-gray-600">
-            Point the barcode straight-on, steady, and well-lit. Avoid glare and motion blur.
-          </div>
-        </div>
-      </div>
+        </>
+      )}
 
       {/* Product Register Modal */}
       <ProductRegisterModal />

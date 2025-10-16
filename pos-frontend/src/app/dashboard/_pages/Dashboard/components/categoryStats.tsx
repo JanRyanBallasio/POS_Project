@@ -85,10 +85,10 @@ export default function ProductStats() {
     return response.data?.data || response.data || []
   }
 
-  // Range state
+  // Range state - default to today only
   const today = new Date()
   const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
-  const [range, setRange] = useState<DateRange | undefined>({ from: startOfMonth, to: today })
+  const [range, setRange] = useState<DateRange | undefined>({ from: today, to: today })
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | 'recent'>('recent')
   const [open, setOpen] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
@@ -232,7 +232,7 @@ export default function ProductStats() {
       <Card className='@container/card w-full relative'>
         <CardHeader className='flex flex-col border-b @md/card:grid'>
           <CardTitle>Category Analytics</CardTitle>
-          <CardDescription>Showing most sold categories for this month.</CardDescription>
+          <CardDescription>Showing most sold categories for the selected day.</CardDescription>
           <CardAction className='mt-2 @md/card:mt-0'>
             <div className="flex gap-2 items-center mt-2">
               <Button onClick={() => setSortOrder('desc')} variant={sortOrder === 'desc' ? 'default' : 'outline'} size="sm"><ChevronDown size={16} /></Button>

@@ -60,20 +60,21 @@ export function useProductSearch(
   // Create Fuse instance for client-side search - only recreate when products change
   const fuse = useMemo(() => {
     if (!allProducts.length) return null;
-    
+
     return new Fuse(allProducts, {
       keys: [
         { name: 'name', weight: 0.7 },
         { name: 'barcode', weight: 0.3 }
       ],
-      threshold: 0.1,
+      threshold: 0.3, // Relaxed from 0.1 for better fuzzy matching
       includeScore: true,
-      minMatchCharLength: 2,
+      minMatchCharLength: 1, // Allow single character matches
       ignoreLocation: true,
-      findAllMatches: false,
-      // Add these for better performance
+      findAllMatches: true, // Find all matches, not just first
       shouldSort: true,
-      includeMatches: false, // Don't include match details for better performance
+      includeMatches: false,
+      distance: 100, // Allow matches further apart
+      useExtendedSearch: true, // Enable advanced search patterns
     });
   }, [allProducts]);
 
@@ -120,9 +121,10 @@ export function useProductSearch(
     const now = Date.now();
     if (lastKeyTimeRef.current) {
       const diff = now - lastKeyTimeRef.current;
-      if (diff < 50 && val.length > 3) {
+      // Improved scanner detection: wider timing window and length check
+      if (diff < 100 && val.length > 2) { // Increased from 50ms to 100ms
         isScannerInputRef.current = true;
-      } else if (diff > 150) {
+      } else if (diff > 200) { // Increased from 150ms to 200ms
         isScannerInputRef.current = false;
       }
     }
@@ -149,7 +151,8 @@ export function useProductSearch(
 
   const searchProducts = useCallback(
     debounce(async (q: string) => {
-      if (!q || q.trim().length < 2) {
+      // Allow single character search for quick access
+      if (!q || q.trim().length < 1) {
         setSearchResults([]);
         setShowSearchResults(false);
         setIsLoading(false);
@@ -196,13 +199,15 @@ export function useProductSearch(
         return;
       }
 
+      // Quick search for single character (instant results)
       if (q.trim().length === 1) {
         const quickResults = allProducts
-          .filter(product => 
-            product.name.toLowerCase().startsWith(q.toLowerCase())
+          .filter(product =>
+            product.name.toLowerCase().startsWith(q.toLowerCase()) ||
+            product.barcode?.startsWith(q)
           )
-          .slice(0, 5);
-        
+          .slice(0, 10); // Increased from 5 to 10
+
         setSearchResults(quickResults);
         setShowSearchResults(true);
         setIsLoading(false);
@@ -258,11 +263,16 @@ export function useProductSearch(
           results = data?.data ?? [];
         }
 
-        // Limit results to 50 for performance
-        results = results.slice(0, 50);
-        
+        // Limit results to 20 for better UX (less scrolling)
+        results = results.slice(0, 20);
+
         // Cache results
         searchCache.current.set(cacheKey, results);
+
+        // Clear cache if it gets too large (memory management)
+        if (searchCache.current.size > 100) {
+          searchCache.current.clear();
+        }
         
         setSearchResults(results);
         setShowSearchResults(true);
@@ -310,7 +320,7 @@ export function useProductSearch(
         }
         setIsLoading(false);
       }
-    }, 100),
+    }, isScannerInputRef.current ? 50 : 200), // Faster for scanner (50ms), slower for typing (200ms)
     [fuse, allProducts]
   );
 

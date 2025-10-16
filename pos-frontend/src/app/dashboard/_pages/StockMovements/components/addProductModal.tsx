@@ -7,10 +7,11 @@ import React, {
   useRef,
   useState,
 } from 'react'
-import { ChevronsUpDownIcon, PlusCircle } from 'lucide-react'
+import { ChevronsUpDownIcon, PlusCircle, RefreshCw, Replace } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Toggle } from '@/components/ui/toggle'
 import {
   Dialog,
   DialogDescription,
@@ -71,6 +72,9 @@ export default function AddProductModal({ onAdd, preSelectedSupplier, onSuccess 
   const [newProductBarcode, setNewProductBarcode] = useState('')
   const [newProductCategory, setNewProductCategory] = useState('')
   const [creatingProduct, setCreatingProduct] = useState(false)
+
+  // Quantity mode: 'overwrite' or 'add'
+  const [quantityMode, setQuantityMode] = useState<'overwrite' | 'add'>('overwrite')
 
   const { mutate } = useSWRConfig()
 
@@ -367,15 +371,23 @@ export default function AddProductModal({ onAdd, preSelectedSupplier, onSuccess 
           throw new Error('Failed to get or create transaction')
         }
 
-        // Calculate final price to use (adjusted if percent available, raw otherwise)
-        const finalPrice = adjustedPrice !== null ? adjustedPrice : Number(unitPrice)
+        // Calculate final price to use (adjusted if percent available, raw otherwise) and round up
+        const finalPrice = Math.ceil(adjustedPrice !== null ? adjustedPrice : Number(unitPrice))
+
+        // Calculate final quantity based on mode and round up
+        let finalQuantity = Math.ceil(Number(qty))
+        if (quantityMode === 'add' && selectedProductData) {
+          // Add to current quantity
+          finalQuantity = Math.ceil(Number(selectedProductData.quantity || 0) + Number(qty))
+        }
 
         // Now add the product as a stock item using the new endpoint
         const payload = {
           items: [{
             product_id: apiId,
             purchased_price: finalPrice,
-            quantity: qty
+            quantity: finalQuantity,
+            quantity_mode: quantityMode
           }]
         }
 
@@ -450,45 +462,6 @@ export default function AddProductModal({ onAdd, preSelectedSupplier, onSuccess 
         </DialogHeader>
 
         <div className="px-4 sm:px-6 pb-4 sm:pb-6 space-y-4 sm:space-y-5">
-          {/* Price Calculation Banner */}
-          {supplierPercent && typeof unitPrice === 'number' && unitPrice > 0 && adjustedPrice && (
-            <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3.5">
-              <div className="flex items-start gap-2.5">
-                <div className="flex-shrink-0 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center mt-0.5">
-                  <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-emerald-900 mb-1">Price Calculation</p>
-                  <p className="text-sm text-emerald-700">
-                    ₱{unitPrice.toFixed(2)} ÷ {supplierPercent.toFixed(2)} = <span className="font-semibold">₱{adjustedPrice.toFixed(2)}</span>
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Warning: No percent set */}
-          {selectedCompany && !supplierPercent && (
-            <div className="rounded-lg bg-amber-50 border border-amber-200 p-3.5">
-              <div className="flex items-start gap-2.5">
-                <div className="flex-shrink-0 w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center mt-0.5">
-                  <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-amber-900 mb-1">No Divisor Set</p>
-                  <p className="text-sm text-amber-700">
-                    Raw price{' '}
-                    {typeof unitPrice === 'number' ? `₱${unitPrice.toFixed(2)}` : ''} will be saved to product.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Product Selection */}
           <div className="space-y-2">
             <Label className="text-sm font-medium text-gray-900">Product</Label>
@@ -691,19 +664,49 @@ export default function AddProductModal({ onAdd, preSelectedSupplier, onSuccess 
               {selectedProductData && (
                 <p className="text-xs text-gray-500 -mt-1">
                   Current: {selectedProductData?.quantity || 0}
+                  {qty !== '' && (
+                    <span className="ml-1 font-semibold text-emerald-600">
+                      → {quantityMode === 'add'
+                        ? Math.ceil(Number(selectedProductData?.quantity || 0) + Number(qty))
+                        : Math.ceil(Number(qty))
+                      }
+                    </span>
+                  )}
                 </p>
               )}
-              <Input
-                ref={qtyRef}
-                type="number"
-                value={qty}
-                onChange={(e) => setQty(e.target.value === '' ? '' : Number(e.target.value))}
-                min={0}
-                step={0.01}
-                placeholder={preSelectedSupplier ? "Enter new quantity" : "0"}
-                disabled={!selected}
-                className="h-11 border-gray-200 focus-visible:border-gray-300 focus-visible:ring-1 focus-visible:ring-gray-300 rounded-lg shadow-sm disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
-              />
+              <div className="relative">
+                <Input
+                  ref={qtyRef}
+                  type="number"
+                  value={qty}
+                  onChange={(e) => setQty(e.target.value === '' ? '' : Number(e.target.value))}
+                  min={0}
+                  step={0.01}
+                  placeholder={quantityMode === 'add' ? "Enter quantity to add" : "Enter new quantity"}
+                  disabled={!selected}
+                  className="h-11 pr-14 border-gray-200 focus-visible:border-gray-300 focus-visible:ring-1 focus-visible:ring-gray-300 rounded-lg shadow-sm disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
+                />
+                <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5 bg-gray-100 rounded-md p-0.5">
+                  <Toggle
+                    pressed={quantityMode === 'overwrite'}
+                    onPressedChange={() => setQuantityMode('overwrite')}
+                    size="sm"
+                    title="Overwrite quantity"
+                    className="h-5 w-5 p-0 data-[state=on]:bg-white data-[state=on]:text-gray-900 data-[state=off]:text-gray-500 hover:data-[state=off]:text-gray-700"
+                  >
+                    <Replace className="h-3 w-3" />
+                  </Toggle>
+                  <Toggle
+                    pressed={quantityMode === 'add'}
+                    onPressedChange={() => setQuantityMode('add')}
+                    size="sm"
+                    title="Add to current quantity"
+                    className="h-5 w-5 p-0 data-[state=on]:bg-white data-[state=on]:text-gray-900 data-[state=off]:text-gray-500 hover:data-[state=off]:text-gray-700"
+                  >
+                    <RefreshCw className="h-3 w-3" />
+                  </Toggle>
+                </div>
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -712,7 +715,12 @@ export default function AddProductModal({ onAdd, preSelectedSupplier, onSuccess 
               </Label>
               {selectedProductData && (
                 <p className="text-xs text-gray-500 -mt-1">
-                  Current: ₱{selectedProductData?.price?.toFixed(2) || '0.00'}
+                  Current: ₱{Math.ceil(selectedProductData?.price || 0)}
+                  {unitPrice !== '' && adjustedPrice !== null && (
+                    <span className="ml-1 font-semibold text-emerald-600">
+                      → ₱{Math.ceil(adjustedPrice)}
+                    </span>
+                  )}
                 </p>
               )}
               <Input

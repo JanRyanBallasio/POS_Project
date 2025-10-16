@@ -127,14 +127,20 @@ export default function ProductSearch({
     <div className="relative mb-6">
       <div className="relative flex items-center">
         <Search
-          className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400"
+          className={`absolute left-2 top-1/2 transform -translate-y-1/2 transition-colors ${
+            isScannerInputRef?.current ? 'text-blue-500' : 'text-gray-400'
+          }`}
           size={20}
         />
         <Input
           ref={inputRef}
           data-product-search="true"
           data-search-open={showSearchResults ? "true" : "false"}
-          className="pl-9 pr-10 w-full"
+          className={`pl-9 pr-10 w-full transition-all ${
+            isScannerInputRef?.current
+              ? 'ring-2 ring-blue-500 border-blue-500'
+              : ''
+          }`}
           placeholder="Search by product name or barcode..."
           value={searchQuery}
           onChange={(e) => handleSearchChange(e.target.value)}
@@ -166,16 +172,19 @@ export default function ProductSearch({
         )}
       </div>
 
-      {isLoading && (
-        <div className="absolute top-full left-0 right-0 bg-white border rounded-md shadow-lg z-10 p-3 text-center text-gray-500">
-          Searching...
+      {isLoading && !showSearchResults && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-xl z-10 p-4 text-center">
+          <div className="flex items-center justify-center gap-2">
+            <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <span className="text-gray-600 text-sm">Searching...</span>
+          </div>
         </div>
       )}
 
       {shouldShowDropdown && (
         <div
           ref={resultsContainerRef}
-          className="absolute top-full left-0 right-0 bg-white border rounded-md shadow-lg z-10 max-h-[32rem] overflow-y-auto"
+          className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-xl z-10 max-h-[28rem] overflow-y-auto"
         >
           {searchResults.map((product, idx) => (
             <div
@@ -229,18 +238,21 @@ export default function ProductSearch({
       {showSearchResults &&
         !isScannerInputRef?.current &&
         searchResults.length === 0 &&
-        searchQuery.length >= 2 &&
+        searchQuery.length >= 1 &&
         !isLoading && (
-          <div className="absolute top-full left-0 right-0 bg-white border rounded-md shadow-lg z-10 p-3 text-center text-gray-500">
-            <div className="mb-2">
-              No product found matching "{searchQuery}"
+          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-xl z-10 p-4 text-center">
+            <div className="mb-3 text-gray-600">
+              No product found matching "<span className="font-semibold">{searchQuery}</span>"
             </div>
             {onAddProduct && (
               <button
                 onClick={onAddProduct}
-                className="text-blue-600 hover:text-blue-800 hover:underline text-sm font-medium"
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
               >
-                Add new product
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Add New Product
               </button>
             )}
           </div>
